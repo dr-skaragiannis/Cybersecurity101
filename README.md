@@ -1,17 +1,17 @@
-# Cybersecurity 101 / Introduction to Cybersecurity: Εισαγωγή στην Κυβερνοασφάλεια
+# Cybersecurity 101 / Introduction to Cybersecurity - Εισαγωγή στην Κυβερνοασφάλεια
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> **Languages / Γλώσσες:** [English](#english) | [Ελληνικά](#ελληνικά)
+> **Languages / Γλώσσες:** [English](#english) | [Ελληνικά](#Greek)
 
 ---
 
-<a name="english"></a>
+<a id="english" name="english"></a>
 ## English
 
 ### Overview
-**Cybersecurity 101** is a practical, open-source educational repository featuring step-by-step lab guides, penetration testing tutorials, and defensive security walkthroughs. It is designed to take learners from foundational Linux command-line mastery through service enumeration, vulnerability exploitation, network packet analysis, and defensive deception mechanisms.
+**Cybersecurity 101** is a practical, open-source educational repository containing step-by-step lab guides, penetration testing tutorials, and defensive security walkthroughs. It is designed to take learners from foundational Linux command-line mastery through service enumeration, vulnerability exploitation, network packet analysis, and defensive deception mechanisms.
 
 ---
 
@@ -36,18 +36,43 @@
 
 Most modules are intended to be executed in an isolated virtualization or container environment:
 
-* **Attacking Machine:** Kali Linux, Parrot Security OS, or standard Linux terminal with security tools installed (`nmap`, `hydra`, `wpscan`).
+* **Attacking Machine:** Kali Linux, Parrot Security OS, or a standard Linux terminal with security tools installed (`nmap`, `hydra`, `wpscan`).
 * **Packet & Traffic Analysis:** `tcpdump`, `wireshark` / `tshark`.
 * **Hypervisor / Sandboxing:** VirtualBox, VMware Workstation, or UTM (for hosting vulnerable targets like Raven 1).
 
 ---
 
-### Quick Start
+---
 
-```bash
-# Clone the repository
-git clone [https://github.com/dr-skaragiannis/Cybersecurity101.git](https://github.com/dr-skaragiannis/Cybersecurity101.git)
-cd Cybersecurity101
+<a id="Greek" name="Greek"></a>
+# Greek
 
-# View available guides
-ls -l *.md
+### Επισκόπηση
+Το **Cybersecurity 101** είναι ένα ανοικτό εκπαιδευτικό αποθετήριο που περιλαμβάνει βήμα-προς-βήμα εργαστηριακούς οδηγούς, τεχνικές penetration testing και αμυντικές ρυθμίσεις ασφαλείας. Στόχος του είναι να καθοδηγήσει τον εκπαιδευόμενο από τη βασική διαχείριση περιβάλλοντος Linux έως την αναγνώριση υπηρεσιών δικτύου, την εκμετάλλευση ευπαθειών (exploitation), την ανάλυση κίνησης πακέτων και την εγκατάσταση αμυντικών honeypots.
+
+---
+
+### Περιεχόμενα & Δομή Μαθημάτων
+
+| # | Οδηγός / Εργαστήριο | Αντικείμενο Μελέτης | Γλώσσα |
+| :---: | :--- | :--- | :---: |
+| **01** | `01-linux-for-beginners-part-01.md` | Βασικές εντολές τερματικού Linux, δομή αρχείων και πλοήγηση | Αγγλικά |
+| **02** | `02-linux-for-beginners-part-02.md` | Διαχείριση χρηστών, δικαιώματα αρχείων (`chmod`, `chown`) και διεργασίες | Αγγλικά |
+| **03** | `03-linux-for-beginners-part-03.md` | Διαχείριση πακέτων, βασικά στοιχεία Bash scripting και δικτυακά εργαλεία | Αγγλικά |
+| **04** | `04 - SSH Penetration Testing - Port 22.md` | Έλεγχος Port 22, επιθέσεις λεξικού, ταυτοποίηση κλειδιών SSH και misconfigurations | Αγγλικά |
+| **05** | `05-anonymous-logins-file-shares.md` | Αναγνώριση και εκμετάλλευση ανώνυμης πρόσβασης σε κοινόχρηστα αρχεία (FTP, SMB, NFS) | Αγγλικά |
+| **06** | `06. Raven_1_Educational_Lab_el.md` | Πλήρης εκπαιδευτικός οδηγός Boot-to-Root CTF (Raven 1 Virtual Machine) | Ελληνικά |
+| **08** | `08. Uncomplicated Firewall - Educational_guide_el.md` | Αμυντική προστασία τερματικού και παραμετροποίηση κανόνων με το UFW | Ελληνικά |
+| **09** | `09. Wordpress_penetration_testing_lab_guide_el.md` | Έλεγχος τρωτότητας CMS, σάρωση με WPScan και τεχνικές exploitation | Ελληνικά |
+| **10** | `10. Honeypot_lab_guide_el.md` | Υλοποίηση honeypot, καταγραφή επιθέσεων και συλλογή τηλεμετρίας | Ελληνικά |
+| **11** | `11. Tcpdump_educational_lab_guide_el.md` | Καταγραφή δικτυακής κίνησης, φίλτρα BPF και ανάλυση πακέτων | Ελληνικά |
+
+---
+
+### Προαπαιτούμενα & Εργαστηριακό Περιβάλλον
+
+Για την εκτέλεση των πρακτικών ασκήσεων συνιστάται απομονωμένο περιβάλλον εικονικοποίησης (sandbox/lab network):
+
+* **Επιτιθέμενο Σύστημα:** Kali Linux ή Parrot OS (με προεγκατεστημένα `nmap`, `hydra`, `wpscan`).
+* **Εργαλεία Ανάλυσης Δικτύου:** `tcpdump`, `wireshark` / `tshark`.
+* **Hypervisor:** VirtualBox, VMware Worksta
