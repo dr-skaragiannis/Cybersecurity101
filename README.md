@@ -8,7 +8,8 @@
 | 02 | [Linux for Beginners - Part 2](docs/02%20-%20Linux%20for%20Beginners%20-%20Part%202.md) | Networks, processes and environment variables |
 | 03 | [Linux for Beginners - Part 3](docs/03%20-%20Linux%20for%20Beginners%20-%20Part%203.md) | Bash scripting, scheduling and services |
 | 04 | [SSH Penetration Testing - Port 22](docs/04%20-%20SSH%20Penetration%20Testing%20-%20Port%2022.md) | SSH from reconnaissance through to persistence |
+| 05 | [Anonymous Logins for Pentesters: FTP, SMB and NFS File-Share Walkthrough](docs/05-anonymous-logins-file-shares.md) | Anonymous/guest FTP, SMB and NFS shares: setup, enumeration and retrieval |
 
 Every document is a standalone walkthrough: commands are shown as console transcripts rather than screenshots, each step is explained in prose, and the examples are written for a disposable lab network rather than production hosts.
 
-The same four guides are also available in Greek: [Οδηγοί στα Ελληνικά](docs-el/README.md).
+The first four guides are also available in Greek: [Οδηγοί στα Ελληνικά](docs-el/README.md).
