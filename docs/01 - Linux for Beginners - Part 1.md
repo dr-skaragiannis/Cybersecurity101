@@ -1,19 +1,11 @@
 # Linux for Beginners (Part 1): The Shell, Files, Text, Packages and Permissions
 
-<<<<<<<< HEAD:docs/01 - Linux for Beginners - Part 1.md
-*This is Part 1 of a three-part guide. It is followed by [Part 2: Networks, Processes and Environment Variables](02%20-%20Linux%20for%20Beginners%20-%20Part%202.md) and [Part 3: Bash Scripting, Automation and Services](03%20-%20Linux%20for%20Beginners%20-%20Part%203.md).*
-========
-*This is Part 1 of a three-part guide. Its continuations — networks, processes and environment variables, then scripting, scheduling and services — are in [Linux for Beginners (Part 2)](02-linux-for-beginners-part-02.md) and [Linux for Beginners (Part 3)](03-linux-for-beginners-part-03.md).*
->>>>>>>> origin/arena/52f71d52-attack-scripts:docs/01-linux-for-beginners-part-01.md
-
 ## Introduction
 
 More often than not, certain operating systems tend to get tied to certain tasks, and when the task is penetration testing, a Linux-based operating system is almost always the platform of choice. This guide is written for someone who has never opened a Linux terminal before and wants to become comfortable with the fundamentals in a single sitting. Rather than dumping a list of commands on you, every section explains *why* a command exists, *what* it does to your system, and *how* you can verify with your own eyes that it actually did it.
 
 The material follows a friendly difficulty curve. We begin with the two questions every beginner asks out loud ("where am I?" and "who am I?") and with the commands that move you around the file system and list what is inside it. From there we look at the built-in help systems, because no one memorises every flag of every utility, and learning to read a manual page is a skill that pays for itself immediately. Next comes file and directory manipulation, the everyday business of creating, copying, moving and deleting things; then text manipulation, which matters far more on Linux than on other systems because almost everything you administer here is a plain text file. The last two sections cover installing and removing software through the package manager and understanding the Unix permission model, the part of Linux that trips up beginners most often and the part that matters most when you later study privilege escalation.
 
-<<<<<<<< HEAD:docs/01 - Linux for Beginners - Part 1.md
-This is **Part 1** of three. Everything here is the layer you need before anything else makes sense: the shell, the file system, text, packages and permissions. **Part 2** carries on with the topics that sit just beneath everyday use — networks and interfaces, process management, and the environment variables that quietly decide which program runs, which resolver answers and which editor opens — and **Part 3** finishes with the automation layer: writing Bash scripts, scheduling them with `cron`, and running the services that keep a machine useful. Neither continuation assumes anything beyond the material below.
 ========
 This is **Part 1** of three. Everything here is the layer you need before anything else makes sense: the shell, the file system, text, packages and permissions. **Part 2** carries on with the topics that sit just beneath everyday use — networks and interfaces, process management, and the environment variables that quietly decide which program runs, which resolver answers and which editor opens — and **Part 3** finishes with scripting, scheduling and services, the automation layer that multiplies everything before it. Both assume only that you are comfortable with the material below.
 >>>>>>>> origin/arena/52f71d52-attack-scripts:docs/01-linux-for-beginners-part-01.md
