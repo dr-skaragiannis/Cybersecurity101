@@ -1,7 +1,5 @@
 # Linux for Beginners (Part 2): Networks, Processes and Environment Variables
 
-<<<<<<<< HEAD:docs/02 - Linux for Beginners - Part 2.md
-*This is Part 2 of a three-part guide. It continues [Linux for Beginners (Part 1): The Shell, Files, Text, Packages and Permissions](01%20-%20Linux%20for%20Beginners%20-%20Part%201.md) and is followed by [Linux for Beginners (Part 3): Bash Scripting, Automation and Services](03%20-%20Linux%20for%20Beginners%20-%20Part%203.md). It assumes you are comfortable with the material in Part 1 — moving around the file system, reading a long listing, editing text from the command line, using the package manager and reading permission strings.*
 ========
 *This is Part 2 of a three-part guide. It continues [Linux for Beginners (Part 1): The Shell, Files, Text, Packages and Permissions](01-linux-for-beginners-part-01.md), and it assumes you are comfortable with the material there — moving around the file system, reading a long listing, editing text from the command line, using the package manager and reading permission strings. Its continuation — scripting, scheduling and services — is in [Linux for Beginners (Part 3)](03-linux-for-beginners-part-03.md).*
 >>>>>>>> origin/arena/52f71d52-attack-scripts:docs/02-linux-for-beginners-part-02.md
