@@ -1,6 +1,10 @@
 # Linux for Beginners (Part 2): Networks, Processes and Environment Variables
 
+<<<<<<<< HEAD:docs/02 - Linux for Beginners - Part 2.md
 *This is Part 2 of a three-part guide. It continues [Linux for Beginners (Part 1): The Shell, Files, Text, Packages and Permissions](01%20-%20Linux%20for%20Beginners%20-%20Part%201.md) and is followed by [Linux for Beginners (Part 3): Bash Scripting, Automation and Services](03%20-%20Linux%20for%20Beginners%20-%20Part%203.md). It assumes you are comfortable with the material in Part 1 — moving around the file system, reading a long listing, editing text from the command line, using the package manager and reading permission strings.*
+========
+*This is Part 2 of a three-part guide. It continues [Linux for Beginners (Part 1): The Shell, Files, Text, Packages and Permissions](01-linux-for-beginners-part-01.md), and it assumes you are comfortable with the material there — moving around the file system, reading a long listing, editing text from the command line, using the package manager and reading permission strings. Its continuation — scripting, scheduling and services — is in [Linux for Beginners (Part 3)](03-linux-for-beginners-part-03.md).*
+>>>>>>>> origin/arena/52f71d52-attack-scripts:docs/02-linux-for-beginners-part-02.md
 
 ## Introduction
 
@@ -766,7 +770,11 @@ The commands in this part only become yours when you have typed them yourself, s
 2. **Processes.** Find the process that is using the most memory, and the one that is using the most CPU. Run a long job at the lowest priority in the background, list it with `jobs -l`, then stop it, background it again and foreground it. Schedule a harmless command with `at` to run two minutes from now and confirm it ran. Send `SIGTERM` to a process of your choosing, and only if that fails escalate to `SIGKILL`, explaining in writing why the order matters.
 3. **Environment.** Print the value of `HISTSIZE`, save it to a file in your home directory, change it for the current shell only, and prove that a child shell does not see the change. Then export it, prove that a child shell does see it, and finally make it permanent in `~/.bashrc`. Create a variable of your own, use it in a command, and delete it with `unset` — noting what an unset variable expands to.
 
+<<<<<<<< HEAD:docs/02 - Linux for Beginners - Part 2.md
 If you can complete these three exercises without looking anything up, you are comfortable with the layer of Linux that sits between using the command line and administering a system — and you have covered everything in the first two parts of this guide.
+========
+If you can complete these three exercises without looking anything up, you are comfortable with the layer of Linux that sits between using the command line and administering a system — and you are ready for Part 3.
+>>>>>>>> origin/arena/52f71d52-attack-scripts:docs/02-linux-for-beginners-part-02.md
 
 ---
 
@@ -776,4 +784,8 @@ The three topics in this part share a theme that is easy to miss while you are m
 
 Two habits from Part 1 are worth carrying forward, because they cover most of the risk. The first is to *look before you change anything*: read a configuration file before you overwrite it, run `pgrep` before you run `pkill`, print an address table before you alter an interface, and save a value before you unset or reassign it. The second is to *have a way back*: a snapshot, a second console, or a rollback scheduled with `at` before you touch the network.
 
+<<<<<<<< HEAD:docs/02 - Linux for Beginners - Part 2.md
 **Part 3** is where those threads come together. [Linux for Beginners (Part 3): Bash Scripting, Automation and Services](03%20-%20Linux%20for%20Beginners%20-%20Part%203.md) takes the variables, the pipelines and the processes you have just met and turns them into programs — a Bash script that takes input and does something useful, a `cron` job that runs it on a schedule without anyone remembering to launch it, and the services (Apache, OpenSSH, FTP) that let a machine answer requests by itself. Beyond that, natural next steps are **service management** with `systemctl` and the systemd journal, **package and configuration management** across more than one machine, and a deeper study of the **permission and privilege model**. Each of them builds directly on the material above, and each of them is far less intimidating once moving around the file system, reading a long listing and inspecting a running process all feel like second nature.
+========
+**Part 3** is the continuation and it picks up exactly where this guide leaves off. [Linux for Beginners (Part 3): Scripting, Scheduling and Services](03-linux-for-beginners-part-03.md) covers shell **scripting and automation** — conditions, loops, functions and the variables you have just met, assembled into programs that do a day's work in a second — along with **scheduling** with `cron` and **service management** with `service`/`systemctl`, including the Apache web server, OpenSSH and FTP. Beyond the three parts, natural next steps are writing your own systemd units and timers, **package and configuration management** across more than one machine, and a deeper study of the **permission and privilege model**. Each of them builds directly on the material above, and each of them is far less intimidating once moving around the file system, reading a long listing and inspecting a running process all feel like second nature.
+>>>>>>>> origin/arena/52f71d52-attack-scripts:docs/02-linux-for-beginners-part-02.md

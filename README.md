@@ -10,3 +10,5 @@
 | 04 | [SSH Penetration Testing - Port 22](docs/04%20-%20SSH%20Penetration%20Testing%20-%20Port%2022.md) | SSH from reconnaissance through to persistence |
 
 Every document is a standalone walkthrough: commands are shown as console transcripts rather than screenshots, each step is explained in prose, and the examples are written for a disposable lab network rather than production hosts.
+
+The same four guides are also available in Greek: [Οδηγοί στα Ελληνικά](docs-el/README.md).
