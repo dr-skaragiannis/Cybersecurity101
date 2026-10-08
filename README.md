@@ -1,15 +1,14 @@
-# Attack-Scripts
+# Οδηγοί στα Ελληνικά
 
-## Contents
+Εδώ θα βρείτε τους τέσσερις εργαστηριακούς οδηγούς της συλλογής, γραμμένους στα ελληνικά ως πρωτότυπο εκπαιδευτικό υλικό — και όχι ως λέξη-προς-λέξη μετάφραση της αγγλικής έκδοσης. Τα transcripts, οι εντολές, οι εξόδοι, τα ονόματα εργαλείων και η αρίθμηση των ενοτήτων είναι πανομοιότυπα με τα αγγλικά, ώστε να μπορείτε να τα δουλεύετε παράλληλα.
 
-| # | Document | What it covers |
-| --- | --- | --- |
-| 01 | [Linux for Beginners - Part 1](docs/01%20-%20Linux%20for%20Beginners%20-%20Part%201.md) | The shell, files, text, packages and permissions |
-| 02 | [Linux for Beginners - Part 2](docs/02%20-%20Linux%20for%20Beginners%20-%20Part%202.md) | Networks, processes and environment variables |
-| 03 | [Linux for Beginners - Part 3](docs/03%20-%20Linux%20for%20Beginners%20-%20Part%203.md) | Bash scripting, scheduling and services |
-| 04 | [SSH Penetration Testing - Port 22](docs/04%20-%20SSH%20Penetration%20Testing%20-%20Port%2022.md) | SSH from reconnaissance through to persistence |
-| 05 | [Anonymous Logins for Pentesters: FTP, SMB and NFS File-Share Walkthrough](docs/05-anonymous-logins-file-shares.md) | Anonymous/guest FTP, SMB and NFS shares: setup, enumeration and retrieval |
+Τα αγγλικά πρωτότυπα βρίσκονται στον φάκελο [`docs/`](../docs/). Ο πέμπτος οδηγός της συλλογής (ανώνυμες συνδέσεις αρχείων FTP, SMB και NFS) είναι προς το παρόν διαθέσιμος μόνο στα αγγλικά.
 
-Every document is a standalone walkthrough: commands are shown as console transcripts rather than screenshots, each step is explained in prose, and the examples are written for a disposable lab network rather than production hosts.
+| # | Οδηγός | Περιεχόμενο |
+|---|--------|-------------|
+| 01 | [Linux για Αρχάριους (Μέρος 1ο): Κέλυφος, Αρχεία, Κείμενο, Πακέτα και Δικαιώματα](01-linux-for-beginners-part-01.md) | Κέλυφος και πλοήγηση, αρχεία και κατάλογοι, αναζήτηση και φιλτράρισμα κειμένου, πακέτα APT, δικαιώματα και ιδιοκτησία |
+| 02 | [Linux για Αρχάριους (Μέρος 2ο): Δίκτυα, Διεργασίες και Μεταβλητές Περιβάλλοντος](02-linux-for-beginners-part-02.md) | Βασικά δικτύωσης, διαχείριση διεργασιών, μεταβλητές περιβάλλοντος |
+| 03 | [Linux για Αρχάριους (Μέρος 3ο): Scripting, Προγραμματισμός Εργασιών και Υπηρεσίες](03-linux-for-beginners-part-03.md) | Bash scripting, cron και rc scripts, Apache, SSH και FTP |
+| 04 | [Penetration Testing SSH (Πόρτα 22): Πλήρης Εργαστηριακή Περιήγηση](04-ssh-pentest-guide.md) | Αναγνώριση, brute force διαπιστευτηρίων, κλειδιά, tunnelling, reverse shell, επιμονή, σκλήρυνση |
 
-The first four guides are also available in Greek: [Οδηγοί στα Ελληνικά](docs-el/README.md).
+Καλή μελέτη — και θυμηθείτε: όλα τα επιθετικά τμήματα εκτελούνται μόνο σε δικό σας lab, ποτέ σε μηχανήματα τρίτων.
