@@ -24,11 +24,11 @@
 | **03** | `03-linux-for-beginners-part-03.md` | Package management, Bash scripting fundamentals, and networking tools | English |
 | **04** | `04 - SSH Penetration Testing - Port 22.md` | Auditing Port 22, credential brute-forcing, key authentication, and misconfigurations | English |
 | **05** | `05-anonymous-logins-file-shares.md` | Enumerating and exploiting unauthenticated access (FTP, SMB, NFS) | English |
-| **06** | `06. Raven_1_Educational_Lab_el.md` | Complete Boot-to-Root educational CTF walkthrough (Raven 1 VM) | Greek |
-| **08** | `08. Uncomplicated Firewall - Educational_guide_el.md` | Host-based defense, ingress/egress filtering, and UFW rule configuration | Greek |
-| **09** | `09. Wordpress_penetration_testing_lab_guide_el.md` | CMS vulnerability assessment, plugin auditing, WPScan, and exploitation | Greek |
-| **10** | `10. Honeypot_lab_guide_el.md` | Deploying deceptive traps, threat telemetry gathering, and attacker monitoring | Greek |
-| **11** | `11. Tcpdump_educational_lab_guide_el.md` | Low-level packet capture, Berkeley Packet Filters (BPF), and traffic inspection | Greek |
+| **06** | `06. Raven_1_Educational_Lab.md` | Complete Boot-to-Root educational CTF walkthrough (Raven 1 VM) | English |
+| **08** | `08. Uncomplicated Firewall - Educational_guide.md` | Host-based defense, ingress/egress filtering, and UFW rule configuration | English |
+| **09** | `09. Wordpress_penetration_testing_lab_guide.md` | CMS vulnerability assessment, plugin auditing, WPScan, and exploitation | English |
+| **10** | `10. Honeypot_lab_guide.md` | Deploying deceptive traps, threat telemetry gathering, and attacker monitoring | English |
+| **11** | `11. Tcpdump_educational_lab_guide.md` | Low-level packet capture, Berkeley Packet Filters (BPF), and traffic inspection | English |
 
 ---
 
@@ -56,11 +56,11 @@ Most modules are intended to be executed in an isolated virtualization or contai
 
 | # | Οδηγός / Εργαστήριο | Αντικείμενο Μελέτης | Γλώσσα |
 | :---: | :--- | :--- | :---: |
-| **01** | `01-linux-for-beginners-part-01.md` | Βασικές εντολές τερματικού Linux, δομή αρχείων και πλοήγηση | Αγγλικά |
-| **02** | `02-linux-for-beginners-part-02.md` | Διαχείριση χρηστών, δικαιώματα αρχείων (`chmod`, `chown`) και διεργασίες | Αγγλικά |
-| **03** | `03-linux-for-beginners-part-03.md` | Διαχείριση πακέτων, βασικά στοιχεία Bash scripting και δικτυακά εργαλεία | Αγγλικά |
-| **04** | `04 - SSH Penetration Testing - Port 22.md` | Έλεγχος Port 22, επιθέσεις λεξικού, ταυτοποίηση κλειδιών SSH και misconfigurations | Αγγλικά |
-| **05** | `05-anonymous-logins-file-shares.md` | Αναγνώριση και εκμετάλλευση ανώνυμης πρόσβασης σε κοινόχρηστα αρχεία (FTP, SMB, NFS) | Αγγλικά |
+| **01** | `01-linux-for-beginners-part-01.md` | Βασικές εντολές τερματικού Linux, δομή αρχείων και πλοήγηση | Ελληνικά |
+| **02** | `02-linux-for-beginners-part-02.md` | Διαχείριση χρηστών, δικαιώματα αρχείων (`chmod`, `chown`) και διεργασίες | Ελληνικά |
+| **03** | `03-linux-for-beginners-part-03.md` | Διαχείριση πακέτων, βασικά στοιχεία Bash scripting και δικτυακά εργαλεία | Ελληνικά |
+| **04** | `04 - SSH Penetration Testing - Port 22.md` | Έλεγχος Port 22, επιθέσεις λεξικού, ταυτοποίηση κλειδιών SSH και misconfigurations | Ελληνικά |
+| **05** | `05-anonymous-logins-file-shares.md` | Αναγνώριση και εκμετάλλευση ανώνυμης πρόσβασης σε κοινόχρηστα αρχεία (FTP, SMB, NFS) | Ελληνικά |
 | **06** | `06. Raven_1_Educational_Lab_el.md` | Πλήρης εκπαιδευτικός οδηγός Boot-to-Root CTF (Raven 1 Virtual Machine) | Ελληνικά |
 | **08** | `08. Uncomplicated Firewall - Educational_guide_el.md` | Αμυντική προστασία τερματικού και παραμετροποίηση κανόνων με το UFW | Ελληνικά |
 | **09** | `09. Wordpress_penetration_testing_lab_guide_el.md` | Έλεγχος τρωτότητας CMS, σάρωση με WPScan και τεχνικές exploitation | Ελληνικά |
