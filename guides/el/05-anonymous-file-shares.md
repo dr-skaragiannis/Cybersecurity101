@@ -2,6 +2,8 @@
 
 ## Εισαγωγή
 
+> **Έννοια.** Τα FTP, SMB/CIFS και NFS είναι τα τρία κυρίαρχα πρωτόκολλα διαμοιρασμού αρχείων στις επιχειρήσεις, και καθένα ενσωματώνει διαφορετικό μοντέλο εμπιστοσύνης: το FTP αυθεντικοποιεί λογαριασμό συνεδρίας, το SMB αυθεντικοποιεί πλαίσιο σύνδεσης, και το NFS αναθέτει την εξουσιοδότηση στο αριθμητικό UID που δηλώνει ο client. Και τα τρία ορίζουν ανώνυμη ή guest ταυτότητα — τον χρήστη `anonymous` του RFC 959, το null session και την αντιστοίχιση guest του SMB, και την εξάρτηση του NFS από ταυτότητα που παρέχει ο client — και κάθε έκθεση σε αυτόν τον οδηγό είναι μία από αυτές τις ταυτότητες να φτάνει δεδομένα που δεν προορίζονταν ποτέ να διαβάσει. Η περιήγηση ακολουθεί τις φάσεις discovery, enumeration και exploitation του Penetration Testing Execution Standard και συνδυάζει κάθε τεχνική με το μέτρο του CIS Benchmark που θα την αφαιρούσε.
+
 Τα πρωτόκολλα διαμοιρασμού αρχείων τροφοδοτούν την εσωτερική λειτουργία σχεδόν κάθε οργανισμού: FTP για τα παραδοσιακά σημεία υποβολής αρχείων, SMB για file servers συμβατούς με Windows και NFS για εξαγωγές Unix προς Unix. Κάθε πρωτόκολλο διαθέτει επίσης λειτουργία ανώνυμης ή guest πρόσβασης, και οι διαχειριστές συχνά ενεργοποιούν μία από αυτές για λόγους ευκολίας και ξεχνούν να την περιορίσουν.
 
 Γι' αυτό τα λανθασμένα ρυθμισμένα κοινόχρηστα αρχεία εμφανίζονται ξανά και ξανά ως ευρήματα υψηλού αντίκτυπου σε εσωτερικούς ελέγχους: η πρόσβαση χωρίς αυθεντικοποίηση μπορεί να εκθέσει πηγαίο κώδικα, αρχεία αντιγράφων ασφαλείας, αρχεία ρυθμίσεων, διαπιστευτήρια και προσωπικά δεδομένα — πράγματα που κανένας περιμετρικός έλεγχος δεν μπορεί να ανακτήσει εκ των υστέρων.
@@ -55,6 +57,8 @@
 
 ## 1. Γιατί έχουν σημασία τα file shares χωρίς αυθεντικοποίηση
 
+> **Έννοια.** Η αυθεντικοποίηση απαντά στο «ποιος είσαι»· η εξουσιοδότηση απαντά στο «τι επιτρέπεται να προσεγγίσεις», και ένα κοινόχρηστο αρχείο χωρίς αυθεντικοποίηση καταργεί την πρώτη ερώτηση αφήνοντας τη δεύτερη άθικτη. Αυτή είναι η αποτυχία που οι Saltzer & Schroeder (1975) περιγράφουν ως παραβίαση της *πλήρους διαμεσολάβησης* (complete mediation): κάθε πρόσβαση πρέπει να ελέγχεται, και ένα share που εμπιστεύεται ανώνυμη ταυτότητα έχει στην πράξη παραιτηθεί από τον έλεγχο ακριβώς για τα δεδομένα που εκθέτει. Μια ανοιχτή θύρα είναι μόνο παρατήρηση· το εύρημα είναι μια anonymous ή guest ταυτότητα που μπορεί να κάνει listing ή να ανακτήσει δεδομένα, γι' αυτό το enumeration ακολουθεί το ίδιο το μοντέλο ταυτότητας του πρωτοκόλλου και όχι απλώς ένα port scan.
+
 Τα τρία πρωτόκολλα αυτού του οδηγού εκθέτουν δεδομένα με τρεις διαφορετικούς τρόπους, αλλά το βασικό σφάλμα είναι το ίδιο: ένας server εμπιστεύεται έναν network client χωρίς να επαληθεύει την ταυτότητά του.
 
 <details>
@@ -85,6 +89,8 @@
 ---
 
 ## 2. Ρύθμιση εργαστηρίου — στόχος, επιτιθέμενος και δίκτυο
+
+> **Έννοια.** Ένα αναπαραγώγιμο εργαστήριο είναι από μόνο του μέτρο ασφαλείας: ένα απομονωμένο τμήμα host-only ή NAT χωρίς διαδρομή προς παραγωγή σημαίνει ότι ακόμη και μια καταστροφική τεχνική discovery δεν μπορεί να αγγίξει τίποτε εκτός της άσκησης. Η μεθοδολογία είναι οι φάσεις προ-συμφωνίας και συλλογής πληροφοριών του Penetration Testing Execution Standard, και η πειθαρχία του snapshot πριν και μετά από κάθε αλλαγή είναι αυτό που κάνει ουσιαστική την αμυντική σύγκριση. Η αναπαραγωγιμότητα μετράει επειδή η ίδια ρύθμιση πρέπει πρώτα να δεχθεί επίθεση και έπειτα να σκληρυνθεί επαληθεύσιμα.
 
 Πριν ξεκινήσει ο έλεγχος, και οι δύο εικονικές μηχανές πρέπει να μπορούν να επικοινωνούν μεταξύ τους και με τίποτα άλλο. Τοποθετήστε τις στο ίδιο απομονωμένο τμήμα εργαστηρίου host-only ή NAT, ορίστε στον στόχο `192.168.1.9` και στον επιτιθέμενο `192.168.1.17` και δημιουργήστε snapshot πριν εγκαταστήσετε τις ευάλωτες υπηρεσίες.
 
@@ -156,6 +162,8 @@ rtt min/avg/max/mdev = 0.480/0.500/0.520/0.020 ms
 ---
 
 ## 3. Anonymous FTP — ρύθμιση του vsftpd
+
+> **Έννοια.** Το FTP ορίζεται από το RFC 959 και διαχωρίζει ένα κανάλι *ελέγχου* (control), που μεταφέρει εντολές και απαντήσεις στην TCP θύρα 21, από ένα κανάλι *δεδομένων* (data), που μεταφέρει listings και bytes αρχείων. Το κανάλι δεδομένων ανοίγει είτε ενεργά (`PORT`, ο server συνδέεται πίσω στον client) είτε παθητικά (`PASV`, ο client συνδέεται σε θύρα που επιλέγει ο server), και κανένα από τα δύο δεν κρυπτογραφείται από προεπιλογή — το RFC 959 δεν ορίζει καθόλου μηχανισμό εμπιστευτικότητας, οπότε διαπιστευτήρια, listings και περιεχόμενα αρχείων ταξιδεύουν σε cleartext εκτός αν ρυθμιστούν οι μεταγενέστερες επεκτάσεις FTPS (RFC 4217). Το πρωτόκολλο ορίζει επίσης ειδικό χρήστη `anonymous`, που κατά σύμβαση αντιστοιχίζεται στον μη προνομιούχο τοπικό λογαριασμό `ftp` και του οποίου ο έλεγχος κωδικού ικανοποιείται από οποιαδήποτε συμβολοσειρά· το `vsftpd` απενεργοποιεί αυτόν τον χρήστη από προεπιλογή και το εργαστήριο τον ενεργοποιεί σκόπιμα ξανά.
 
 Το `vsftpd`, το Very Secure FTP Daemon, είναι ο προεπιλεγμένος FTP server σε πολλά συστήματα που προέρχονται από τη Debian. Από προεπιλογή ακούει στη TCP θύρα 21, υποστηρίζει συνδέσεις τοπικών χρηστών και απενεργοποιεί την anonymous πρόσβαση. Το εργαστήριο αντιστρέφει αυτή την τελευταία προεπιλογή και ρυθμίζει ένα passive anonymous share που μπορεί να διαβαστεί από οποιονδήποτε γείτονα του δικτύου.
 
@@ -400,6 +408,8 @@ systemctl status vsftpd --no-pager
 
 ## 4. Anonymous FTP — enumeration και ανάκτηση
 
+> **Έννοια.** Οι απαντήσεις του FTP είναι κωδικοί τριών ψηφίων και λίγοι από αυτούς κουβαλούν ολόκληρη την ιστορία του enumeration: το `220` είναι το banner ετοιμότητας της υπηρεσίας, το `230` επιτυχής σύνδεση, το `229` αναγγέλλει σύνδεση δεδομένων σε passive λειτουργία, το `150` ανοίγει μεταφορά και το `226` την ολοκληρώνει. Η ανάγνωση των κωδικών απευθείας, αντί της εμπιστοσύνης στη σύνοψη ενός εργαλείου, είναι αυτό που επιτρέπει σε έναν επιχειρών να διακρίνει ένα listing που πέτυχε από ένα που απλώς φάνηκε επιτυχές. Αυτή η φάση αντιστοιχεί στην τακτική ανακάλυψης του MITRE ATT&CK (T1046, Network Service Scanning) και ακολουθείται από τη συλλογή των εκτεθειμένων artefacts.
+
 Με τον lab server ενεργό, το workflow του επιτιθέμενου έχει δύο κλασικά βήματα: επιβεβαίωση της anonymous πρόσβασης με Nmap και στη συνέχεια αλληλεπίδραση με το share μέσω μιας FTP session για ανάκτηση του marker.
 
 ### 4.1 Ανίχνευση υπηρεσίας με Nmap
@@ -571,6 +581,8 @@ Lab FTP retrieval marker
 ---
 
 ## 5. Guest SMB — ρύθμιση του Samba
+
+> **Έννοια.** Το SMB είναι πρωτόκολλο επιπέδου εφαρμογής του οποίου η γενεαλογία ξεκινά από τη διάλεκτο CIFS και περνά διαδοχικά από SMB1, SMB2 και SMB3 έως το SMB3.1.1, που πρόσθεσε κρυπτογράφηση AES-GCM και ακεραιότητα προ-πιστοποίησης βασισμένη σε SHA-512. Σε παλαιότερα δίκτυα κινείται πάνω από NetBIOS over TCP/IP (RFC 1001 και RFC 1002), γι' αυτό η θύρα 139 (υπηρεσία NetBIOS session) εμφανίζεται μαζί με τη θύρα 445 (SMB απευθείας πάνω από TCP) σε έναν προεπιλεγμένο host Samba· οι σύγχρονοι clients χρησιμοποιούν αποκλειστικά τη 445. Το SMB ορίζει επίσης «null session» και αντιστοίχιση guest, και οι επιλογές `map to guest` και `guest ok` του Samba αποφασίζουν αν ένας client χωρίς αυθεντικοποίηση αποκτά σιωπηλά πρόσβαση — ακριβώς η συμπεριφορά που οπλίζει αυτή η ενότητα.
 
 Το Samba υλοποιεί το πρωτόκολλο SMB/CIFS σε Linux και γεφυρώνει Linux servers με Windows-compatible clients. Όπως και το `vsftpd`, διαθέτει συντηρητικές προεπιλογές τις οποίες το εργαστήριο αποδυναμώνει σκόπιμα. Το προκύπτον export `[shares]` είναι browsable, writable και προσβάσιμο σε SMB clients χωρίς αυθεντικοποίηση.
 
@@ -800,6 +812,8 @@ cd ~
 
 ## 6. Guest SMB — enumeration και ανάκτηση
 
+> **Έννοια.** Το enumeration του SMB ανακρίνει τον server μέσα από το ίδιο πλαίσιο χωρίς αυθεντικοποίηση που χρησιμοποιεί ένας client για null session: το `smbclient` κάνει listing shares, το `smbmap` τα χαρτογραφεί μαζί με τα δικαιώματά τους, το `enum4linux` αυτοματοποιεί τους κλασικούς ελέγχους null session, και το `rpcclient` οδηγεί απευθείας κλήσεις MS-RPC όπως η `netshareenumall`. Η υπηρεσία ονομάτων NetBIOS (RFC 1001) είναι το παλαιότερο στρώμα ονοματοδοσίας από κάτω, και εργαλεία όπως τα `nmblookup` και `nbtscan` την ερωτούν ανεξάρτητα από το ίδιο το SMB. Όλα εδώ αποτελούν discovery κατά MITRE ATT&CK T1046 εναντίον υπηρεσίας ρυθμισμένης να απαντά χωρίς διαπιστευτήρια.
+
 Δύο συμπληρωματικά εργαλεία χειρίζονται το Samba enumeration. Το NetExec ανακαλύπτει shares γρήγορα σε έναν ή πολλούς hosts, ενώ το `smbclient` παρέχει διαδραστική εργασία session πάνω σε ένα συγκεκριμένο export. Χρησιμοποιήστε NetExec για discovery και `smbclient` για retrieval.
 
 ### 6.1 Ανακάλυψη shares με NetExec
@@ -951,9 +965,268 @@ Lab SMB retrieval marker
 
 </details>
 
+### 6.4 Ανακάλυψη και enumeration με scripts SMB του Nmap
+
+Το Nmap διαθέτει οικογένεια scripts SMB που απαντούν στα ίδια ερωτήματα με τα ειδικά εργαλεία, μέσα από την έξοδο του scanner. Το `smb-os-discovery` διαβάζει το λειτουργικό σύστημα, το hostname και το domain μέσα από τη συνεδρία SMB:
+
+```bash
+nmap --script smb-os-discovery -p445 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:16 UTC
+Nmap scan report for 192.168.1.9
+Host is up (0.00061s latency).
+
+PORT    STATE SERVICE      VERSION
+445/tcp open  microsoft-ds Samba smbd 4.17.7-Ubuntu (workgroup: WORKGROUP)
+| smb-os-discovery:
+|   OS: Windows 6.1 (Samba 4.17.7-Ubuntu)
+|   Computer name: ubuntu-lab
+|   NetBIOS computer name: UBUNTU-LAB
+|   Domain name: workgroup
+|   FQDN: ubuntu-lab
+|_  System time: 2026-10-10T12:16:05+00:00
+MAC Address: 00:0C:29:1B:2C:3D (VMware)
+Nmap done: 1 IP address (1 host up) scanned in 3.28 seconds
+```
+
+Το script ονομάζει το NetBIOS computer name (`UBUNTU-LAB`), ακριβώς τη συμβολοσειρά που εκτύπωσε το NetExec στην ενότητα 6.1.
+
+Τώρα κάντε enumeration shares και χρηστών σε μία εκτέλεση:
+
+```bash
+nmap --script smb-enum-shares,smb-enum-users -p139,445 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:17 UTC
+Nmap scan report for 192.168.1.9
+Host is up (0.00058s latency).
+
+PORT    STATE SERVICE      VERSION
+139/tcp open  netbios-ssn  Samba smbd 4.17.7-Ubuntu
+445/tcp open  microsoft-ds Samba smbd 4.17.7-Ubuntu
+| smb-enum-shares:
+|   account_used: guest
+|   \\192.168.1.9\IPC$:
+|     Type: STYPE_IPC_HIDDEN
+|     Comment: IPC Service (Samba 4.17.7-Ubuntu)
+|     Users: 1
+|     Max Users: <unlimited>
+|     Path: C:\tmp
+|     Anonymous access: READ/WRITE
+|   \\192.168.1.9\print$:
+|     Type: STYPE_DISKTREE
+|     Comment: Printer Drivers
+|     Anonymous access: <none>
+|   \\192.168.1.9\shares:
+|     Type: STYPE_DISKTREE
+|     Comment: Lab file share
+|     Anonymous access: READ/WRITE
+|_    Current user access: READ/WRITE
+| smb-enum-users:
+|_  (no users captured - anonymous session not permitted to enumerate)
+MAC Address: 00:0C:29:1B:2C:3D (VMware)
+Nmap done: 1 IP address (1 host up) scanned in 6.11 seconds
+```
+
+Η γραμμή `account_used: guest` είναι ολόκληρο το εύρημα σε ένα σημείο: ο server δέχθηκε anonymous συνεδρία, και το `shares` αναφέρει `READ/WRITE` για αυτήν.
+
+Τέλος, σαρώστε για τις ευπάθειες SMB που γνωρίζει το Nmap:
+
+```bash
+nmap --script smb-vuln* -p445 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:18 UTC
+Nmap scan report for 192.168.1.9
+Host is up (0.00060s latency).
+
+PORT    STATE SERVICE
+445/tcp open  microsoft-ds
+
+Host script results:
+| smb-vuln-ms17-010:
+|   VULNERABLE:
+|   Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2017-0143
+|       Risk factor: HIGH
+|     Disclosure date: 2017-03-14
+|     References:
+|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-0143
+|_      https://technet.microsoft.com/en-us/library/security/ms17-010.aspx
+
+MAC Address: 00:0C:29:1B:2C:3D (VMware)
+Nmap done: 1 IP address (1 host up) scanned in 25.02 seconds
+```
+
+Το `smb-vuln-*` είναι wildcard πάνω στους ελέγχους ευπαθειών. Μια ετυμηγορία `VULNERABLE` είναι υπόνοια βασισμένη σε έκδοση και όχι επιβεβαιωμένο exploit, οπότε πρέπει να επιβεβαιωθεί πριν αναφερθεί.
+
+### 6.5 Αυτοματοποιημένο enumeration και MS-RPC
+
+Το `enum4linux` συσκευάζει τους κλασικούς ελέγχους null session — shares, χρήστες, ομάδες και πολιτική κωδικών — σε μία εκτέλεση:
+
+```bash
+enum4linux -a 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting enum4linux v0.9.1 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Sat Oct 10 12:19:02 2026
+
+ ==========================
+|    Target Information    |
+ ==========================
+Target ........... 192.168.1.9
+RID Range ........ 500-550,1000-1050
+Username ......... ''
+Password ......... ''
+Known Usernames .. administrator, guest
+
+ =============================================
+|    Share Enumeration on 192.168.1.9         |
+ =============================================
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	print$          Disk      Printer Drivers
+	shares          Disk      Lab file share
+	IPC$            IPC       IPC Service (Samba 4.17.7-Ubuntu)
+
+ ===================================================
+|    Users on 192.168.1.9 via RPC                   |
+ ===================================================
+[+] Enumerating users using SID S-1-22-1 and logon username '', password ''
+
+S-1-22-1-1000 UNIX User\ubuntu (Local User)
+S-1-22-1-1001 UNIX User\deploy (Local User)
+
+enum4linux complete on Sat Oct 10 12:19:37 2026
+```
+
+Οι γραμμές `S-1-22-1-*` είναι οι τοπικοί λογαριασμοί Unix που εκτίθενται μέσω RPC· ένα πραγματικό engagement θα ταΐσει αυτά τα ονόματα στις επιθέσεις διαπιστευτηρίων που ακολουθούν.
+
+Το `rpcclient` μιλά απευθείας MS-RPC. Ανοίξτε null session και οδηγήστε το από το δικό του prompt:
+
+```bash
+rpcclient -U "" -N 192.168.1.9
+```
+
+**Output:**
+
+```text
+rpcclient $>
+```
+
+Το κενό username και το `-N` καταστέλλουν το prompt κωδικού. Ζητήστε του να απαριθμήσει κάθε share:
+
+```bash
+netshareenumall
+```
+
+**Output:**
+
+```text
+netname: print$
+	remark: Printer Drivers
+	path: C:\var\lib\samba\printers
+	password:
+netname: shares
+	remark: Lab file share
+	path: C:\var\www\
+	password:
+netname: IPC$
+	remark: IPC Service (Samba 4.17.7-Ubuntu)
+	path: C:\tmp
+	password:
+```
+
+Το πεδίο `path:` είναι απόδοση της διαδρομής Unix σε μορφή Windows: το `C:\var\www\` είναι το ίδιο `/var/www/` που δημοσιεύτηκε στην ενότητα 5.3.
+
+Το `smbmap` συνοψίζει τα δικαιώματα ανά share σε έναν πίνακα:
+
+```bash
+smbmap -H 192.168.1.9
+```
+
+**Output:**
+
+```text
+[+] IP: 192.168.1.9:445	Name: ubuntu-lab           Status: Guest session
+        Disk                                                   Permissions	Comment
+        ----                                                   -----------	-------
+        print$                                                 NO ACCESS	Printer Drivers
+        shares                                                 READ, WRITE	Lab file share
+        IPC$                                                   NO ACCESS	IPC Service (Samba 4.17.7-Ubuntu)
+```
+
+Η κατάσταση `Guest session` και το δικαίωμα `READ, WRITE` στο `shares` επαναδιατυπώνουν την έκθεση που ανέφεραν και το NetExec και το Nmap.
+
+### 6.6 Enumeration ονομάτων NetBIOS
+
+Το SMB σε παλαιότερα δίκτυα κινείται πάνω στην υπηρεσία ονομάτων NetBIOS, και η απευθείας ερώτηση στο NetBIOS μπορεί να ονομάσει έναν host ακόμη και όταν η λίστα shares απορρίπτεται. Το `nmblookup -A` επιλύει πίνακα ονομάτων NetBIOS από μια διεύθυνση IP:
+
+```bash
+nmblookup -A 192.168.1.9
+```
+
+**Output:**
+
+```text
+Looking up status of 192.168.1.9
+	UBUNTU-LAB      <00> -         B <ACTIVE>
+	UBUNTU-LAB      <03> -         B <ACTIVE>
+	UBUNTU-LAB      <20> -         B <ACTIVE>
+	WORKGROUP       <1e> -         B <ACTIVE>
+	WORKGROUP       <00> - B <GROUP> <ACTIVE>
+	MAC Address = 00-0C-29-1B-2C-3D
+```
+
+Κάθε εγγραφή είναι όνομα με κατάληξη `<suffix>`, και τα suffixes περιγράφουν τι προσφέρει ο host. Το `nbtscan` εκτελεί το ίδιο ερώτημα σε ολόκληρη περιοχή:
+
+```bash
+nbtscan 192.168.1.0/24
+```
+
+**Output:**
+
+```text
+Doing NBT name scan for addresses from 192.168.1.0/24
+
+IP address       NetBIOS Name     Server    User             MAC address
+------------------------------------------------------------------------------
+192.168.1.9      UBUNTU-LAB       <server>  UBUNTU-LAB       00:0c:29:1b:2c:3d
+192.168.1.17     KALI             <server>  KALI             00:0c:29:aa:bb:cc
+```
+
+Η ανάγνωση αυτών των suffixes είναι η δεξιότητα, και αξίζει να απομνημονεύσετε τους συνηθέστερους:
+
+| Suffix | Τύπος | Σημασία |
+| --- | --- | --- |
+| `<00>` | Unique | Σταθμός εργασίας ή υπηρεσία client |
+| `<03>` | Unique | Υπηρεσία Messenger |
+| `<20>` | Unique | Υπηρεσία αρχείων (διαμοιρασμός αρχείων SMB) |
+| `<1B>` | Unique | Domain master browser |
+| `<1C>` | Group | Domain controllers |
+| `<1D>` | Unique | Master browser |
+
+Μια εγγραφή `<20>` με ένδειξη `<ACTIVE>` είναι η άμεση αναγγελία διαμοιρασμού αρχείων από το NetBIOS, οπότε επιβεβαιώνει ένα εύρημα SMB ακόμη και πριν γίνει listing οποιουδήποτε share.
+
 ---
 
 ## 7. Insecure NFS — ρύθμιση των exports
+
+> **Έννοια.** Το NFS ορίζεται από το RFC 1813 για την έκδοση 3 και το RFC 7530 για την έκδοση 4· η v3 είναι πρωτόκολλο stateless RPC που μεταφέρεται στη θύρα 2049 και οι συνοδευτικές υπηρεσίες της — ο `rpcbind`/portmapper στη θύρα 111 και ο daemon mount — πρέπει να εντοπιστούν πριν πετύχει ένα mount. Το μοντέλο ασφαλείας της είναι το αντίθετο του SMB: ο server δεν αυθεντικοποιεί ποτέ τον χρήστη, εμπιστεύεται το αριθμητικό UID και GID που στέλνει ο client με κάθε αίτημα, οπότε τα δικαιώματα βάσει ιδιοκτησίας τηρούνται κατά παραχώρηση. Οι επιλογές export `root_squash`, `no_root_squash`, `all_squash` και `subtree_check` είναι οι μοχλοί που τροποποιούν αυτή την εμπιστοσύνη, και η λανθασμένη ρύθμισή τους μετατρέπει ένα share σε filesystem χωρίς αυθεντικοποίηση.
 
 Το NFS, το Network File System, είναι το κανονικό πρωτόκολλο διαμοιρασμού αρχείων Unix προς Unix. Σε αντίθεση με τα FTP και SMB, το NFS από προεπιλογή δεν αυθεντικοποιεί χρήστες σε επίπεδο πρωτοκόλλου· εμπιστεύεται το UID που δηλώνει ο client. Οι επιλογές export παρακάτω οπλίζουν σκόπιμα αυτό το μοντέλο εμπιστοσύνης για το εργαστήριο.
 
@@ -1082,6 +1355,15 @@ nano /etc/exports
 
 </details>
 
+<details>
+<summary><strong>Read more</strong> — the squashing modes and subtree checking</summary>
+
+Το NFS τιμά το UID και το GID που στέλνει ο client, και το *squashing* είναι ο τρόπος με τον οποίο ο server επιλέγει να τροποποιήσει αυτή τη δήλωση. Το `root_squash`, η προεπιλογή του Linux, ξαναγράφει μόνο το UID 0 στον μη προνομιούχο λογαριασμό `nobody` (UID 65534) αφήνοντας κάθε άλλο UID άθικτο. Το `all_squash` ξαναγράφει *κάθε* ταυτότητα client σε `nobody`, που είναι η ασφαλέστερη ρύθμιση για ένα πραγματικά δημόσιο drop folder αλλά καθιστά αδύνατη την ιδιοκτησία ανά χρήστη. Το `no_root_squash` δεν κάνει καθόλου ξαναγραφή, οπότε ένα απομακρυσμένο root αίτημα ενεργεί ως root στα exported αρχεία — το primitive privilege escalation που παρουσιάζεται στην ενότητα 8.
+
+Ο έλεγχος `subtree_check` είναι ξεχωριστό ζήτημα: όταν είναι ενεργός, ο server επαληθεύει ότι κάθε ζητούμενο αρχείο βρίσκεται πραγματικά μέσα στο εξαγόμενο subtree πριν το σερβίρει. Τα σύγχρονα `nfs-utils` προεπιλέγουν `no_subtree_check` για λόγους απόδοσης, και το τίμημα είναι αδυναμία path traversal κατά την οποία ένα κατασκευασμένο file handle μπορεί να φτάσει αρχεία έξω από το export· η ασφαλής επιλογή για ένα μικρό export είναι να αφήσετε τον έλεγχο ενεργό.
+
+</details>
+
 ### 7.4 Εφαρμογή και επαλήθευση του export
 
 Επαναφορτώστε τον πίνακα export:
@@ -1137,6 +1419,8 @@ LISTEN 0      64                 *:2049            *:*    users:(("nfsd",pid=243
 
 ## 8. Insecure NFS — enumeration, λήψη και mounting
 
+> **Έννοια.** Το enumeration του NFS προχωρά από τον portmapper προς τα έξω: τα `showmount -e` και `rpcinfo -p` ονομάζουν τα exports και τις υπηρεσίες RPC πίσω τους, τα scripts `nfs-*` του Nmap διαβάζουν listings καταλόγων και στατιστικά filesystem μέσα από το δίκτυο, και η ενότητα NFS του NetExec εκτελεί την ίδια ανακάλυψη χωρίς kernel mount. Ένα πλήρες mount εκθέτει έπειτα τη σημασιολογία του filesystem, και επειδή το NFSv2 δεν φέρει καθόλου εξουσιοδότηση ο επιτιθέμενος μπορεί να επιλέξει την έκδοση πρωτοκόλλου που είναι ευκολότερο να καταχραστεί. Το μοντέλο εμπιστοσύνης στο UID σημαίνει ότι η πρακτική κλιμάκωση είναι η υποδήλωση ταυτότητας (impersonation): δημιουργήστε τοπικό λογαριασμό με UID που ταιριάζει σε αρχείο-στόχο και αφήστε τον server να τον τιμήσει.
+
 Το NFS enumeration έχει τρία χρήσιμα επίπεδα: ανακάλυψη των exports, απομακρυσμένη επιθεώρηση ή λήψη μεμονωμένων αρχείων, και mount του export για πλήρη πρόσβαση στο filesystem. Το NetExec καλύπτει τα δύο πρώτα χωρίς να κάνει mount τίποτα. Ένα παραδοσιακό mount παρέχει το τρίτο και εκθέτει τον πλήρη αντίκτυπο του `no_root_squash`.
 
 ### 8.1 Κλασική ανακάλυψη exports με `showmount` και `rpcinfo`
@@ -1184,6 +1468,32 @@ rpcinfo -p 192.168.1.9 | head -12
 Οι δυναμικές θύρες του `mountd` είναι φυσιολογικές εκτός αν ο διαχειριστής τις καρφώνει· η παρουσία τους εξηγεί γιατί το firewall του NFS είναι πιο περίπλοκο από το άνοιγμα της θύρας 2049 μόνο. Ο daemon mount ακούει σε μια εφήμερη θύρα που αλλάζει μεταξύ των επανεκκινήσεων, οπότε ένας κανόνας firewall γραμμένος για τη χθεσινή θύρα σταματά σιωπηλά να ταιριάζει — οι defenders είτε καρφώνουν τη θύρα στη ρύθμιση του server είτε επιτρέπουν ολόκληρη την περιοχή RPC, καθένα με τα συμβιβαστικά του.
 
 </details>
+
+Το Nmap μπορεί επίσης να διαβάσει exports NFS και μεταδεδομένα filesystem απευθείας, χωρίς mount:
+
+```bash
+nmap --script nfs-ls,nfs-showmount,nfs-statfs -p2049 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:25 UTC
+Nmap scan report for 192.168.1.9
+Host is up (0.00057s latency).
+
+PORT     STATE SERVICE
+2049/tcp open  nfs
+| nfs-showmount:
+|_  /srv/nfs/public *
+| nfs-statfs:
+|   Filesystem        1K-blocks      Used   Available  Use%  Maxfilesize  Maxlink
+|_  /srv/nfs/public  10240000.0  4521832.0   5718168.0   45%        0.0K     3200
+MAC Address: 00:0C:29:1B:2C:3D (VMware)
+Nmap done: 1 IP address (1 host up) scanned in 5.94 seconds
+```
+
+Το `nfs-showmount` αναπαράγει την έξοδο του `showmount -e` μέσα στο scan, το `nfs-statfs` αναφέρει ελεύθερο χώρο, και το `nfs-ls` θα έκανε listing καταλόγου· και τα τρία είναι αναγνώσιμα επειδή το export δεν επιβάλλει κανέναν έλεγχο αυθεντικοποίησης.
 
 ### 8.2 Enumeration και listing των exports με NetExec
 
@@ -1336,9 +1646,67 @@ ls /tmp/nfs
 
 </details>
 
+### 8.5 Mounts έκδοσης 2 και υποδήλωση ταυτότητας UID
+
+Το NFS έκδοσης 2 προηγείται των πεδίων διαπιστευτηρίων της έκδοσης 3, οπότε ένα mount v2 δεν στέλνει καθόλου πληροφορία εξουσιοδότησης και ο server τιμά όποιο UID του παρουσιάσει ο kernel. Ο καθηλωμός της έκδοσης με `vers=2` και η απενεργοποίηση του daemon κλειδώματος με `nolock` αφαιρούν επομένως τον τελευταίο έλεγχο:
+
+```bash
+mount -t nfs -o vers=2 192.168.1.9:/srv/nfs/public /mnt -o nolock
+```
+
+Ένα επιτυχές mount δεν εκτυπώνει τίποτα· επιβεβαιώστε ότι είναι ενεργό και διαβάστε ένα αρχείο που ανήκει σε άλλο χρήστη:
+
+```bash
+ls -la /mnt
+```
+
+**Output:**
+
+```text
+total 16
+drwxrwxrwx  2 root root 4096 Feb 10 12:20 .
+drwxr-xr-x 20 root root 4096 Feb 10 12:26 ..
+-rw-r--r--  1 root root   25 Feb 10 12:20 data.txt
+-rw-r--r--  1 1001 1001   41 Feb 10 12:22 payroll.csv
+```
+
+Το αρχείο `payroll.csv` ανήκει στο UID 1001, αριθμητική ταυτότητα που ο server εμπιστεύεται από τον client. Mounted μέσω export v2, είναι ακόμη αναγνώσιμο επειδή το export δεν αντιστοιχίζει καθόλου ταυτότητες.
+
+Ακόμη και αφού αφαιρεθεί το `no_root_squash`, το μοντέλο εμπιστοσύνης στο UID επιβιώνει για κάθε μη-root ταυτότητα. Αν ένα exported αρχείο ανήκει στο UID 1001, ένας επιτιθέμενος που δημιουργεί τοπικό λογαριασμό με το ίδιο UID κληρονομεί την πρόσβαση στο αρχείο:
+
+```bash
+useradd -u 1001 -M impostor
+```
+
+Τώρα ενεργήστε ως αυτή η ταυτότητα και διαβάστε το αρχείο που ο server πιστεύει ότι της ανήκει:
+
+```bash
+su - impostor -c 'cat /mnt/payroll.csv'
+```
+
+**Output:**
+
+```text
+employee,uid,department,salary
+a.papadopoulos,1001,engineering,48000
+m.ionesco,1002,finance,52000
+```
+
+Ο server δεν ρώτησε ποτέ ποιος ήταν ο `impostor`· ταίριαξε το αριθμητικό UID 1001 με τον ιδιοκτήτη του αρχείου και παραχώρησε την πρόσβαση. Πρόκειται για το ATT&CK T1078 (Valid Accounts) που επιτυγχάνεται χωρίς κανένα διαπιστευτήριο.
+
+Αφαιρέστε το mount όταν τελειώσετε:
+
+```bash
+umount /mnt
+```
+
+Ένα κενό mount point επιβεβαιώνει τον καθαρισμό, και η πειθαρχία ταιριάζει με τον έλεγχο unmount της ενότητας 8.4.
+
 ---
 
 ## 9. Σύνοψη hardening
+
+> **Έννοια.** Κάθε έκθεση σε αυτόν τον οδηγό είναι το ίδιο σχεδιαστικό σφάλμα ειδωμένο τρεις φορές: μια υπηρεσία που αποτυγχάνει να διαμεσολαβήσει την πρόσβαση για ανώνυμη ταυτότητα. Οι διορθωτικές αρχές είναι η ελάχιστη αρχή (least privilege) και οι ασφαλείς εξ ορισμού προεπιλογές (fail-safe defaults) των Saltzer & Schroeder (1975) — παραχωρήστε μόνο ό,τι απαιτεί μια εργασία και αρνηθείτε εξ ορισμού όταν δεν μπορεί να ληφθεί απόφαση — μαζί με τις βάσεις του CIS Benchmark, που δίνουν συγκεκριμένες τιμές για τα `anonymous_enable`, `guest ok`, `root_squash` και το επίπεδο ασφαλείας Kerberos του NFS. Το hardening ολοκληρώνεται μόνο όταν η αλλαγή επαληθεύεται από έξω, με το ίδιο enumeration που θα έτρεχε ο επιτιθέμενος.
 
 Το εργαστήριο έχει πλέον δεχθεί επίθεση από άκρη σε άκρη, και κάθε έκθεση πρωτοκόλλου προήλθε από έναν μικρό αριθμό επιλογών ρύθμισης. Η ενότητα αυτή συγκεντρώνει τα αντίστοιχα μέτρα σε ένα σημείο.
 
@@ -1359,6 +1727,14 @@ ls /tmp/nfs
 
 </details>
 
+Η ρύθμιση που αφαιρεί ολόκληρο το εύρημα είναι μία γραμμή:
+
+```text
+anonymous_enable=NO
+```
+
+Με κλειστή την anonymous πρόσβαση, η συνεδρία της ενότητας 4 σταματά στο prompt `Name:` και το `ftp-anon` δεν αναφέρει anonymous σύνδεση, οπότε η έκθεση εξαφανίζεται στην πηγή της.
+
 ### 9.2 Samba hardening
 
 **Απενεργοποιήστε την guest πρόσβαση.** Αφαιρέστε τα `guest ok = yes` και `public = yes` από κάθε share, ορίστε `map to guest = Never` στο `[global]`, και απαιτήστε έγκυρους λογαριασμούς Linux για κάθε σύνδεση. Η anonymous πρόσβαση SMB θα πρέπει να είναι εξαίρεση, τεκμηριωμένη και τακτικά ελεγχόμενη.
@@ -1375,6 +1751,14 @@ ls /tmp/nfs
 Το SMB1 αξίζει την ίδια αντιμετώπιση με ζώνη και τιράντες: οι σύγχρονοι clients διαπραγματεύονται SMB2 ή SMB3 από προεπιλογή, οπότε το `min protocol = SMB2` σπάνια σπάει τη νόμιμη πρόσβαση ενώ αφαιρεί μια διαδρομή πρωτοκόλλου με γνωστές, οπλισμένες αδυναμίες.
 
 </details>
+
+Στην πλευρά του Samba η ισοδύναμη αλλαγή μίας γραμμής αρνείται την αντιστοίχιση guest για το share:
+
+```text
+guest ok = no
+```
+
+Η αφαίρεση του `guest ok` (ή ο ρητός ορισμός του σε `no`) σημαίνει ότι ένας client χωρίς αυθεντικοποίηση δεν αντιστοιχίζεται πλέον σε share, και αυτό μετατρέπει την επιτυχία `(Guest)` της ενότητας 6.1 σε `NT_STATUS_ACCESS_DENIED`.
 
 ### 9.3 NFS hardening
 
@@ -1394,6 +1778,64 @@ ls /tmp/nfs
 Όποιο επίπεδο κι αν επιλέξετε, θυμηθείτε ότι το Kerberos προσθέτει εξάρτηση από τον συγχρονισμό χρόνου και από έναν προσβάσιμο KDC — δοκιμάστε το mount από έναν καθαρό client πριν δηλώσετε ολοκληρωμένη τη μετάβαση.
 
 </details>
+
+Η διορθωμένη export line διατηρεί πρόσβαση ανάγνωσης/εγγραφής για το ονομασμένο υποδίκτυο αλλά εξαναγκάζει κάθε ταυτότητα client μέσα από τους κανόνες squashing:
+
+```text
+/srv/nfs/public 192.168.1.0/24(rw,sync,root_squash,all_squash)
+```
+
+Όπου το δίκτυο δεν είναι έμπιστο, προσθέστε Kerberos στην ίδια γραμμή ώστε το mount να αυθεντικοποιείται και να κρυπτογραφείται και όχι απλώς να υφίσταται squashing:
+
+```text
+/srv/nfs/public 192.168.1.0/24(rw,sync,root_squash,sec=krb5p)
+```
+
+Τέλος, περιορίστε τους listeners RPC και NFS στο γνωστό υποδίκτυο του εργαστηρίου με το firewall του host, ανοίγοντας τις θύρες μόνο για αυτή την πηγή:
+
+```bash
+ufw allow from 192.168.1.0/24 to any port 2049 proto tcp
+```
+
+**Output:**
+
+```text
+Rule added
+```
+
+Η θύρα 2049 είναι πλέον προσβάσιμη μόνο από το υποδίκτυο του εργαστηρίου. Προσθέστε τη θύρα του portmapper κάτω από τον ίδιο περιορισμό:
+
+```bash
+ufw allow from 192.168.1.0/24 to any port 111 proto tcp
+```
+
+**Output:**
+
+```text
+Rule added
+```
+
+Επιβεβαιώστε την πολιτική που προκύπτει· η προεπιλεγμένη πολιτική εισερχομένων αρνείται ό,τι δεν επιτρέπεται ρητά:
+
+```bash
+ufw status verbose
+```
+
+**Output:**
+
+```text
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+2049/tcp                   ALLOW IN    192.168.1.0/24
+111/tcp                    ALLOW IN    192.168.1.0/24
+```
+
+Οι κανόνες αξιολογούνται από πάνω προς τα κάτω και ό,τι δεν ταιριάζει απορρίπτεται, οπότε το μη έμπιστο τμήμα αποκλείεται εξ ορισμού και όχι κατ' εξαίρεση.
 
 ### 9.4 Ανίχνευση και auditing
 
@@ -1431,6 +1873,8 @@ ls /tmp/nfs
 
 ## 10. Cheat sheet γρήγορης αναφοράς
 
+> **Έννοια.** Ο συνοπτικός πίνακας συμπιέζει ολόκληρη την περιήγηση σε πίνακα αναφοράς ομαδοποιημένο κατά τη φάση PTES στην οποία ανήκει κάθε γραμμή — στήσιμο, ρύθμιση ανά πρωτόκολλο, αναγνώριση, πρόσβαση και άμυνα. Κάθε επιθετική γραμμή έχει αμυντικό αντίστοιχο, επειδή κάθε εντολή είναι ταυτόχρονα ο έλεγχος που πρέπει να τρέξει ένας defender για να αποδείξει ότι το αντίστοιχο μέτρο εξακολουθεί να ισχύει.
+
 | Φάση | Εντολή | Τι κάνει |
 | --- | --- | --- |
 | Ρύθμιση | `apt update` | ενημερώνει τον κατάλογο πακέτων πριν από την εγκατάσταση |
@@ -1462,6 +1906,14 @@ ls /tmp/nfs
 | SMB ρυθμίσεις | `systemctl restart smbd` | εφαρμόζει τις αλλαγές ρύθμισης Samba |
 | SMB αρχεία | `echo "Lab SMB retrieval marker" > /var/www/file.txt` | δημιουργεί ένα επαληθεύσιμο SMB marker |
 | SMB αναγνώριση | `nxc smb <target> --shares -u 'guest' -p ''` | κάνει enumeration των shares ως guest |
+| SMB αναγνώριση | `nmap --script smb-os-discovery -p445 <target>` | διαβάζει το λειτουργικό, το hostname και το domain μέσω SMB |
+| SMB αναγνώριση | `nmap --script smb-enum-shares,smb-enum-users -p139,445 <target>` | κάνει enumeration shares και χρηστών με το Nmap |
+| SMB αναγνώριση | `nmap --script smb-vuln* -p445 <target>` | εκτελεί τους ελέγχους ευπαθειών SMB του Nmap |
+| SMB αναγνώριση | `enum4linux -a <target>` | εκτελεί τους κλασικούς ελέγχους null session |
+| SMB αναγνώριση | `rpcclient -U "" -N <target>` then `netshareenumall` | κάνει enumeration shares μέσω MS-RPC |
+| SMB αναγνώριση | `smbmap -H <target>` | χαρτογραφεί shares και τα δικαιώματά τους |
+| SMB αναγνώριση | `nmblookup -A <ip>` | επιλύει πίνακα ονομάτων NetBIOS κατά διεύθυνση |
+| SMB αναγνώριση | `nbtscan <range>` | σαρώνει περιοχή για ονόματα NetBIOS |
 | SMB πρόσβαση | `smbclient -N -L //<target>` | εμφανίζει τα shares χωρίς κωδικό |
 | SMB πρόσβαση | `smbclient //<target>/shares -N` | ανοίγει το share με guest πρόσβαση |
 | SMB πρόσβαση | `ls`, `get file.txt`, `exit` | κάνει listing και ανακτά ένα αρχείο μέσω SMB |
@@ -1474,19 +1926,25 @@ ls /tmp/nfs
 | NFS αρχεία | `echo "Lab NFS retrieval marker" > /srv/nfs/public/data.txt` | δημιουργεί ένα επαληθεύσιμο NFS marker |
 | NFS αναγνώριση | `showmount -e <target>` | εμφανίζει τους καταλόγους που εξάγονται στο δίκτυο |
 | NFS αναγνώριση | `rpcinfo -p <target>` | εμφανίζει τις καταχωρισμένες υπηρεσίες RPC |
+| NFS αναγνώριση | `nmap --script nfs-ls,nfs-showmount,nfs-statfs -p2049 <target>` | διαβάζει exports NFS και στατιστικά με το Nmap |
 | NFS αναγνώριση | `nxc nfs <target> --enum-shares` | ανακαλύπτει NFS exports με το NetExec |
 | NFS αναγνώριση | `nxc nfs <target> --share '/srv/nfs/public' --ls '/'` | κάνει listing της ρίζας ενός export χωρίς mount |
 | NFS πρόσβαση | `nxc nfs <target> --share /srv/nfs/public/ --get-file data.txt data.txt` | κατεβάζει ένα αρχείο NFS χωρίς mount |
 | NFS πρόσβαση | `mount -t nfs <target>:/srv/nfs/public /tmp/nfs` | κάνει mount το export τοπικά |
+| NFS πρόσβαση | `mount -t nfs -o vers=2 <target>:/srv/nfs/public /mnt -o nolock` | κάνει mount με το πρωτόκολλο v2 χωρίς διαπιστευτήρια |
+| NFS πρόσβαση | `useradd -u <uid> -M impostor` then `su - impostor -c 'cat /mnt/<file>'` | υποδύεται ταυτότητα UID που το export εμπιστεύεται |
 | NFS πρόσβαση | `ls -la /tmp/nfs` and `cat /tmp/nfs/data.txt` | ελέγχει και διαβάζει το mounted export |
 | NFS πρόσβαση | `umount /tmp/nfs` | αφαιρεί το τοπικό mount NFS |
 | Άμυνα | `grep -nE 'anonymous_enable\|guest ok\|public =\|map to guest\|min protocol' /etc/vsftpd.conf /etc/samba/smb.conf` | εντοπίζει επικίνδυνες directives FTP/SMB |
 | Άμυνα | `grep -nE 'no_root_squash\|\*\(\|insecure' /etc/exports` | εντοπίζει επικίνδυνες επιλογές export NFS |
 | Άμυνα | `nmap -sV -p 21,111,139,445,2049 <target>` | ελέγχει την έκθεση διαμοιρασμού αρχείων από το δίκτυο |
+| Άμυνα | `ufw allow from <subnet> to any port 2049 proto tcp` | περιορίζει το NFS σε γνωστό υποδίκτυο |
 
 ---
 
 ## 11. Ασκήσεις εξάσκησης
+
+> **Έννοια.** Οι ασκήσεις επαναλαμβάνουν ολόκληρη την αλυσίδα ως εργαστήριο και αντιστρέφουν σκόπιμα την οπτική του επιτιθέμενου στο τέλος: μετά την ανάκτηση δεδομένων χωρίς αυθεντικοποίηση, κάθε άσκηση ρωτά τι κάνει μια μόνο αμυντική αλλαγή στην ίδια έξοδο. Αυτό είναι το μεταφέρσιμο κομμάτι — οι εντολές γενικεύονται, αλλά ο συλλογισμός που αντιστοιχίζει μια γραμμή ρύθμισης σε αποτέλεσμα επίθεσης είναι αυτό που μεταφέρεται σε διαφορετικό στόχο, υπηρεσία και αποστολή.
 
 Η ακόλουθη σειρά έχει σχεδιαστεί για εκτέλεση σε απομονωμένο εργαστήριο με δύο εικονικές μηχανές και χωρίς διαδρομή προς το Internet. Κάθε άσκηση βασίζεται στην προηγούμενη, και αρκετές έχουν ως στόχο να δείξουν πώς μία αμυντική αλλαγή μεταβάλλει την έξοδο από την πλευρά του επιτιθέμενου.
 

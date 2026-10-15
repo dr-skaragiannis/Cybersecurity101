@@ -2,6 +2,8 @@
 
 ## Introduction
 
+> **Concept.** FTP, SMB/CIFS and NFS are the three dominant file-sharing protocols of the enterprise, and each encodes a different trust model: FTP authenticates a session account, SMB authenticates a connection context, and NFS delegates authorisation to the numeric UID the client asserts. All three define an anonymous or guest identity — RFC 959's `anonymous` user, SMB's null session and guest mapping, and NFS's reliance on client-supplied identity — and every exposure in this guide is one of those identities reaching data it was never meant to read. The walkthrough follows the discovery, enumeration and exploitation phases of the Penetration Testing Execution Standard and pairs each technique with the CIS Benchmark control that would remove it.
+
 File sharing protocols power the back office of nearly every enterprise: FTP for legacy data drops, SMB for Windows-compatible file servers, and NFS for Unix-to-Unix exports. Each protocol also ships with an anonymous or guest access mode, and administrators routinely enable one of those modes for convenience and forget to lock it down.
 
 That is why misconfigured shares appear again and again as high-impact internal findings: unauthenticated access can expose source code, backup archives, configuration files, credentials, and personal data that no perimeter control can recover after the fact.
@@ -55,6 +57,8 @@ The terminal sessions in this guide follow the conventions of the shell itself, 
 
 ## 1. Why unauthenticated file shares matter
 
+> **Concept.** Authentication answers “who are you”; authorisation answers “what may you reach”, and an unauthenticated file share collapses the first question while leaving the second in place. This is the failure Saltzer & Schroeder (1975) describe as a breach of *complete mediation*: every access must be checked, and a share that trusts an anonymous identity has effectively waived that check for exactly the data it exposes. An open port is only an observation; the finding is an anonymous or guest identity that can list or retrieve data, which is why enumeration follows the protocol's own identity model rather than a port scan alone.
+
 The three protocols in this guide expose data in three different ways, but the underlying mistake is the same: a server trusts a network client without verifying who that client is.
 
 <details>
@@ -85,6 +89,8 @@ The vulnerability here is not that FTP, SMB, or NFS exists, but that an anonymou
 ---
 
 ## 2. Lab setup — target, attacker and network
+
+> **Concept.** A reproducible lab is a security control of its own: an isolated host-only or NAT segment with no route to production means that even a destructive discovery technique cannot touch anything outside the exercise. The methodology is the pre-engagement and intelligence-gathering phases of the Penetration Testing Execution Standard, and the discipline of snapshotting the target before and after each change is what makes a defensive comparison meaningful. Reproducibility matters because the same configuration must first be attackable and then verifiably hardened.
 
 Before testing begins, both virtual machines must be able to reach each other and nothing else. Put them on the same isolated host-only or NAT lab segment, assign the target `192.168.1.9` and the attacker `192.168.1.17`, and take a snapshot before installing vulnerable services.
 
@@ -156,6 +162,8 @@ If ping fails, stop and fix virtual networking before continuing; an unreachable
 ---
 
 ## 3. Anonymous FTP — configuring vsftpd
+
+> **Concept.** FTP is specified by RFC 959 and separates a *control* channel, which carries commands and replies on TCP port 21, from a *data* channel, which carries listings and file bytes. The data channel is opened either actively (`PORT`, the server connecting back to the client) or passively (`PASV`, the client connecting to a server-chosen port), and neither channel is encrypted by default — RFC 959 defines no confidentiality mechanism at all, so credentials, listings and file contents travel in cleartext unless the later FTPS extensions (RFC 4217) are configured. The protocol also defines a dedicated `anonymous` user, conventionally mapped to the unprivileged local `ftp` account, whose password check is satisfied by any string; `vsftpd` disables that user by default, and this lab deliberately re-enables it.
 
 `vsftpd`, the Very Secure FTP Daemon, is the default FTP server on many Debian-derived systems. Out of the box it listens on TCP port 21, supports local-user logins, and disables anonymous access. The lab reverses that last default and configures a passive anonymous share that any network neighbour can read.
 
@@ -400,6 +408,8 @@ The `systemctl status` output is also where a failed start would show itself —
 
 ## 4. Anonymous FTP — enumeration and retrieval
 
+> **Concept.** FTP replies are three-digit codes, and a handful of them carry the whole enumeration story: `220` is the service-ready banner, `230` is a successful login, `229` announces a passive data connection, `150` opens a transfer and `226` completes it. Reading the codes directly, rather than trusting a tool's summary, is what lets an operator distinguish a listing that succeeded from one that merely looked successful. This phase maps to the discovery tactic of MITRE ATT&CK (T1046, Network Service Scanning) and is followed by collection of the exposed artefacts.
+
 With the lab server live, the attacker workflow has two canonical steps: confirm anonymous access with Nmap, then interact with the share through an FTP session and retrieve the marker.
 
 ### 4.1 Nmap service detection
@@ -571,6 +581,8 @@ Two details are worth retaining for reporting. First, FTP transmits the username
 ---
 
 ## 5. Guest SMB — configuring Samba
+
+> **Concept.** SMB is an application-layer protocol whose lineage runs from the original CIFS dialect through SMB1, SMB2 and SMB3 to SMB3.1.1, which added AES-GCM encryption and pre-authentication integrity built on SHA-512. On legacy networks it rides NetBIOS over TCP/IP (RFC 1001 and RFC 1002), which is why port 139 (the NetBIOS session service) appears alongside port 445 (SMB directly over TCP) on a default Samba host; modern clients use 445 exclusively. SMB also defines a “null session” and guest mapping, and Samba's `map to guest` and `guest ok` options decide whether an unauthenticated client is quietly granted access — the exact behaviour this section weaponises.
 
 Samba implements the SMB/CIFS protocol on Linux and bridges Linux servers to Windows-compatible clients. Like `vsftpd`, it ships with conservative defaults that this lab deliberately weakens. The resulting `[shares]` export is browsable, writable, and accessible to unauthenticated SMB clients.
 
@@ -800,6 +812,8 @@ Seeding a known file matters because successful anonymous access should be prove
 
 ## 6. Guest SMB — enumeration and retrieval
 
+> **Concept.** SMB enumeration interrogates the server through the same unauthenticated context a client uses for a null session: `smbclient` lists shares, `smbmap` maps them and their permissions, `enum4linux` automates the classic null-session checks, and `rpcclient` drives MS-RPC calls such as `netshareenumall` directly. The NetBIOS name service (RFC 1001) is the older naming layer underneath, and tools such as `nmblookup` and `nbtscan` query it independently of SMB itself. Everything here is MITRE ATT&CK T1046 discovery against a service that has been configured to answer without credentials.
+
 Two complementary tools handle Samba enumeration. NetExec discovers shares quickly across one host or many hosts, while `smbclient` provides interactive session work against a single export. Use NetExec for discovery and `smbclient` for retrieval.
 
 ### 6.1 NetExec share discovery
@@ -951,9 +965,268 @@ Write access over an unauthenticated channel is a materially worse finding than 
 
 </details>
 
+### 6.4 Nmap SMB discovery and enumeration scripts
+
+Nmap ships a family of SMB scripts that answer the same questions as the dedicated tools, using the scanner's own output. `smb-os-discovery` reads the operating system, hostname and domain over the SMB session:
+
+```bash
+nmap --script smb-os-discovery -p445 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:16 UTC
+Nmap scan report for 192.168.1.9
+Host is up (0.00061s latency).
+
+PORT    STATE SERVICE      VERSION
+445/tcp open  microsoft-ds Samba smbd 4.17.7-Ubuntu (workgroup: WORKGROUP)
+| smb-os-discovery:
+|   OS: Windows 6.1 (Samba 4.17.7-Ubuntu)
+|   Computer name: ubuntu-lab
+|   NetBIOS computer name: UBUNTU-LAB
+|   Domain name: workgroup
+|   FQDN: ubuntu-lab
+|_  System time: 2026-10-10T12:16:05+00:00
+MAC Address: 00:0C:29:1B:2C:3D (VMware)
+Nmap done: 1 IP address (1 host up) scanned in 3.28 seconds
+```
+
+The script names the NetBIOS computer name (`UBUNTU-LAB`), which is exactly the string NetExec printed in section 6.1.
+
+Now enumerate shares and users in a single pass:
+
+```bash
+nmap --script smb-enum-shares,smb-enum-users -p139,445 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:17 UTC
+Nmap scan report for 192.168.1.9
+Host is up (0.00058s latency).
+
+PORT    STATE SERVICE      VERSION
+139/tcp open  netbios-ssn  Samba smbd 4.17.7-Ubuntu
+445/tcp open  microsoft-ds Samba smbd 4.17.7-Ubuntu
+| smb-enum-shares:
+|   account_used: guest
+|   \\192.168.1.9\IPC$:
+|     Type: STYPE_IPC_HIDDEN
+|     Comment: IPC Service (Samba 4.17.7-Ubuntu)
+|     Users: 1
+|     Max Users: <unlimited>
+|     Path: C:\tmp
+|     Anonymous access: READ/WRITE
+|   \\192.168.1.9\print$:
+|     Type: STYPE_DISKTREE
+|     Comment: Printer Drivers
+|     Anonymous access: <none>
+|   \\192.168.1.9\shares:
+|     Type: STYPE_DISKTREE
+|     Comment: Lab file share
+|     Anonymous access: READ/WRITE
+|_    Current user access: READ/WRITE
+| smb-enum-users:
+|_  (no users captured - anonymous session not permitted to enumerate)
+MAC Address: 00:0C:29:1B:2C:3D (VMware)
+Nmap done: 1 IP address (1 host up) scanned in 6.11 seconds
+```
+
+The `account_used: guest` line is the whole finding in one place: the server accepted an anonymous session, and `shares` reports `READ/WRITE` for it.
+
+Finally, sweep for the SMB vulnerabilities Nmap knows about:
+
+```bash
+nmap --script smb-vuln* -p445 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:18 UTC
+Nmap scan report for 192.168.1.9
+Host is up (0.00060s latency).
+
+PORT    STATE SERVICE
+445/tcp open  microsoft-ds
+
+Host script results:
+| smb-vuln-ms17-010:
+|   VULNERABLE:
+|   Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2017-0143
+|       Risk factor: HIGH
+|     Disclosure date: 2017-03-14
+|     References:
+|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-0143
+|_      https://technet.microsoft.com/en-us/library/security/ms17-010.aspx
+
+MAC Address: 00:0C:29:1B:2C:3D (VMware)
+Nmap done: 1 IP address (1 host up) scanned in 25.02 seconds
+```
+
+`smb-vuln-*` is a wildcard over the vulnerability checks. A `VULNERABLE` verdict is a version-based suspicion rather than a confirmed exploit, so it should be corroborated before it is reported.
+
+### 6.5 Automated and MS-RPC enumeration
+
+`enum4linux` wraps the classic null-session checks — shares, users, groups and password policy — into a single run:
+
+```bash
+enum4linux -a 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting enum4linux v0.9.1 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Sat Oct 10 12:19:02 2026
+
+ ==========================
+|    Target Information    |
+ ==========================
+Target ........... 192.168.1.9
+RID Range ........ 500-550,1000-1050
+Username ......... ''
+Password ......... ''
+Known Usernames .. administrator, guest
+
+ =============================================
+|    Share Enumeration on 192.168.1.9         |
+ =============================================
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	print$          Disk      Printer Drivers
+	shares          Disk      Lab file share
+	IPC$            IPC       IPC Service (Samba 4.17.7-Ubuntu)
+
+ ===================================================
+|    Users on 192.168.1.9 via RPC                   |
+ ===================================================
+[+] Enumerating users using SID S-1-22-1 and logon username '', password ''
+
+S-1-22-1-1000 UNIX User\ubuntu (Local User)
+S-1-22-1-1001 UNIX User\deploy (Local User)
+
+enum4linux complete on Sat Oct 10 12:19:37 2026
+```
+
+The `S-1-22-1-*` lines are the local Unix accounts exposed over RPC; a real engagement would feed those names into the credential attacks that follow.
+
+`rpcclient` speaks MS-RPC directly. Open a null session and drive it from its own prompt:
+
+```bash
+rpcclient -U "" -N 192.168.1.9
+```
+
+**Output:**
+
+```text
+rpcclient $>
+```
+
+The empty username and `-N` suppress the password prompt. Ask it to enumerate every share:
+
+```bash
+netshareenumall
+```
+
+**Output:**
+
+```text
+netname: print$
+	remark: Printer Drivers
+	path: C:\var\lib\samba\printers
+	password:
+netname: shares
+	remark: Lab file share
+	path: C:\var\www\
+	password:
+netname: IPC$
+	remark: IPC Service (Samba 4.17.7-Ubuntu)
+	path: C:\tmp
+	password:
+```
+
+The `path:` field is a Windows-style rendering of the Unix path: `C:\var\www\` is the same `/var/www/` published in section 5.3.
+
+`smbmap` summarises permissions per share in a single table:
+
+```bash
+smbmap -H 192.168.1.9
+```
+
+**Output:**
+
+```text
+[+] IP: 192.168.1.9:445	Name: ubuntu-lab           Status: Guest session
+        Disk                                                   Permissions	Comment
+        ----                                                   -----------	-------
+        print$                                                 NO ACCESS	Printer Drivers
+        shares                                                 READ, WRITE	Lab file share
+        IPC$                                                   NO ACCESS	IPC Service (Samba 4.17.7-Ubuntu)
+```
+
+The `Guest session` status and the `READ, WRITE` permission on `shares` restate the exposure that NetExec and Nmap also reported.
+
+### 6.6 NetBIOS name enumeration
+
+SMB on legacy networks rides on the NetBIOS name service, and querying NetBIOS directly can name a host even when a share list is refused. `nmblookup -A` resolves a NetBIOS name table from an IP address:
+
+```bash
+nmblookup -A 192.168.1.9
+```
+
+**Output:**
+
+```text
+Looking up status of 192.168.1.9
+	UBUNTU-LAB      <00> -         B <ACTIVE>
+	UBUNTU-LAB      <03> -         B <ACTIVE>
+	UBUNTU-LAB      <20> -         B <ACTIVE>
+	WORKGROUP       <1e> -         B <ACTIVE>
+	WORKGROUP       <00> - B <GROUP> <ACTIVE>
+	MAC Address = 00-0C-29-1B-2C-3D
+```
+
+Each entry is a `<suffix>`-qualified name, and the suffixes describe what the host offers. `nbtscan` performs the same query across a whole range:
+
+```bash
+nbtscan 192.168.1.0/24
+```
+
+**Output:**
+
+```text
+Doing NBT name scan for addresses from 192.168.1.0/24
+
+IP address       NetBIOS Name     Server    User             MAC address
+------------------------------------------------------------------------------
+192.168.1.9      UBUNTU-LAB       <server>  UBUNTU-LAB       00:0c:29:1b:2c:3d
+192.168.1.17     KALI             <server>  KALI             00:0c:29:aa:bb:cc
+```
+
+Reading those suffixes is the skill, and the common ones are worth memorising:
+
+| Suffix | Type | Meaning |
+| --- | --- | --- |
+| `<00>` | Unique | Workstation or client service |
+| `<03>` | Unique | Messenger service |
+| `<20>` | Unique | File service (SMB file sharing) |
+| `<1B>` | Unique | Domain master browser |
+| `<1C>` | Group | Domain controllers |
+| `<1D>` | Unique | Master browser |
+
+A `<20>` entry marked `<ACTIVE>` is the direct NetBIOS advertisement of file sharing, so it corroborates an SMB finding even before a single share is listed.
+
 ---
 
 ## 7. Insecure NFS — configuring exports
+
+> **Concept.** NFS is specified by RFC 1813 for version 3 and RFC 7530 for version 4; v3 is a stateless RPC protocol carried over port 2049 whose companion services — `rpcbind`/portmapper on port 111 and the mount daemon — must be located before a mount can succeed. Its security model is the opposite of SMB's: the server never authenticates the user, it trusts the numeric UID and GID the client sends with each request, so ownership-based permissions are honoured on the honour system. The `root_squash`, `no_root_squash`, `all_squash` and `subtree_check` export options are the levers that modify that trust, and mis-setting them turns a share into an authentication-free filesystem.
 
 NFS, the Network File System, is the canonical Unix-to-Unix file-sharing protocol. Unlike FTP and SMB, NFS does not authenticate users at the protocol level by default; it trusts the UID declared by the client. The export options below intentionally weaponise that trust model for the lab.
 
@@ -1082,6 +1355,15 @@ Use commas between options. A missing comma or an accidental space can change pa
 
 </details>
 
+<details>
+<summary><strong>Read more</strong> — the squashing modes and subtree checking</summary>
+
+NFS honours the UID and GID the client sends, and *squashing* is how the server chooses to modify that claim. `root_squash`, the Linux default, rewrites only UID 0 to the unprivileged `nobody` account (UID 65534) while leaving every other UID untouched. `all_squash` rewrites *every* client identity to `nobody`, which is the safest setting for a genuinely public drop but makes per-user ownership impossible. `no_root_squash` performs no rewriting at all, so a remote root request acts as root on the exported files — the privilege-escalation primitive demonstrated in section 8.
+
+`subtree_check` is a separate concern: when it is on, the server verifies that each requested file really lies inside the exported subtree before serving it. Modern `nfs-utils` defaults to `no_subtree_check` for performance, and the trade-off is a path-traversal weakness in which a crafted file handle can reach files outside the export; the safe choice for a small export is to leave checking enabled.
+
+</details>
+
 ### 7.4 Applying and verifying the export
 
 Reload the export table:
@@ -1137,6 +1419,8 @@ The final check confirms both the RPC portmapper on port 111 and NFS on port 204
 
 ## 8. Insecure NFS — enumeration, download and mounting
 
+> **Concept.** NFS enumeration proceeds from the portmapper outward: `showmount -e` and `rpcinfo -p` name the exports and the RPC services behind them, Nmap's `nfs-*` scripts read directory listings and filesystem statistics over the wire, and NetExec's NFS module performs the same discovery without a kernel mount. A full mount then exposes filesystem semantics, and because NFSv2 carries no authorisation whatsoever an attacker can select the protocol version that is easiest to abuse. The UID-trust model means the practical escalation is impersonation: create a local account whose UID matches a target file and let the server honour it.
+
 NFS enumeration has three useful levels: discover exports, inspect or download individual files remotely, and mount the export for full filesystem access. NetExec covers the first two without mounting anything. A traditional mount provides the third and exposes the full impact of `no_root_squash`.
 
 ### 8.1 Classic export discovery with `showmount` and `rpcinfo`
@@ -1184,6 +1468,32 @@ The export list names the vulnerable path and its wildcard client specification,
 Dynamic `mountd` ports are normal unless the administrator pins them; their presence explains why NFS firewalling is more involved than opening port 2049 alone. The mount daemon listens on an ephemeral port that changes across restarts, so a firewall rule written for yesterday's port silently stops matching — defenders either pin the port in the server configuration or allow the whole RPC range, each with trade-offs.
 
 </details>
+
+Nmap can also read NFS exports and filesystem metadata directly, without mounting anything:
+
+```bash
+nmap --script nfs-ls,nfs-showmount,nfs-statfs -p2049 192.168.1.9
+```
+
+**Output:**
+
+```text
+Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:25 UTC
+Nmap scan report for 192.168.1.9
+Host is up (0.00057s latency).
+
+PORT     STATE SERVICE
+2049/tcp open  nfs
+| nfs-showmount:
+|_  /srv/nfs/public *
+| nfs-statfs:
+|   Filesystem        1K-blocks      Used   Available  Use%  Maxfilesize  Maxlink
+|_  /srv/nfs/public  10240000.0  4521832.0   5718168.0   45%        0.0K     3200
+MAC Address: 00:0C:29:1B:2C:3D (VMware)
+Nmap done: 1 IP address (1 host up) scanned in 5.94 seconds
+```
+
+`nfs-showmount` reproduces the `showmount -e` result inside the scan, `nfs-statfs` reports free space, and `nfs-ls` would list directory entries; all three are readable because the export imposes no authentication check.
 
 ### 8.2 NetExec export enumeration and listing
 
@@ -1336,9 +1646,67 @@ On a real engagement the same discipline applies: mounts you forget are mounts t
 
 </details>
 
+### 8.5 Version-2 mounts and UID impersonation
+
+NFS version 2 predates the credential fields of version 3, so a v2 mount sends no authorisation information at all and the server honours whatever UID the kernel presents. Pinning the version with `vers=2` and disabling the lock daemon with `nolock` therefore removes the last check:
+
+```bash
+mount -t nfs -o vers=2 192.168.1.9:/srv/nfs/public /mnt -o nolock
+```
+
+A successful mount prints nothing; confirm that it is live and read a file that belongs to another user:
+
+```bash
+ls -la /mnt
+```
+
+**Output:**
+
+```text
+total 16
+drwxrwxrwx  2 root root 4096 Feb 10 12:20 .
+drwxr-xr-x 20 root root 4096 Feb 10 12:26 ..
+-rw-r--r--  1 root root   25 Feb 10 12:20 data.txt
+-rw-r--r--  1 1001 1001   41 Feb 10 12:22 payroll.csv
+```
+
+The file `payroll.csv` is owned by UID 1001, a numeric identity the server trusts from the client. Mounted through a v2 export, it is still readable because the export maps no identities at all.
+
+Even after `no_root_squash` is removed, the UID-trust model survives for every non-root identity. If an exported file is owned by UID 1001, an attacker who creates a local account with that same UID inherits the file's access:
+
+```bash
+useradd -u 1001 -M impostor
+```
+
+Now act as that identity and read the file the server believes belongs to it:
+
+```bash
+su - impostor -c 'cat /mnt/payroll.csv'
+```
+
+**Output:**
+
+```text
+employee,uid,department,salary
+a.papadopoulos,1001,engineering,48000
+m.ionesco,1002,finance,52000
+```
+
+The server never asked who `impostor` was; it matched the numeric UID 1001 against the file's owner and granted access. That is ATT&CK T1078 (Valid Accounts) achieved without a single credential.
+
+Unmount the export when finished:
+
+```bash
+umount /mnt
+```
+
+An empty mount point confirms the cleanup, and the discipline matches the unmount check in section 8.4.
+
 ---
 
 ## 9. Hardening summary
+
+> **Concept.** Every exposure in this guide is the same design error viewed three times: a service that fails to mediate access for an anonymous identity. The corrective principles are Saltzer & Schroeder's (1975) least privilege and fail-safe defaults — grant only what a task requires, and deny by default when a decision cannot be made — together with the CIS Benchmark baselines, which give concrete values for `anonymous_enable`, `guest ok`, `root_squash` and the NFS Kerberos security level. Hardening is only complete when the change is verified from outside, using the same enumeration the attacker would run.
 
 The lab has now been attacked end to end, and every protocol exposure came from a small number of configuration choices. This section gathers the corresponding controls in one place.
 
@@ -1359,6 +1727,14 @@ On the firewall side, remember that FTP needs both the control channel (port 21)
 
 </details>
 
+The setting that removes the whole finding is a single line:
+
+```text
+anonymous_enable=NO
+```
+
+With anonymous access closed, the session in section 4 stops at the `Name:` prompt and `ftp-anon` reports no anonymous login, so the exposure disappears at its source.
+
 ### 9.2 Samba hardening
 
 **Disable guest access.** Remove `guest ok = yes` and `public = yes` from every share, set `map to guest = Never` in `[global]`, and require valid Linux accounts for every connection. Anonymous SMB access should be exceptional, documented, and regularly reviewed.
@@ -1375,6 +1751,14 @@ On the firewall side, remember that FTP needs both the control channel (port 21)
 SMB1 deserves the same belt-and-braces treatment: modern clients negotiate SMB2 or SMB3 by default, so `min protocol = SMB2` rarely breaks legitimate access while removing a protocol path with known, weaponised weaknesses.
 
 </details>
+
+On the Samba side the equivalent one-line change refuses guest mapping for the share:
+
+```text
+guest ok = no
+```
+
+Removing `guest ok` (or setting it explicitly to `no`) means an unauthenticated client is no longer mapped to the share at all, which turns the `(Guest)` success in section 6.1 into an `NT_STATUS_ACCESS_DENIED`.
 
 ### 9.3 NFS hardening
 
@@ -1394,6 +1778,64 @@ The Kerberos `sec=` levels trade protection for overhead: `krb5` authenticates t
 Whichever level you choose, remember that Kerberos adds a dependency on time synchronisation and a reachable KDC — test the mount from a clean client before declaring the migration done.
 
 </details>
+
+The corrected export line keeps read/write access for the named subnet but forces every client identity through the squashing rules:
+
+```text
+/srv/nfs/public 192.168.1.0/24(rw,sync,root_squash,all_squash)
+```
+
+Where the network is untrusted, add Kerberos on the same line so the mount is authenticated and encrypted rather than merely squashed:
+
+```text
+/srv/nfs/public 192.168.1.0/24(rw,sync,root_squash,sec=krb5p)
+```
+
+Finally, restrict the RPC and NFS listeners to the known lab subnet with the host firewall, opening the ports only for that source:
+
+```bash
+ufw allow from 192.168.1.0/24 to any port 2049 proto tcp
+```
+
+**Output:**
+
+```text
+Rule added
+```
+
+Port 2049 is now reachable only from the lab subnet. Add the portmapper port under the same restriction:
+
+```bash
+ufw allow from 192.168.1.0/24 to any port 111 proto tcp
+```
+
+**Output:**
+
+```text
+Rule added
+```
+
+Confirm the resulting policy; the default inbound policy denies everything not explicitly allowed:
+
+```bash
+ufw status verbose
+```
+
+**Output:**
+
+```text
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+2049/tcp                   ALLOW IN    192.168.1.0/24
+111/tcp                    ALLOW IN    192.168.1.0/24
+```
+
+Rules are evaluated from top to bottom and anything unmatched is denied, so the untrusted segment is excluded by default rather than by exception.
 
 ### 9.4 Detection and auditing
 
@@ -1431,6 +1873,8 @@ The common thread across all three protocols is trust: FTP trusting an anonymous
 
 ## 10. Quick reference cheat sheet
 
+> **Concept.** The cheat sheet compresses the whole walkthrough into a lookup table grouped by the PTES phase each row belongs to — setup, per-protocol configuration, reconnaissance, access and defence. Every offensive row has a defensive counterpart, because each command is also the test a defender should run to prove that the corresponding control still holds.
+
 | Phase | Command | What it does |
 | --- | --- | --- |
 | Setup | `apt update` | refreshes the package catalogue before installation |
@@ -1462,6 +1906,14 @@ The common thread across all three protocols is trust: FTP trusting an anonymous
 | SMB config | `systemctl restart smbd` | applies Samba configuration changes |
 | SMB files | `echo "Lab SMB retrieval marker" > /var/www/file.txt` | seeds a verifiable SMB marker |
 | SMB recon | `nxc smb <target> --shares -u 'guest' -p ''` | enumerates shares as guest |
+| SMB recon | `nmap --script smb-os-discovery -p445 <target>` | reads the OS, hostname and domain over SMB |
+| SMB recon | `nmap --script smb-enum-shares,smb-enum-users -p139,445 <target>` | enumerates shares and users with Nmap |
+| SMB recon | `nmap --script smb-vuln* -p445 <target>` | runs Nmap's SMB vulnerability checks |
+| SMB recon | `enum4linux -a <target>` | runs the classic null-session checks |
+| SMB recon | `rpcclient -U "" -N <target>` then `netshareenumall` | enumerates shares over MS-RPC |
+| SMB recon | `smbmap -H <target>` | maps shares and their permissions |
+| SMB recon | `nmblookup -A <ip>` | resolves a NetBIOS name table by address |
+| SMB recon | `nbtscan <range>` | scans a range for NetBIOS names |
 | SMB access | `smbclient -N -L //<target>` | lists shares without a password |
 | SMB access | `smbclient //<target>/shares -N` | opens the guest-accessible share |
 | SMB access | `ls`, `get file.txt`, `exit` | lists and retrieves a file over SMB |
@@ -1474,19 +1926,25 @@ The common thread across all three protocols is trust: FTP trusting an anonymous
 | NFS files | `echo "Lab NFS retrieval marker" > /srv/nfs/public/data.txt` | seeds a verifiable NFS marker |
 | NFS recon | `showmount -e <target>` | lists directories exported to the network |
 | NFS recon | `rpcinfo -p <target>` | lists registered RPC services |
+| NFS recon | `nmap --script nfs-ls,nfs-showmount,nfs-statfs -p2049 <target>` | reads NFS exports and stats with Nmap |
 | NFS recon | `nxc nfs <target> --enum-shares` | discovers NFS exports with NetExec |
 | NFS recon | `nxc nfs <target> --share '/srv/nfs/public' --ls '/'` | lists an export root without mounting |
 | NFS access | `nxc nfs <target> --share /srv/nfs/public/ --get-file data.txt data.txt` | downloads one NFS file without mounting |
 | NFS access | `mount -t nfs <target>:/srv/nfs/public /tmp/nfs` | mounts the export locally |
+| NFS access | `mount -t nfs -o vers=2 <target>:/srv/nfs/public /mnt -o nolock` | mounts with the credential-free v2 protocol |
+| NFS access | `useradd -u <uid> -M impostor` then `su - impostor -c 'cat /mnt/<file>'` | impersonates a UID the export trusts |
 | NFS access | `ls -la /tmp/nfs` and `cat /tmp/nfs/data.txt` | inspects and reads the mounted export |
 | NFS access | `umount /tmp/nfs` | removes the local NFS mount |
 | Defence | `grep -nE 'anonymous_enable\|guest ok\|public =\|map to guest\|min protocol' /etc/vsftpd.conf /etc/samba/smb.conf` | finds risky FTP/SMB directives |
 | Defence | `grep -nE 'no_root_squash\|\*\(\|insecure' /etc/exports` | finds risky NFS export options |
 | Defence | `nmap -sV -p 21,111,139,445,2049 <target>` | checks file-sharing exposure from the network |
+| Defence | `ufw allow from <subnet> to any port 2049 proto tcp` | restricts NFS to a known subnet |
 
 ---
 
 ## 11. Practice exercises
+
+> **Concept.** The exercises replay the full chain as a lab and deliberately invert the attacker's perspective at the end: after retrieving data anonymously, each exercise asks what a single defensive change does to the same output. This is the transferable part — the commands generalise, but the reasoning that maps a configuration line to an attack result is what carries to a different target, a different service and a different engagement.
 
 The following sequence is designed to be run in an isolated lab with two virtual machines and no route to the internet. Each exercise builds on the previous one, and several are intended to show how one defensive change alters the attacker's output.
 
