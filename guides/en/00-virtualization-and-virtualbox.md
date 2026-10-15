@@ -32,6 +32,8 @@ Hypervisors come in two tiers:
 *   **Type-1 (bare-metal):** run directly on the hardware with no host operating system beneath them (VMware ESXi, KVM, Xen, Proxmox VE). They are fast and low-latency, which makes them the standard for data-centre infrastructure.
 *   **Type-2 (hosted):** install as an ordinary program inside a conventional operating system (Oracle VM VirtualBox, VMware Workstation). The host manages the physical devices; the hypervisor mediates the guest.
 
+Modern x86 CPUs add a third dimension to this picture: **hardware-assisted virtualization**. Intel **VT-x** (with **EPT** for nested paging) and AMD **AMD-V** (with **NPT**) let the guest execute most instructions directly in a reduced privilege ring while sensitive ones trap to the hypervisor, so a VM runs at near-native speed without the interpreter that early products needed.
+
 ```
 +--------------------------------------------------------------+
 |                     Host Hardware (CPU, RAM, NIC)            |
@@ -67,7 +69,7 @@ A VM is not a single file: it is a set of configuration files and disk images. T
 <details>
 <summary><strong>Read more</strong> — what is inside an OVF package</summary>
 
-*   **OVF (Open Virtualization Format):** a set of uncompressed files — an XML descriptor (`.ovf`) describing the virtual hardware (vCPUs, RAM, disk controllers, network cards), one or more disk images (`.vmdk` or `.vhd`), and an optional manifest (`.mf`) of SHA checksums for integrity.
+*   **OVF (Open Virtualization Format):** a set of uncompressed files — an XML descriptor (`.ovf`) describing the virtual hardware (vCPUs, RAM, disk controllers, network cards), one or more disk images (`.vmdk` or `.vhd`), and an optional manifest (`.mf`) of SHA checksums for integrity. The format is defined by the DMTF in specification **DSP0243**, and the manifest is what makes the package verifiable end to end.
 *   **OVA (Open Virtual Appliance):** the whole OVF package packed into one POSIX `tar` archive. Being a single file, it avoids fragmentation and configuration drift during download or transfer.
 
 </details>
@@ -118,6 +120,12 @@ The import is more than a copy. It unpacks the OVA tarball, translates the DMTF 
 Because the disks are converted here, this is also the moment to decide **where** they live. Keeping VMs on a fast SSD or NVMe makes an enormous difference to boot times and to the responsiveness of the guests you will run throughout the course.
 
 </details>
+
+### Snapshots, disk formats and rollback
+
+VirtualBox stores each disk either in its own format (`.vdi`) or in the interoperable `.vmdk`/`.vhd`. A **snapshot** does not copy the whole disk: it freezes the current state and opens a **differencing image** that records every subsequent write with copy-on-write, which is why a snapshot is fast and cheap to take.
+
+For a security lab this is the single most useful safety habit: take a snapshot *before* every destructive exercise (**Machine → Take Snapshots**, or `VBoxManage snapshot "<vm>" take "clean-before-lab"`), and roll back to it afterwards. Two caveats follow from the copy-on-write design: the differencing image grows with every write (**Snapshots** are not a backup — copy the `.vdi` instead), and a long chain of snapshots slows the guest down, so consolidate them when the exercise is over.
 
 ---
 
