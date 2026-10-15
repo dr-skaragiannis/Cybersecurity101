@@ -59,7 +59,12 @@ Before testing begins, both virtual machines must be able to reach each other an
 The target needs three server packages:
 
 ```bash
-root@ubuntu-lab:~# apt update
+apt update
+```
+
+**Output:**
+
+```text
 Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease
 Hit:2 http://security.ubuntu.com/ubuntu jammy-security InRelease
 Reading package lists... Done
@@ -101,7 +106,12 @@ A sub-millisecond round-trip time is the usual signature of two virtual machines
 Install the daemon package:
 
 ```bash
-root@ubuntu-lab:~# apt install vsftpd
+apt install vsftpd
+```
+
+**Output:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -128,7 +138,12 @@ The single-package footprint is one reason teams reach for `vsftpd`: the daemon 
 The server configuration lives in `/etc/vsftpd.conf`. Before changing anything, inspect the directives that control listeners and anonymous access:
 
 ```bash
-root@ubuntu-lab:~# grep -nE '^(#)?(listen|listen_ipv6|anonymous_enable|local_enable)=' /etc/vsftpd.conf
+grep -nE '^(#)?(listen|listen_ipv6|anonymous_enable|local_enable)=' /etc/vsftpd.conf
+```
+
+**Output:**
+
+```text
 12:listen=NO
 18:listen_ipv6=YES
 27:#anonymous_enable=NO
@@ -142,7 +157,7 @@ The important line is the anonymous-access default. With anonymous access disabl
 Open the configuration file:
 
 ```bash
-root@ubuntu-lab:~# nano /etc/vsftpd.conf
+nano /etc/vsftpd.conf
 ```
 
 Change the anonymous-access directive to an active `YES`:
@@ -158,14 +173,39 @@ Leave `local_enable=YES` unchanged for this lab. The resulting combination accep
 The anonymous FTP user maps to the local `ftp` account. The lab creates a conventional public subdirectory and seeds it with a small retrieval marker:
 
 ```bash
-root@ubuntu-lab:~# mkdir -p /var/ftp/pub
-root@ubuntu-lab:~# chown nobody:nogroup /var/ftp/pub
-root@ubuntu-lab:~# cd /var/ftp/pub
-root@ubuntu-lab:/var/ftp/pub# echo "Lab FTP retrieval marker" > note.txt
-root@ubuntu-lab:/var/ftp/pub# ls -l
+mkdir -p /var/ftp/pub
+```
+
+```bash
+chown nobody:nogroup /var/ftp/pub
+```
+
+```bash
+cd /var/ftp/pub
+```
+
+```bash
+echo "Lab FTP retrieval marker" > note.txt
+```
+
+```bash
+ls -l
+```
+
+**Output:**
+
+```text
 total 4
 -rw-r--r-- 1 root root 25 Feb 10 12:01 note.txt
-root@ubuntu-lab:/var/ftp/pub# cat note.txt
+```
+
+```bash
+cat note.txt
+```
+
+**Output:**
+
+```text
 Lab FTP retrieval marker
 ```
 
@@ -199,11 +239,30 @@ From a defensive perspective, `hide_ids` deserves special attention. It exists s
 Restart the daemon to apply the configuration:
 
 ```bash
-root@ubuntu-lab:/var/ftp/pub# service vsftpd restart
-root@ubuntu-lab:/var/ftp/pub# cd ~
-root@ubuntu-lab:~# ss -tlnp | grep ':21'
+service vsftpd restart
+```
+
+```bash
+cd ~
+```
+
+```bash
+ss -tlnp | grep ':21'
+```
+
+**Output:**
+
+```text
 LISTEN 0      32                 *:21              *:*    users:(("vsftpd",pid=1842,fd=3))
-root@ubuntu-lab:~# systemctl status vsftpd --no-pager
+```
+
+```bash
+systemctl status vsftpd --no-pager
+```
+
+**Output:**
+
+```text
 ● vsftpd.service - vsftpd FTP server
      Loaded: loaded (/lib/systemd/system/vsftpd.service; enabled; vendor preset: enabled)
      Active: active (running) since Sat 2026-10-10 12:04:11 UTC; 18s ago
@@ -322,7 +381,12 @@ Samba implements the SMB/CIFS protocol on Linux and bridges Linux servers to Win
 Install the server package:
 
 ```bash
-root@ubuntu-lab:~# apt install samba
+apt install samba
+```
+
+**Output:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -345,15 +409,26 @@ The installer pulls Samba with its common libraries and supporting tools. The da
 Move to the configuration directory and inspect its contents:
 
 ```bash
-root@ubuntu-lab:~# cd /etc/samba/
-root@ubuntu-lab:/etc/samba# ls -al
+cd /etc/samba/
+```
+
+```bash
+ls -al
+```
+
+**Output:**
+
+```text
 total 32
 drwxr-xr-x  3 root root  4096 Feb 10 12:10 .
 drwxr-xr-x 96 root root  4096 Feb 10 11:58 ..
 -rw-r--r--  1 root root    17 Feb 10 11:59 gdbcommands
 -rw-r--r--  1 root root  9831 Feb 10 11:59 smb.conf
 drwxr-xr-x  2 root root  4096 Feb 10 11:59 tls
-root@ubuntu-lab:/etc/samba# nano smb.conf
+```
+
+```bash
+nano smb.conf
 ```
 
 The canonical file is `smb.conf`; `gdbcommands` supports debugging and `tls` holds certificate material. Editing `smb.conf` directly is clear for a lab, but production changes should always be validated with `testparm` before the new configuration is applied.
@@ -378,7 +453,12 @@ Every line contributes to the exposure. `guest ok = yes` maps unauthenticated cl
 Validate the resulting configuration before restarting:
 
 ```bash
-root@ubuntu-lab:/etc/samba# testparm -s
+testparm -s
+```
+
+**Output:**
+
+```text
 Loaded services file OK.
 Weak crypto is allowed by default.
 
@@ -401,11 +481,22 @@ Server role: ROLE_STANDALONE
 Restart the SMB daemon and confirm the expected listeners:
 
 ```bash
-root@ubuntu-lab:/etc/samba# systemctl restart smbd
-root@ubuntu-lab:/etc/samba# ss -tlnp | grep -E ':(139|445)'
+systemctl restart smbd
+```
+
+```bash
+ss -tlnp | grep -E ':(139|445)'
+```
+
+**Output:**
+
+```text
 LISTEN 0      50                 *:139             *:*    users:(("smbd",pid=2261,fd=34))
 LISTEN 0      50                 *:445             *:*    users:(("smbd",pid=2261,fd=33))
-root@ubuntu-lab:/etc/samba# cd ~
+```
+
+```bash
+cd ~
 ```
 
 Ports 139 and 445 are the traditional SMB listeners. If only one is present, check whether another service owns the missing socket and whether the host firewall is interfering. If neither is present, the Samba configuration did not load as expected.
@@ -415,15 +506,37 @@ Ports 139 and 445 are the traditional SMB listeners. If only one is present, che
 Create a marker in the shared web directory and confirm its contents locally:
 
 ```bash
-root@ubuntu-lab:~# echo "Lab SMB retrieval marker" > /var/www/file.txt
-root@ubuntu-lab:~# cd /var/www/
-root@ubuntu-lab:/var/www# ls -l
+echo "Lab SMB retrieval marker" > /var/www/file.txt
+```
+
+```bash
+cd /var/www/
+```
+
+```bash
+ls -l
+```
+
+**Output:**
+
+```text
 total 12
 -rw-r--r-- 1 root root   25 Feb 10 12:14 file.txt
 drwxr-xr-x 2 root root 4096 Feb 10 11:47 html
-root@ubuntu-lab:/var/www# cat file.txt
+```
+
+```bash
+cat file.txt
+```
+
+**Output:**
+
+```text
 Lab SMB retrieval marker
-root@ubuntu-lab:/var/www# cd ~
+```
+
+```bash
+cd ~
 ```
 
 The `html` subdirectory is the normal web-content directory, while `file.txt` is the lab’s verifiable retrieval target. Seeding a known file matters because successful anonymous access should be proved by reading back exact bytes, not merely by listing a filename.
@@ -531,7 +644,12 @@ NFS, the Network File System, is the canonical Unix-to-Unix file-sharing protoco
 Install the server package:
 
 ```bash
-root@ubuntu-lab:~# apt install nfs-kernel-server -y
+apt install nfs-kernel-server -y
+```
+
+**Output:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -553,16 +671,44 @@ The supporting packages matter. `nfs-common` provides client-side utilities, `li
 Create a public export directory, make it world-writable, and seed a marker file:
 
 ```bash
-root@ubuntu-lab:~# mkdir -p /srv/nfs/public
-root@ubuntu-lab:~# chmod 777 /srv/nfs/public
-root@ubuntu-lab:~# cd /srv/nfs/public
-root@ubuntu-lab:/srv/nfs/public# echo "Lab NFS retrieval marker" > data.txt
-root@ubuntu-lab:/srv/nfs/public# ls -l
+mkdir -p /srv/nfs/public
+```
+
+```bash
+chmod 777 /srv/nfs/public
+```
+
+```bash
+cd /srv/nfs/public
+```
+
+```bash
+echo "Lab NFS retrieval marker" > data.txt
+```
+
+```bash
+ls -l
+```
+
+**Output:**
+
+```text
 total 4
 -rw-r--r-- 1 root root 25 Feb 10 12:20 data.txt
-root@ubuntu-lab:/srv/nfs/public# cat data.txt
+```
+
+```bash
+cat data.txt
+```
+
+**Output:**
+
+```text
 Lab NFS retrieval marker
-root@ubuntu-lab:/srv/nfs/public# cd ~
+```
+
+```bash
+cd ~
 ```
 
 World-writable `777` permissions are dangerous on their own, and they become especially dangerous when combined with the `no_root_squash` export option below. That combination allows a remote root user to write files that retain root ownership on the server, which is a textbook persistence and privilege-escalation surface.
@@ -572,7 +718,7 @@ World-writable `777` permissions are dangerous on their own, and they become esp
 NFS access control lives in `/etc/exports`. Open it:
 
 ```bash
-root@ubuntu-lab:~# nano /etc/exports
+nano /etc/exports
 ```
 
 Add the following lab-only export line:
@@ -590,12 +736,31 @@ Use commas between options. A missing comma or an accidental space can change pa
 Reload the export table, inspect the effective export, restart the NFS server, and verify the listeners:
 
 ```bash
-root@ubuntu-lab:~# exportfs -a
-root@ubuntu-lab:~# exportfs -v
+exportfs -a
+```
+
+```bash
+exportfs -v
+```
+
+**Output:**
+
+```text
 /srv/nfs/public
 		*(rw,wdelay,no_root_squash,no_subtree_check,sec=sys,rw,insecure,no_root_squash,no_all_squash)
-root@ubuntu-lab:~# systemctl restart nfs-kernel-server
-root@ubuntu-lab:~# ss -tlnp | grep -E ':(111|2049)'
+```
+
+```bash
+systemctl restart nfs-kernel-server
+```
+
+```bash
+ss -tlnp | grep -E ':(111|2049)'
+```
+
+**Output:**
+
+```text
 LISTEN 0      4096               *:111             *:*    users:(("rpcbind",pid=2418,fd=4))
 LISTEN 0      64                 *:2049            *:*    users:(("nfsd",pid=2431,fd=9))
 ```

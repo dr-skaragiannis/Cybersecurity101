@@ -59,7 +59,12 @@
 Ο στόχος χρειάζεται τρία πακέτα server:
 
 ```bash
-root@ubuntu-lab:~# apt update
+apt update
+```
+
+**Έξοδος:**
+
+```text
 Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease
 Hit:2 http://security.ubuntu.com/ubuntu jammy-security InRelease
 Reading package lists... Done
@@ -101,7 +106,12 @@ rtt min/avg/max/mdev = 0.480/0.500/0.520/0.020 ms
 Εγκαταστήστε το πακέτο του daemon:
 
 ```bash
-root@ubuntu-lab:~# apt install vsftpd
+apt install vsftpd
+```
+
+**Έξοδος:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -128,7 +138,12 @@ Processing triggers for man-db (2.10.2-1) ...
 Η ρύθμιση του server βρίσκεται στο `/etc/vsftpd.conf`. Πριν αλλάξετε οτιδήποτε, ελέγξτε τις directives που ελέγχουν τους listeners και την anonymous πρόσβαση:
 
 ```bash
-root@ubuntu-lab:~# grep -nE '^(#)?(listen|listen_ipv6|anonymous_enable|local_enable)=' /etc/vsftpd.conf
+grep -nE '^(#)?(listen|listen_ipv6|anonymous_enable|local_enable)=' /etc/vsftpd.conf
+```
+
+**Έξοδος:**
+
+```text
 12:listen=NO
 18:listen_ipv6=YES
 27:#anonymous_enable=NO
@@ -142,7 +157,7 @@ root@ubuntu-lab:~# grep -nE '^(#)?(listen|listen_ipv6|anonymous_enable|local_ena
 Ανοίξτε το αρχείο ρυθμίσεων:
 
 ```bash
-root@ubuntu-lab:~# nano /etc/vsftpd.conf
+nano /etc/vsftpd.conf
 ```
 
 Αλλάξτε τη directive anonymous-access σε ενεργή τιμή `YES`:
@@ -158,14 +173,39 @@ anonymous_enable=YES
 Ο anonymous FTP χρήστης αντιστοιχίζεται στον τοπικό λογαριασμό `ftp`. Το εργαστήριο δημιουργεί έναν συμβατικό public υποκατάλογο και τον αρχικοποιεί με ένα μικρό retrieval marker:
 
 ```bash
-root@ubuntu-lab:~# mkdir -p /var/ftp/pub
-root@ubuntu-lab:~# chown nobody:nogroup /var/ftp/pub
-root@ubuntu-lab:~# cd /var/ftp/pub
-root@ubuntu-lab:/var/ftp/pub# echo "Lab FTP retrieval marker" > note.txt
-root@ubuntu-lab:/var/ftp/pub# ls -l
+mkdir -p /var/ftp/pub
+```
+
+```bash
+chown nobody:nogroup /var/ftp/pub
+```
+
+```bash
+cd /var/ftp/pub
+```
+
+```bash
+echo "Lab FTP retrieval marker" > note.txt
+```
+
+```bash
+ls -l
+```
+
+**Έξοδος:**
+
+```text
 total 4
 -rw-r--r-- 1 root root 25 Feb 10 12:01 note.txt
-root@ubuntu-lab:/var/ftp/pub# cat note.txt
+```
+
+```bash
+cat note.txt
+```
+
+**Έξοδος:**
+
+```text
 Lab FTP retrieval marker
 ```
 
@@ -199,11 +239,30 @@ pasv_max_port=50000
 Κάντε restart στον daemon για να εφαρμοστεί η ρύθμιση:
 
 ```bash
-root@ubuntu-lab:/var/ftp/pub# service vsftpd restart
-root@ubuntu-lab:/var/ftp/pub# cd ~
-root@ubuntu-lab:~# ss -tlnp | grep ':21'
+service vsftpd restart
+```
+
+```bash
+cd ~
+```
+
+```bash
+ss -tlnp | grep ':21'
+```
+
+**Έξοδος:**
+
+```text
 LISTEN 0      32                 *:21              *:*    users:(("vsftpd",pid=1842,fd=3))
-root@ubuntu-lab:~# systemctl status vsftpd --no-pager
+```
+
+```bash
+systemctl status vsftpd --no-pager
+```
+
+**Έξοδος:**
+
+```text
 ● vsftpd.service - vsftpd FTP server
      Loaded: loaded (/lib/systemd/system/vsftpd.service; enabled; vendor preset: enabled)
      Active: active (running) since Sat 2026-10-10 12:04:11 UTC; 18s ago
@@ -322,7 +381,12 @@ Lab FTP retrieval marker
 Εγκαταστήστε το server package:
 
 ```bash
-root@ubuntu-lab:~# apt install samba
+apt install samba
+```
+
+**Έξοδος:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -345,15 +409,26 @@ Do you want to continue? [Y/n] y
 Μεταβείτε στον κατάλογο ρυθμίσεων και ελέγξτε τα περιεχόμενά του:
 
 ```bash
-root@ubuntu-lab:~# cd /etc/samba/
-root@ubuntu-lab:/etc/samba# ls -al
+cd /etc/samba/
+```
+
+```bash
+ls -al
+```
+
+**Έξοδος:**
+
+```text
 total 32
 drwxr-xr-x  3 root root  4096 Feb 10 12:10 .
 drwxr-xr-x 96 root root  4096 Feb 10 11:58 ..
 -rw-r--r--  1 root root    17 Feb 10 11:59 gdbcommands
 -rw-r--r--  1 root root  9831 Feb 10 11:59 smb.conf
 drwxr-xr-x  2 root root  4096 Feb 10 11:59 tls
-root@ubuntu-lab:/etc/samba# nano smb.conf
+```
+
+```bash
+nano smb.conf
 ```
 
 Το βασικό αρχείο είναι το `smb.conf`· το `gdbcommands` υποστηρίζει debugging και το `tls` περιέχει υλικό πιστοποιητικών. Η απευθείας επεξεργασία του `smb.conf` είναι σαφής για εργαστήριο, αλλά οι αλλαγές σε production πρέπει πάντα να επικυρώνονται με `testparm` πριν εφαρμοστεί η νέα ρύθμιση.
@@ -378,7 +453,12 @@ guest ok = yes
 Επικυρώστε την τελική ρύθμιση πριν από το restart:
 
 ```bash
-root@ubuntu-lab:/etc/samba# testparm -s
+testparm -s
+```
+
+**Έξοδος:**
+
+```text
 Loaded services file OK.
 Weak crypto is allowed by default.
 
@@ -401,11 +481,22 @@ Server role: ROLE_STANDALONE
 Κάντε restart στον SMB daemon και επιβεβαιώστε τους αναμενόμενους listeners:
 
 ```bash
-root@ubuntu-lab:/etc/samba# systemctl restart smbd
-root@ubuntu-lab:/etc/samba# ss -tlnp | grep -E ':(139|445)'
+systemctl restart smbd
+```
+
+```bash
+ss -tlnp | grep -E ':(139|445)'
+```
+
+**Έξοδος:**
+
+```text
 LISTEN 0      50                 *:139             *:*    users:(("smbd",pid=2261,fd=34))
 LISTEN 0      50                 *:445             *:*    users:(("smbd",pid=2261,fd=33))
-root@ubuntu-lab:/etc/samba# cd ~
+```
+
+```bash
+cd ~
 ```
 
 Οι θύρες 139 και 445 είναι οι παραδοσιακοί SMB listeners. If only one is present, check whether another service owns the missing socket and whether the host firewall is interfering. If neither is present, the Samba configuration did not load as expected.
@@ -415,15 +506,37 @@ root@ubuntu-lab:/etc/samba# cd ~
 Δημιουργήστε ένα marker στον shared web directory και επιβεβαιώστε τοπικά τα περιεχόμενά του:
 
 ```bash
-root@ubuntu-lab:~# echo "Lab SMB retrieval marker" > /var/www/file.txt
-root@ubuntu-lab:~# cd /var/www/
-root@ubuntu-lab:/var/www# ls -l
+echo "Lab SMB retrieval marker" > /var/www/file.txt
+```
+
+```bash
+cd /var/www/
+```
+
+```bash
+ls -l
+```
+
+**Έξοδος:**
+
+```text
 total 12
 -rw-r--r-- 1 root root   25 Feb 10 12:14 file.txt
 drwxr-xr-x 2 root root 4096 Feb 10 11:47 html
-root@ubuntu-lab:/var/www# cat file.txt
+```
+
+```bash
+cat file.txt
+```
+
+**Έξοδος:**
+
+```text
 Lab SMB retrieval marker
-root@ubuntu-lab:/var/www# cd ~
+```
+
+```bash
+cd ~
 ```
 
 Ο υποκατάλογος `html` είναι ο κανονικός κατάλογος web content, ενώ το `file.txt` είναι ο επαληθεύσιμος στόχος ανάκτησης του εργαστηρίου. Seeding a known file matters because successful anonymous access should be proved by reading back exact bytes, not merely by listing a filename.
@@ -531,7 +644,12 @@ NFS, the Δίκτυο File System, is the canonical Unix-to-Unix file-sharing pr
 Εγκαταστήστε το server package:
 
 ```bash
-root@ubuntu-lab:~# apt install nfs-kernel-server -y
+apt install nfs-kernel-server -y
+```
+
+**Έξοδος:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -553,16 +671,44 @@ After this operation, 3,862 kB of additional disk space will be used.
 Δημιουργήστε έναν public export directory, κάντε τον world-writable και δημιουργήστε ένα marker file:
 
 ```bash
-root@ubuntu-lab:~# mkdir -p /srv/nfs/public
-root@ubuntu-lab:~# chmod 777 /srv/nfs/public
-root@ubuntu-lab:~# cd /srv/nfs/public
-root@ubuntu-lab:/srv/nfs/public# echo "Lab NFS retrieval marker" > data.txt
-root@ubuntu-lab:/srv/nfs/public# ls -l
+mkdir -p /srv/nfs/public
+```
+
+```bash
+chmod 777 /srv/nfs/public
+```
+
+```bash
+cd /srv/nfs/public
+```
+
+```bash
+echo "Lab NFS retrieval marker" > data.txt
+```
+
+```bash
+ls -l
+```
+
+**Έξοδος:**
+
+```text
 total 4
 -rw-r--r-- 1 root root 25 Feb 10 12:20 data.txt
-root@ubuntu-lab:/srv/nfs/public# cat data.txt
+```
+
+```bash
+cat data.txt
+```
+
+**Έξοδος:**
+
+```text
 Lab NFS retrieval marker
-root@ubuntu-lab:/srv/nfs/public# cd ~
+```
+
+```bash
+cd ~
 ```
 
 Τα world-writable δικαιώματα `777` είναι επικίνδυνα από μόνα τους και γίνονται ιδιαίτερα επικίνδυνα όταν συνδυάζονται με την επιλογή export `no_root_squash` παρακάτω. Ο συνδυασμός αυτός επιτρέπει σε απομακρυσμένο root χρήστη να γράφει αρχεία που διατηρούν root ownership στον server, κάτι που αποτελεί κλασική επιφάνεια persistence και privilege escalation.
@@ -572,7 +718,7 @@ root@ubuntu-lab:/srv/nfs/public# cd ~
 Ο έλεγχος πρόσβασης NFS βρίσκεται στο `/etc/exports`. Open it:
 
 ```bash
-root@ubuntu-lab:~# nano /etc/exports
+nano /etc/exports
 ```
 
 Προσθέστε την ακόλουθη export line μόνο για το εργαστήριο:
@@ -590,12 +736,31 @@ root@ubuntu-lab:~# nano /etc/exports
 Επαναφορτώστε τον export table, ελέγξτε το effective export, κάντε restart στον NFS server και επαληθεύστε τους listeners:
 
 ```bash
-root@ubuntu-lab:~# exportfs -a
-root@ubuntu-lab:~# exportfs -v
+exportfs -a
+```
+
+```bash
+exportfs -v
+```
+
+**Έξοδος:**
+
+```text
 /srv/nfs/public
 		*(rw,wdelay,no_root_squash,no_subtree_check,sec=sys,rw,insecure,no_root_squash,no_all_squash)
-root@ubuntu-lab:~# systemctl restart nfs-kernel-server
-root@ubuntu-lab:~# ss -tlnp | grep -E ':(111|2049)'
+```
+
+```bash
+systemctl restart nfs-kernel-server
+```
+
+```bash
+ss -tlnp | grep -E ':(111|2049)'
+```
+
+**Έξοδος:**
+
+```text
 LISTEN 0      4096               *:111             *:*    users:(("rpcbind",pid=2418,fd=4))
 LISTEN 0      64                 *:2049            *:*    users:(("nfsd",pid=2431,fd=9))
 ```

