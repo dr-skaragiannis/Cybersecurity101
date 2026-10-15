@@ -147,11 +147,13 @@ The `id` output also lists *supplementary* groups — every additional group the
 
 ### 2.3 `cd` — changing directories
 
-`cd` stands for *change directory*. If the operation succeeds the shell prints nothing at all — on Linux, silence is success. The only feedback is the change in your prompt.
+`cd` stands for *change directory* and moves your shell session from the current working directory to the path you pass as an argument. Here we move into the `Desktop/` directory inside our home folder:
 
 ```bash
 cd Desktop/
 ```
+
+Because `cd` prints nothing when it succeeds — on Linux, silence is success and the only immediate feedback is the change in your prompt — we run `pwd` to verify our new location:
 
 ```bash
 pwd
@@ -163,21 +165,27 @@ pwd
 /root/Desktop
 ```
 
-The move worked, and `pwd` proves it. The trailing slash on `Desktop/` is optional and purely cosmetic; the shell treats `Desktop` and `Desktop/` identically.
+The move worked, and `pwd` proves that our working directory is now `/root/Desktop`. The trailing slash on `Desktop/` is optional and purely cosmetic; the shell treats `Desktop` and `Desktop/` identically.
 
-`cd` also understands a handful of special destinations that every Linux user memorises within a day:
+`cd` also understands four special destination shortcuts that every Linux user memorises within a day. First, `..` always points to the parent directory one level up the tree:
 
 ```bash
 cd ..
 ```
 
+The shell silently moves us one level up from `/root/Desktop` back to `/root`. Next, a single forward slash `/` represents the root of the entire file system — the top-level directory from which every other directory hangs:
+
 ```bash
 cd /
 ```
 
+Again, `cd` succeeds silently and places us at the top of the directory tree (note that the `/` directory is different from `/root`, the administrator's personal home directory). To jump straight back to your home directory from anywhere on the system, pass the tilde shortcut `~` (or run `cd` with no arguments at all):
+
 ```bash
 cd ~
 ```
+
+The shell expands `~` to `/root` and returns us home without printing anything. Finally, a single dash `-` acts like a browser's back button and returns you to whichever directory you were in immediately before:
 
 ```bash
 cd -
@@ -189,25 +197,17 @@ cd -
 /root/Desktop
 ```
 
-<details>
-<summary><strong>Read more</strong> — the four destinations every beginner needs</summary>
-
-* `cd ..` moves one level **up** the tree, from `/root/Desktop` to `/root`. The `..` entry exists in every directory and always points at its parent.
-* `cd /` moves to the **root of the file system**, the single directory from which everything else hangs. Note that this is a different concept from the root *user*; the forward slash is the top of the directory tree, while `root` is the name of the administrator account.
-* `cd ~` (or simply `cd` with nothing after it) returns you to your **home directory** from anywhere on the system, which is a lifesaver after you have wandered deep into `/usr/share/doc` looking for something.
-* `cd -` returns you to the **previous directory**, the way a browser's back button works. As you can see from the transcript, `cd -` prints the directory it moved you to, which is the only case where `cd` is chatty.
-
-If you try to `cd` into something that does not exist, the shell prints a clear error such as `bash: cd: Downloads/: No such file or directory`. That wording is worth reading carefully — it names the program that complained and the exact argument it could not find.
-
-</details>
+Unlike the other forms of `cd`, `cd -` prints the path of the directory it moved you back to (`/root/Desktop` in the transcript), confirming where you landed. If you ever try to `cd` into a path that does not exist, the shell prints a clear error such as `bash: cd: Downloads/: No such file or directory`, naming both the command that failed and the exact argument it could not find.
 
 ### 2.4 `ls` — listing the contents of a directory
 
-Where `pwd` tells you where you stand, `ls` tells you what is standing around you. It lists the contents of the current directory by default, or of any directory you name.
+Where `pwd` tells you where you stand, `ls` tells you what is standing around you. It lists the contents of the current directory by default, or of any directory you name. Let us first make sure we are inside `Desktop/`:
 
 ```bash
 cd Desktop/
 ```
+
+With our working directory set to `Desktop/`, we run `ls` with no arguments to list the visible files and folders inside it:
 
 ```bash
 ls
@@ -409,7 +409,9 @@ whereis git
 git: /usr/bin/git /usr/share/man/man1/git.1.gz
 ```
 
-`which` is stricter. It looks only at the directories listed in your `PATH` and returns the single binary the shell would actually run if you typed the bare command name.
+The output shows two paths after `git:`: the executable binary itself at `/usr/bin/git` and its compressed Section 1 manual page at `/usr/share/man/man1/git.1.gz`.
+
+`which` is stricter. It looks only at the directories listed in your `PATH` environment variable and returns the single binary the shell would actually run if you typed the bare command name:
 
 ```bash
 which git
@@ -421,7 +423,7 @@ which git
 /usr/bin/git
 ```
 
-That difference is why both exist, and why `which` is the more useful of the two in day-to-day work: when several copies of a program are installed, `which` tells you which one wins. The search path itself is a colon-separated list, searched from left to right:
+The single line `/usr/bin/git` tells us the exact executable that wins when we type `git`. That difference is why both commands exist, and why `which` is the more useful of the two in day-to-day work when several copies of a program are installed. To see the search path itself, we print the `$PATH` variable with `echo`:
 
 ```bash
 echo $PATH
@@ -433,14 +435,9 @@ echo $PATH
 /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ```
 
-<details>
-<summary><strong>Read more</strong> — two surprises explained by <code>PATH</code></summary>
+The output is a colon-separated list of six directories that the shell searches from left to right whenever you type a command name.
 
-Because `/usr/local/bin` is searched before `/usr/bin`, a copy of a program you place in `/usr/local/bin` will be run instead of the system one. That is how you override a tool without touching the distribution's files.
-
-The current directory is deliberately *not* on the search path — a safety measure, so that a malicious `ls` dropped into a shared folder cannot be run by accident. To run something from the current directory you must name it explicitly, for example `./simple_bash.sh`.
-
-A third command, `type`, is the shell's own answer to the same question and additionally reveals whether a name is a built-in, an alias or a function rather than a real binary:
+A third command, `type`, is the shell's own built-in query and reveals whether a command name resolves to an external binary on disk, an alias, a function, or a shell built-in. Here we check `git` with `type`:
 
 ```bash
 type git
@@ -452,6 +449,8 @@ type git
 git is /usr/bin/git
 ```
 
+The shell confirms that `git` is an external binary located at `/usr/bin/git`. Now let us run `type` against `cd` to see why `which cd` often produces nothing:
+
 ```bash
 type cd
 ```
@@ -462,11 +461,20 @@ type cd
 cd is a shell builtin
 ```
 
+The output tells us that `cd` is not a separate file on disk at all, but a command built directly into the shell itself (because only the shell process can change its own working directory).
+
+<details>
+<summary><strong>Read more</strong> — two surprises explained by <code>PATH</code></summary>
+
+Because `/usr/local/bin` is searched before `/usr/bin`, a copy of a program you place in `/usr/local/bin` will be run instead of the system one. That is how you override a tool without touching the distribution's files.
+
+The current directory is deliberately *not* on the search path — a safety measure, so that a malicious `ls` dropped into a shared folder cannot be run by accident. To run something from the current directory you must name it explicitly, for example `./simple_bash.sh`.
+
 </details>
 
 ### 2.9 Filtering output with `grep`
 
-Often you do not want *more* output, you want *less* of it — one particular line out of a hundred. `grep` reads text, either from a file you name or from its standard input, and prints only the lines matching the pattern you give it.
+Often you do not want *more* output, you want *less* of it — one particular line out of a hundred. `grep` reads text, either from a file you name or from its standard input, and prints only the lines matching the pattern you give it. Here we search `simple_bash.sh` for the string `echo`, passing `-i` to ignore case:
 
 ```bash
 grep -i "echo" simple_bash.sh
@@ -479,12 +487,9 @@ echo "Starting the backup job..."
 echo "Backup finished at $(date)"
 ```
 
-The `-i` flag makes the search case-insensitive, so a line containing `Echo` would have matched too. Without it, `grep` is case-sensitive. Two flags extend this immediately: `-n` prefixes every match with its line number, and `-r` walks a whole directory tree.
+Only the two lines from `simple_bash.sh` that contain `echo` are printed, while every other line in the script is hidden. Because we used `-i`, a line containing `Echo` or `ECHO` would have matched too; without `-i`, `grep` is strictly case-sensitive.
 
-<details>
-<summary><strong>Read more</strong> — the pipe: filtering one program with another</summary>
-
-By far the most common use of `grep` is not to search files at all but to *pipe* another program's output into it. The `ifconfig` utility prints a great deal about every network interface; if all you want is the addresses:
+By far the most common use of `grep` is not to search files directly, but to *pipe* another program's output into it using the vertical bar `|`. The `ifconfig` utility prints a great deal of detail about every network interface; here we pipe its output into `grep inet` to keep only the lines that show IP addresses:
 
 ```bash
 ifconfig | grep inet
@@ -499,13 +504,14 @@ ifconfig | grep inet
         inet6 ::1  prefixlen 128  scopeid 0x10<host>
 ```
 
-The vertical bar is the *pipe*: it takes whatever the program on its left wrote to standard output and feeds it to the program on its right as standard input. Nothing is written to disk in between; the two processes run at the same time and data flows through as it is produced.
+The four surviving lines tell you everything that matters: the machine's IPv4 address (`10.0.2.15`, the classic NAT address of a virtual machine) with its netmask and broadcast address, its IPv6 link-local address (`fe80::...`), and the IPv4 (`127.0.0.1`) and IPv6 (`::1`) loopback addresses that the machine uses to refer to itself.
 
-The four surviving lines tell you everything that matters: the machine's real address (`10.0.2.15`, the classic NAT address of a virtual machine), its IPv6 link-local address, and the loopback interface `127.0.0.1`, which is how a machine refers to itself.
+<details>
+<summary><strong>Read more</strong> — how the pipe works and useful <code>grep</code> flags</summary>
 
-Two refinements: `grep -v inet` *inverts* the match and prints every line that does **not** contain the string — how you throw away noise instead of keeping it; and on modern systems `ip a` is the preferred replacement for the ageing `ifconfig`, with `ip a | grep inet` producing much the same result.
+The vertical bar `|` is the *pipe*: it takes whatever the program on its left wrote to standard output and feeds it to the program on its right as standard input. Nothing is written to disk in between; the two processes run at the same time and data flows through as it is produced.
 
-`grep -rn "password" /etc` is the sort of command that reveals how many plaintext credentials a badly configured server accumulates.
+Useful flags to combine with `grep`: `-n` prefixes every matching line with its line number, `-r` walks a whole directory tree recursively (for example, `grep -rn "password" /etc` reveals how many plaintext credentials a badly configured server accumulates), and `-v` *inverts* the match to print every line that does **not** contain the pattern. On modern systems `ip a` is the preferred replacement for the ageing `ifconfig`, with `ip a | grep inet` producing much the same result.
 
 </details>
 
@@ -513,7 +519,7 @@ Two refinements: `grep -v inet` *inverts* the match and prints every line that d
 
 `find` is the most powerful of the searching utilities, and the one that rewards a little study. Unlike `locate` it walks the file system live, examining every file as it goes, which lets it filter on far more than the name: creation or modification date, owner, group, permissions, size and type.
 
-Its grammar is `find <where to look> <what to look for>`. Each criterion is a flag, and you can stack as many as you like.
+Its grammar is `find <where to look> <what to look for>`. Here we search from the root directory `/` for a regular file (`-type f`) named `practice-notes.txt` (`-name practice-notes.txt`):
 
 ```bash
 find / -type f -name practice-notes.txt
@@ -529,9 +535,9 @@ find: '/var/cache/private': Permission denied
 find: '/var/lib/private': Permission denied
 ```
 
-The file was found — but look at the other lines. Because we asked `find` to search the whole machine as an unprivileged account, it also walked into directories our account may not read, and every such entry produced a `Permission denied` message. Those two kinds of line travel on **different channels**: the result on standard output (file descriptor 1), the errors on standard error (file descriptor 2).
+The file was found at `/home/student/notes/practice-notes.txt` — but look at the surrounding lines. Because we asked `find` to search the whole machine as an unprivileged account, it also tried to enter restricted directories, and every such attempt produced a `Permission denied` message. Those two kinds of line travel on **different channels**: the actual results on standard output (file descriptor 1), and the errors on standard error (file descriptor 2).
 
-Silencing one without touching the other is what `2>/dev/null` does:
+Silencing the error channel without touching the results is what redirecting file descriptor `2` to `/dev/null` (`2>/dev/null`) does:
 
 ```bash
 find / -type f -name practice-notes.txt 2>/dev/null
@@ -543,14 +549,9 @@ find / -type f -name practice-notes.txt 2>/dev/null
 /home/student/notes/practice-notes.txt
 ```
 
-`/dev/null` is a special file that discards everything written to it, so the errors vanish and the result stays.
+`/dev/null` is a special kernel device that discards everything written to it, so all `Permission denied` lines vanish and only the clean match `/home/student/notes/practice-notes.txt` remains.
 
-<details>
-<summary><strong>Read more</strong> — standard output vs standard error, and the flags that make <code>find</code> dangerous</summary>
-
-Because the two streams are separate, you can redirect them independently. A common alternative you will see in older tutorials is `2>&1 | grep -v "Permission denied"`, which first merges the errors into the normal output and then filters out the permission failures. Both produce a tidy transcript, but `2>/dev/null` is preferable: it does not depend on the exact wording of the error message, it does not hide genuine errors that are not permission problems, and it costs nothing.
-
-With that plumbing understood, the real power of `find` becomes usable, because you can filter on almost any attribute of a file:
+With that redirection in place, we can stack multiple criteria in a single `find` command. Here we search `/home` for regular files (`-type f`) owned by the user `student` (`-user student`) that were modified within the last 7 days (`-mtime -7`):
 
 ```bash
 find /home -type f -user student -mtime -7 2>/dev/null
@@ -563,7 +564,12 @@ find /home -type f -user student -mtime -7 2>/dev/null
 /home/student/notes/week-2.txt
 ```
 
-That reads as "under `/home`, find regular files owned by `student` that were modified within the last seven days" — the sort of query that takes seconds to write and replaces ten minutes of clicking.
+The output lists the two files under `/home/student/notes/` that match all three conditions simultaneously (`week-1.txt` and `week-2.txt`), demonstrating how `find` narrows thousands of files down to exact recent activity in seconds.
+
+<details>
+<summary><strong>Read more</strong> — standard output vs standard error, and the flags that make <code>find</code> dangerous</summary>
+
+Because the two streams are separate, you can redirect them independently. A common alternative you will see in older tutorials is `2>&1 | grep -v "Permission denied"`, which first merges the errors into the normal output and then filters out the permission failures. Both produce a tidy transcript, but `2>/dev/null` is preferable: it does not depend on the exact wording of the error message, it does not hide genuine errors that are not permission problems, and it costs nothing.
 
 Flags worth keeping in your notes:
 
@@ -582,15 +588,19 @@ Finally, `find` can *do* things to what it finds, not merely print them, thanks 
 
 Now that we can move around, ask for help and search, it is time for the operations that make up most of the actual work: reading a file, creating one, making a directory, copying, moving, renaming and deleting. The concepts are simple, but type every one of them out rather than copying blindly — muscle memory for paths is half of what a Linux user is.
 
-Let us first create a small working area for the examples:
+Let us first create a dedicated `linux-lab` directory inside `Documents/` for our examples using `mkdir`:
 
 ```bash
 mkdir Documents/linux-lab
 ```
 
+`mkdir` creates the new folder silently without printing any output. Next, we move into that new directory with `cd`:
+
 ```bash
 cd Documents/linux-lab
 ```
+
+Again, `cd` succeeds silently, so we run `pwd` to confirm we are standing inside our new workspace before creating or deleting files:
 
 ```bash
 pwd
@@ -601,6 +611,8 @@ pwd
 ```text
 /root/Documents/linux-lab
 ```
+
+The output `/root/Documents/linux-lab` confirms that our working directory is now the isolated lab folder, so every relative filename we use below will live safely inside it.
 
 ### 3.1 `cat` — printing the contents of a file
 

