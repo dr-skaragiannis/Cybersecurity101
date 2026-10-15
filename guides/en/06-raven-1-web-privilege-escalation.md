@@ -2,6 +2,22 @@
 
 > **Authorized-lab use only.** This material is written for an intentionally vulnerable virtual machine or another system you own or have explicit permission to test. Replace the example target address with the address assigned to your lab machine.
 
+## How to read this guide
+
+Every step is shown the same way: the **command** you type, the **output** it produces, and then a short explanation of what happened and how to read the result. For example:
+
+```bash
+id
+```
+
+**Output:**
+
+```text
+uid=1000(student) gid=1000(student) groups=1000(student),27(sudo)
+```
+
+A command box shows exactly what to run; an output box shows what the machine answered. Output is representative — addresses, versions and process IDs differ on your own lab. The paragraphs that follow each output explain *what the tool does* and *why the step matters*, so you learn the method, not just the syntax.
+
 ## Learning objectives
 
 This exercise demonstrates a practical penetration-testing workflow: discovering exposed services, enumerating a web application, identifying credentials in an authorized lab, examining local files and databases, testing account privileges, and documenting evidence. The goal is not to attack a real system, but to understand how each observation leads to the next controlled test.

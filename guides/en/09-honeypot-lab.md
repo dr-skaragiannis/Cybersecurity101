@@ -2,6 +2,22 @@
 
 > **Authorized defensive use only.** A honeypot is a decoy service intended to observe unsolicited access attempts. Deploy it only in a controlled lab or in an organization with written approval, documented monitoring, data-retention rules, and strict network isolation. Do not retaliate against source addresses or use a honeypot as a platform for scanning or attacking others.
 
+## How to read this guide
+
+Every step is shown the same way: the **command** you type, the **output** it produces, and then a short explanation of what happened and how to read the result. For example:
+
+```bash
+id
+```
+
+**Output:**
+
+```text
+uid=1000(student) gid=1000(student) groups=1000(student),27(sudo)
+```
+
+A command box shows exactly what to run; an output box shows what the machine answered. Output is representative — addresses, versions and process IDs differ on your own lab. The paragraphs that follow each output explain *what the tool does* and *why the step matters*, so you learn the method, not just the syntax.
+
 ## Purpose and limitations
 
 A low-interaction honeypot listens on a selected network port, records connection attempts, and may return a simple banner or warning message. It is useful for learning how internet scans and unauthorized probes appear in logs. It is not a full simulation of SSH, HTTP, FTP, or another protocol, and it must not be mistaken for a replacement for production intrusion detection, patching, authentication, or a firewall.

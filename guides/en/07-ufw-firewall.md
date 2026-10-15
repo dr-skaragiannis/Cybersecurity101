@@ -2,6 +2,22 @@
 
 > **Use only on systems you own or are authorized to administer.** Firewall changes can interrupt SSH access, web traffic, monitoring, and other production services. Keep a recovery console or out-of-band access available before applying changes remotely.
 
+## How to read this guide
+
+Every step is shown the same way: the **command** you type, the **output** it produces, and then a short explanation of what happened and how to read the result. For example:
+
+```bash
+id
+```
+
+**Output:**
+
+```text
+uid=1000(student) gid=1000(student) groups=1000(student),27(sudo)
+```
+
+A command box shows exactly what to run; an output box shows what the machine answered. Output is representative — addresses, versions and process IDs differ on your own lab. The paragraphs that follow each output explain *what the tool does* and *why the step matters*, so you learn the method, not just the syntax.
+
 ## What UFW does
 
 UFW, or Uncomplicated Firewall, is a command-line management layer for Linux firewall rules. It makes common allow and deny operations easier to read than directly editing low-level packet-filtering rules. UFW can control access by source IP address, subnet, service profile, port, and protocol. It is commonly available on Debian-based distributions such as Ubuntu and Debian.

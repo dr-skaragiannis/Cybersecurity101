@@ -2,6 +2,22 @@
 
 > **Authorized use only.** Packet capture can expose credentials, session tokens, personal data, internal addresses, and application content. Capture only on networks and systems you own or are explicitly authorized to monitor. Use a lab interface whenever possible, minimize capture scope and retention, and protect capture files as sensitive evidence.
 
+## How to read this guide
+
+Every step is shown the same way: the **command** you type, the **output** it produces, and then a short explanation of what happened and how to read the result. For example:
+
+```bash
+id
+```
+
+**Output:**
+
+```text
+uid=1000(student) gid=1000(student) groups=1000(student),27(sudo)
+```
+
+A command box shows exactly what to run; an output box shows what the machine answered. Output is representative — addresses, versions and process IDs differ on your own lab. The paragraphs that follow each output explain *what the tool does* and *why the step matters*, so you learn the method, not just the syntax.
+
 ## What tcpdump does
 
 `tcpdump` captures and decodes packets observed by a network interface. It uses the libpcap capture framework and accepts a powerful filter language, commonly called BPF syntax, to limit what is collected. It is valuable for troubleshooting DNS, TCP handshakes, service reachability, routing, and protocol behavior. It is not an intrusion tool; its primary value is careful observation and interpretation.
