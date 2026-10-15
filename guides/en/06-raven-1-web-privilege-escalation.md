@@ -66,6 +66,8 @@ A command box shows exactly what to run; an output box shows what the machine an
 
 ## 1. Confirm the lab network
 
+> **Concept.** Confirmation comes before any test, and it belongs to the first phase of the Penetration Testing Execution Standard (PTES) — Information Gathering — whose later phases are Vulnerability Analysis, Exploitation and Post-Exploitation. MITRE ATT&CK frames the exercise as T1190 (Exploit Public-Facing Application), with the network reachability that enables it recorded as T1046 (Network Service Scanning). A penetration test is only defensible when the target address is taken from the lab's own console rather than assumed, which is why the first action is to agree on what the target is.
+
 Before scanning, confirm that the attacker and target virtual machines are attached to the same isolated host-only or training network. A discovery command can help identify active devices:
 
 ```bash
@@ -123,6 +125,8 @@ The `Vendor` column is a hint, not proof: VirtualBox, VMware and similar prefixe
 
 ## 2. Discover exposed services
 
+> **Concept.** An attack surface is the set of interfaces through which an attacker can reach and influence a system; here that is TCP ports 22, 80 and 111, each exposing a distinct service and version. PTES keeps this work in Information Gathering, and MITRE ATT&CK records the exploitation that follows as T1190 (Exploit Public-Facing Application). A version banner is the raw material of that map, not a conclusion: whether a specific CVE applies depends on the exact package revision, so each claim is verified against a trusted advisory.
+
 Start with a focused TCP scan:
 
 ```bash
@@ -156,6 +160,8 @@ A few scanning courtesies worth knowing: even a full `-p-` scan of one host take
 ---
 
 ## 3. Enumerate the website
+
+> **Concept.** Content discovery walks the application's attack surface one path at a time, and the OWASP Web Security Testing Guide (WSTG-INFO-05, Review Web Page Content for Information Leakage) treats each reachable directory, form and comment as a potential finding. Here the walk uncovers a WordPress installation under `/wordpress`, whose own surface — `wp-login.php`, the XML-RPC endpoint and an ecosystem of plugins and themes — is examined next. The 200, 301 and 403 answers are facts about the server's behaviour; they become findings only after a person confirms them.
 
 Request the home page and inspect its headers:
 
@@ -235,6 +241,21 @@ The `x-powered-by: PHP/5.6.x` line is a good example of why manual confirmation 
 
 </details>
 
+A second tool for the same job is `dirb`, which ships with a default wordlist and prints one line per discovered path:
+
+```bash
+dirb http://raven.local /usr/share/wordlists/dirb/common.txt
+```
+
+**Output:**
+
+```text
++ http://raven.local/wordpress (CODE:301|SIZE:0)
++ http://raven.local/server-status (CODE:403|SIZE:0)
+```
+
+`dirb` lists each discovered resource with its response code and size; the second argument names the wordlist, and like gobuster it reports everything that is not a plain 404. Running both tools would repeat the same requests, so a real engagement picks one and keeps the request rate low.
+
 ### Source-code comments
 
 Save the HTML and search for comments or flag-like strings:
@@ -270,6 +291,8 @@ In a real assessment, report exposed secrets without publishing them unnecessari
 
 ## 4. Identify the content-management system
 
+> **Concept.** WordPress is a PHP application backed by MySQL or MariaDB, and the majority of WordPress CVEs are found not in the core but in its plugins and themes. It exposes three principal entry points — `wp-login.php` for form logins, `xmlrpc.php` for the legacy XML-RPC API, and the REST API at `/wp-json/` — each of which can leak user names or accept credentials. MITRE ATT&CK captures the exploitation of that public-facing application as T1190 (Exploit Public-Facing Application) and the use of a resulting account as T1078 (Valid Accounts).
+
 If a WordPress installation appears under `/wordpress`, inspect it with a scanner configured for that path:
 
 ```bash
@@ -297,9 +320,64 @@ The exposed usernames (`steven`, `michael`) are already useful: they turn any la
 
 </details>
 
+A broader scan asks a wider question: the `u,vp,ap` enumeration lists users, *vulnerable* plugins and *all* plugins in a single pass, which is how a plugin version is first surfaced.
+
+```bash
+wpscan --url http://raven.local --enumerate u,vp,ap
+```
+
+**Output:**
+
+```text
+[+] URL: http://raven.local/
+[+] WordPress version 4.x identified
+[+] We identified the following plugins:
+ | Name        | Version |
+ | akismet     | 3.1.7   |
+[!] 1 vulnerability reported for akismet 3.1.7
+```
+
+The `vp` component reports plugins with known vulnerabilities and `ap` lists every plugin it can detect, so the two together separate "installed" from "risky". A reported version is still a hypothesis: confirm it against the plugin's changelog and a trusted advisory before treating it as exploitable.
+
+To list accounts alone, drop the plugin components and keep the user enumeration:
+
+```bash
+wpscan --url http://raven.local --enumerate u
+```
+
+**Output:**
+
+```text
+[i] User(s) Identified:
+    steven
+    michael
+```
+
+With the plugin noise removed, the output isolates the fact that matters for the next phase — the set of valid account names — which is what turns a later password test from two-sided into one-sided.
+
+When the REST API refuses to disclose accounts, the legacy XML-RPC endpoint often still answers. `system.multicall` lets one request carry many method calls, and a list of `wp.getUsersBlogs` calls is the classic form of XML-RPC user enumeration against `/wordpress/xmlrpc.php`:
+
+```bash
+curl -s http://raven.local/wordpress/xmlrpc.php -d '<?xml version="1.0"?><methodCall><methodName>system.multicall</methodName><params><param><value><array><data><value><struct><member><name>methodName</name><value><string>wp.getUsersBlogs</string></value></member><member><name>params</name><value><array><data><value><string>steven</string></value><value><string>guess</string></value></data></array></value></member></struct></value></data></array></value></param></params></methodCall>'
+```
+
+**Output:**
+
+```text
+<?xml version="1.0"?>
+<methodResponse><params><param><value><array><data>
+<value><struct><member><name>faultCode</name><value><int>403</int></value></member>
+<member><name>faultString</name><value><string>Incorrect username or password.</string></value></member></struct></value>
+</data></array></value></param></params></methodResponse>
+```
+
+The response distinguishes a wrong password for a real account from a wrong username, so one request can test many candidates at once; because `system.multicall` amplifies a single HTTP request into many internal calls, the endpoint has also been abused for traffic amplification in denial-of-service campaigns, one reason guidance such as CERT/CC and NIST publications recommends disabling `xmlrpc.php` when it is not needed. Enumerate only with authorization and keep the candidate list small.
+
 ---
 
 ## 5. Understand login requests safely
+
+> **Concept.** A login form is an authentication protocol spoken over HTTP, and testing it is online password guessing — MITRE ATT&CK T1110 (Brute Force), with T1110.001 (Password Guessing) for a dictionary run against one account. Automation multiplies attempts per second, which is exactly the signal a lockout threshold or rate limiter is built to see, so a test is defensible only with documented authorization, a small approved wordlist, a rate limit and a stopping condition. NIST SP 800-63B is the standard that would have blocked weak passwords at enrolment.
 
 For a training application, browser developer tools can show how a login form submits data. Inspect the form's method, action, parameter names, and failure response. A generic request may look like this:
 
@@ -351,6 +429,8 @@ If the failure string is wrong — for example the application says "Invalid cre
 ---
 
 ## 6. Test SSH credentials in the lab
+
+> **Concept.** Reusing one password across a web application and a shell account collapses two separate trust boundaries into one: the technique is MITRE ATT&CK T1078 (Valid Accounts), and the reuse itself is what turns a web foothold into a host foothold. The account belongs to a person, not only to a service, so the guarantee is only as strong as the weakest place that secret was typed. Treating that credential as sensitive, and recording how it was obtained, keeps the assessment inside its authorization.
 
 If a lab account is supplied or discovered through an authorized exercise, test it directly rather than repeatedly guessing:
 
@@ -419,6 +499,8 @@ Start with low-impact commands because everything you run may be logged and may 
 
 ## 7. Examine local mail and web files
 
+> **Concept.** Local files are a first-class credential source, catalogued by MITRE ATT&CK as T1552.001 (Unsecured Credentials: Credentials in Files) inside the T1552 group. A per-user mailbox, a deployment note and a world-readable configuration are the same failure in different clothes: a secret the application needs, left where any local account can read it. Redacting the value and quoting only its location is what separates evidence collection from new exposure.
+
 Locate mail using the system database when available:
 
 ```bash
@@ -471,6 +553,22 @@ Mail can contain useful operational information in a lab, while in real environm
 
 </details>
 
+A second mailbox can show the same failure from the other direction. The account that will later hold the misconfigured `sudo` rule is `steven`, and a per-user mailbox named after it may hold the line that links the web application to the shell:
+
+```bash
+cat /var/mail/steven
+```
+
+**Output:**
+
+```text
+From admin@raven.local ...
+Subject: account handover
+SSH and WordPress share the same password for steven.
+```
+
+Reusing one password between a CMS account and a shell account is the single most common finding in this kind of chain, because it needs no exploit at all — the earlier foothold simply authenticates somewhere else. The mailbox is world-readable here (`-rw-rw-r--`), which is exactly how the note leaks; capturing only the subject and redacting the credential keeps the evidence usable without republishing the secret.
+
 Review web directories without changing files:
 
 ```bash
@@ -500,6 +598,8 @@ Everything is owned by `www-data`, the account the web server runs as — the fi
 
 ## 8. Protect configuration secrets
 
+> **Concept.** `wp-config.php` is the runtime contract between WordPress and its database: it carries `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST` together with the authentication salts (`AUTH_KEY`, `SECURE_AUTH_KEY`, `LOGGED_IN_KEY`, `NONCE_KEY` and their salts). Those salts are mixed into the HMAC that signs WordPress authentication cookies, so an attacker who reads them can forge a valid session for any account without ever learning a password. This is why a single readable configuration file turns into full application compromise, and why it is the classic object of T1552.001 (Credentials in Files).
+
 A configuration file may contain credentials in plaintext:
 
 ```bash
@@ -525,6 +625,23 @@ These values identify the database name, account, password, and host. In a vulne
 Do not expose real credentials in reports; redact them and rotate them when discovered. A finding should read "database password stored in plaintext at this path, readable by these accounts" — enough for the owner to fix it, and useless to anyone who finds the report later.
 
 </details>
+
+The four database lines are only part of what the file holds. WordPress also defines a set of authentication salts, and those are the values that sign the login cookies:
+
+```bash
+grep -nE "AUTH_KEY|SECURE_AUTH_KEY|LOGGED_IN_KEY|NONCE_KEY|AUTH_SALT|NONCE_SALT" /var/www/html/wordpress/wp-config.php
+```
+
+**Output:**
+
+```text
+53:define('AUTH_KEY',         'k8W...redacted...');
+54:define('SECURE_AUTH_KEY',  'pQ2...redacted...');
+55:define('LOGGED_IN_KEY',    'zR7...redacted...');
+56:define('NONCE_KEY',        'mN4...redacted...');
+```
+
+The salts are concatenated into the keys that HMAC the WordPress authentication cookies, so a reader of this file can craft a cookie the site accepts for any account — the same class of exposure as the 2014 WordPress authentication-cookie timing flaw (CVE-2014-0166), and a reason to rotate every salt the moment the file is believed to have leaked. The file lives at `/var/www/html/wordpress/wp-config.php` by convention, which is exactly why an enumeration step looks for that name first.
 
 A safer way to document the finding is to record only the presence and location of a secret:
 
@@ -552,6 +669,8 @@ The usual fix is one command run by the file's owner: `chmod 600 wp-config.php`,
 ---
 
 ## 9. Inspect the database
+
+> **Concept.** WordPress stores account passwords in the `wp_users.user_pass` column using **phpass**, a portable iterated hash whose `$P$` (and the older `$H$`) prefix distinguishes it from a plain MD5 digest. `phpass` stretches each candidate through many rounds precisely so that guessing is slow, but the search is offline: no server, no rate limit and no lockout stands between the attacker and the hash. John the Ripper addresses the format with `--format=phpass` and hashcat with `-m 400`, so the practical defence is a long, unique password rather than the algorithm alone.
 
 Using credentials authorized for the lab, connect locally:
 
@@ -606,6 +725,38 @@ Store hashes securely, avoid placing them in public notes, and use only approved
 
 </details>
 
+Assessing those hashes happens offline, against an authorized copy of the column, so two standard tools apply. John the Ripper names the format directly:
+
+```bash
+john --format=phpass wp-hashes.txt --wordlist=/usr/share/wordlists/rockyou.txt
+```
+
+**Output:**
+
+```text
+Loaded 2 password hashes with 2 different salts (phpass [phpass ($P$ or $H$) 128/128 ...])
+training-password   (steven)
+1g 0:00:00:06 DONE 0.33g/s
+Use the "--show" option to display all of the cracked passwords reliably
+```
+
+hashcat reaches the same format by its numeric identifier instead of its name:
+
+```bash
+hashcat -m 400 wp-hashes.txt /usr/share/wordlists/rockyou.txt
+```
+
+**Output:**
+
+```text
+hashcat (v6.x) starting...
+$P$...redacted-hash...:training-password
+Session..........: hashcat
+Status...........: Cracked
+```
+
+Both tools compute candidate fingerprints and compare them to the imported hashes, and `-m 400` is hashcat's number for the WordPress/phpass mode. Because the comparison runs on your own hardware there is no lockout and no log on the target, which is why a long, unique password — not the algorithm alone — is what raises the real cost of the attack.
+
 Export only redacted evidence for documentation:
 
 ```bash
@@ -641,6 +792,8 @@ The habit generalises: collect the smallest fact that proves the point, store it
 
 ## 10. Check privilege boundaries
 
+> **Concept.** `sudo -l` reads the rules that decide which identities an account may assume, and a rule naming a general-purpose interpreter, editor or shell is a complete failure of the Saltzer & Schroeder (1975) principle of least privilege: if Python may run as root, every command Python can issue may run as root. MITRE ATT&CK records the abuse as T1548.003 (Abuse Elevation Control Mechanism: Sudo and Sudo Caching). A correct rule grants the smallest capability the task needs — "restart this one service" — never "run this Swiss-army knife".
+
 For each authorized shell account, inspect permitted `sudo` commands:
 
 ```bash
@@ -660,7 +813,7 @@ User steven may run the following commands on raven:
     (root) /usr/bin/python
 ```
 
-`sudo -l` displays commands the current user may run through `sudo`. The first result closes the door; the second means the account can execute the specified interpreter as root.
+`sudo -l` displays commands the current user may run through `sudo`. The first result closes the door; the second means the account can execute the specified interpreter as root. The same failure appears whenever a rule names `vim`, `find`, `less` or any other tool that can hand out a shell, and the `NOPASSWD` tag on such a rule removes even the password prompt — which is what makes it the classic privilege-escalation path.
 
 <details>
 <summary><strong>Read more</strong> — why an interpreter in <code>sudoers</code> is a boundary failure</summary>
@@ -674,6 +827,8 @@ In a real system, remove the broad rule and replace it with a narrowly scoped ad
 ---
 
 ## 11. Demonstrate the impact in the lab
+
+> **Concept.** Demonstrating impact is the exploitation phase of PTES made concrete: a non-interactive proof that the interpreter now holds root (effective uid `0`) is worth more than a screenshot of a shell, because it is reproducible and leaves one audit entry. Public catalogues such as GTFOBins systematise the method by listing how hundreds of ordinary binaries hand out a shell when `sudo` is misconfigured. The same finding is closed defensively by removing the broad rule and auditing what `sudo` already logged.
 
 Only inside the intentionally vulnerable lab, the permitted interpreter can be used to demonstrate that the rule crosses the user-to-root boundary:
 
@@ -738,6 +893,8 @@ Do not use this technique on systems without authorization; the appropriate defe
 
 ## 12. Locate and document final evidence
 
+> **Concept.** The last phase of PTES is Reporting, and its raw material is the evidence file each earlier step produced. MITRE ATT&CK supplies a common vocabulary for the narrative — T1190 for the web foothold, T1078 for the reused account, T1552.001 for the exposed secret and T1548.003 for the `sudo` failure — so that two assessors describe the same chain the same way. A finding that names the location, the access it granted and the fix it needs is the deliverable; the flag itself is only a marker of success.
+
 Once root access has been demonstrated in the lab, search only the challenge directories or explicitly authorized paths:
 
 ```bash
@@ -776,17 +933,24 @@ A professional finding should connect evidence to remediation. The chain from th
 
 ## Defensive review checklist
 
+> **Concept.** The controls below are the concrete face of Saltzer & Schroeder's (1975) design principles — least privilege, fail-safe defaults and complete mediation — applied to a web application and the host beneath it. No single item is sufficient: the value comes from overlapping them so that no one mistake is decisive, exactly as the CIS Benchmarks arrange their recommendations.
+
 - Restrict laboratory targets to an isolated network and confirm authorization before scanning.
 - Disable directory listings and remove comments or files that reveal secrets.
 - Keep the web server, PHP runtime, CMS, themes, and plugins updated.
 - Store secrets in protected configuration or a secrets manager, with restrictive file permissions.
 - Use unique, long passwords and multi-factor authentication where practical.
 - Give database accounts only the privileges required by the application; never use a database superuser for routine web access.
+- Disable the XML-RPC endpoint (`xmlrpc.php`) when it is unused, and limit login attempts on the authentication forms.
+- Rotate the WordPress authentication salts after any exposure, and set `DISALLOW_FILE_EDIT` in `wp-config.php`.
+- Enforce restrictive file permissions on `wp-config.php` and other files that hold secrets.
 - Review `sudoers` rules for interpreters, editors, shells, and other programs that can execute arbitrary commands.
 - Log and review authentication, database, web-server, and privilege-escalation events.
 - Rotate any credential that may have been exposed and preserve sanitized evidence for the incident record.
 
 ## Key takeaways
+
+> **Concept.** A strong assessment is a chain of verified observations, read from left to right through the PTES phases and reported in the shared language of MITRE ATT&CK. The evidence file that accumulates along the way is what lets a reviewer re-run every step and reach the same conclusion, which is the difference between a walkthrough and a claim.
 
 A strong assessment is a chain of verified observations: a port identifies a service, enumeration reveals application paths, source and configuration review expose weaknesses, database inspection explains account relationships, and `sudo -l` reveals the final privilege boundary.
 
