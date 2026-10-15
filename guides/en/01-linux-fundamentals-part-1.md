@@ -58,6 +58,8 @@ A few conventions run through the whole guide and are worth learning straight aw
 
 ## 1. Why Linux for security work
 
+> **Concept.** Linux separates a privileged **kernel** (which manages memory, processes, devices and the file system) from unprivileged **user space** (where your programs run), and the only doorway between them is the **system call** interface — a stable Application Binary Interface (ABI) standardised as POSIX.1/IEEE 1003. Because the kernel, the C library and the utilities are free software, that whole boundary can be read and audited, which is why the platform rewards curiosity about *how* a check is implemented rather than only *that* it exists (see `man 2` for the syscall manuals and `man 7` for the concepts).
+
 Three practical reasons explain why Linux is the platform security work happens on: it is **transparent** (its source code can be read), it has **tool gravity** (the security tools are written for it first), and it is **cheap to maintain** (updates and dependencies are handled by the system).
 
 None of this means that Linux is magically secure. It means that Linux gives you the controls and the visibility to see what is happening on the system, and that is the foundation of every technique that follows.
@@ -76,6 +78,8 @@ Because the source code of the kernel, the shell and virtually every utility is 
 ---
 
 ## 2. The terminal and your first commands
+
+> **Concept.** A terminal is only the wire; the program that actually interprets your typing is the **shell**, an ordinary user-space process like any other. It reads a line, splits it into a program name and arguments, then asks the kernel through **system calls** to do the work — `fork(2)` to clone itself, `execve(2)` to replace the clone with the requested program, and `read(2)`/`write(2)` to move the data — because the shell never touches a file or a socket directly. That separation is deliberate: the kernel is the only component allowed to perform privileged operations, and `man 2 read` documents the exact contract of one of those calls.
 
 A terminal is the program that reads what you type, interprets it, and asks the operating system to perform the operation you requested. It is the command-line equivalent of the everyday graphical operations — creating folders, moving files, copying things around.
 
@@ -197,7 +201,7 @@ cd -
 /root/Desktop
 ```
 
-Unlike the other forms of `cd`, `cd -` prints the path of the directory it moved you back to (`/root/Desktop` in the transcript), confirming where you landed. If you ever try to `cd` into a path that does not exist, the shell prints a clear error such as `bash: cd: Downloads/: No such file or directory`, naming both the command that failed and the exact argument it could not find.
+Unlike the other forms of `cd`, `cd -` prints the path of the directory it moved you back to (`/root/Desktop` in the transcript), confirming where you landed. If you ever try to `cd` into a path that does not exist, the shell prints a clear error such as `bash: cd: Downloads/: No such file or directory`, naming both the command that failed and the exact argument it could not find. `cd` is a **shell builtin** rather than a program because it changes the working directory of the *current* process with `chdir(2)`; a child process cannot alter its parent's directory, which is why no standalone `cd` binary exists.
 
 ### 2.4 `ls` — listing the contents of a directory
 
@@ -236,7 +240,7 @@ total 12
 drwxr-xr-x 2 root root 4096 Oct  7 19:05 tools
 ```
 
-Every line has the same seven fields. From left to right: the permission string, the number of hard links, the owner, the owning group, the size in bytes, the last modification time, and the name. The first character of the permission string tells you what kind of object the entry is — a leading `-` means a regular file, a leading `d` means a directory. Section 6 is essentially a study of that first field.
+Every line has the same seven fields. From left to right: the permission string, the number of hard links, the owner, the owning group, the size in bytes, the last modification time, and the name. The first character of the permission string tells you what kind of object the entry is — a leading `-` means a regular file, a leading `d` means a directory. Section 6 is essentially a study of that first field. `ls` is an external program (`/usr/bin/ls`, part of GNU coreutils) rather than a builtin because it needs nothing from the shell's own state: it opens a directory through `getdents(2)` and writes to standard output, so it can be replaced or invoked by its full path.
 
 Combining flags is normal, and `ls -lah` is a perfectly ordinary thing to type:
 
@@ -311,6 +315,8 @@ Help output can easily be a hundred lines long, so `tool --help | less` is a per
 
 ### 2.6 `man` — the manual pages
 
+> **Concept.** Manual pages are the canonical, system-specific documentation, and they are organised into numbered **sections** — `1` user commands, `2` system calls, `3` library functions, `5` file formats, `7` topics, `8` administration commands — so `man 2 read` and `man 1 read` are different documents. The `SYNOPSIS` block is written in a small grammar borrowed from POSIX conventions, which is why `[OPTION]...` and `FILE...` mean exactly what they say. When you do not know a name, `man -k` (or its standalone spelling `apropos`) searches the one-line descriptions of every page on the system.
+
 The full reference for most commands is the manual page, which you open with `man` followed by the command name. Manual pages have a consistent structure: `NAME`, `SYNOPSIS` (the grammar of the command), `DESCRIPTION`, and usually `EXAMPLES`, `FILES`, `SEE ALSO` and `AUTHOR`.
 
 ```bash
@@ -360,6 +366,25 @@ The `(1)` next to the name is the manual *section* number, and it tells you what
 When the same name exists in several sections, `man` picks the lowest-numbered one by default, and you can ask for a specific section explicitly, for example `man 8 tcpdump`.
 
 </details>
+
+The three help systems answer different questions, and it pays to know which to reach for. `--help` is the fastest and exists for almost every GNU tool; `man` is the complete reference you cite; `info` is GNU's hypertext manual, which for a handful of packages goes deeper than `man`. When you remember a keyword but not the command name, `apropos` finds it by searching the one-line description of every page on the system — it is the same command as `man -k`:
+
+```bash
+apropos password
+```
+
+**Output:**
+
+```text
+chage (1)            - change user password expiry information
+gpasswd (1)          - administer /etc/group and /etc/gshadow
+passwd (1)           - change user password
+passwd (5)           - the password file
+shadow (5)           - shadowed password file
+...
+```
+
+The list returns both a *command* (`passwd`, in section 1) and a *file format* of the same name (`passwd`, in section 5) — exactly the ambiguity that makes `man 5 passwd` and `man passwd` different reads. Every line has the form `name (section) - description`, so one hit tells you both what to read and where to find it.
 
 ### 2.7 `locate` — searching for filenames by keyword
 
@@ -472,7 +497,37 @@ The current directory is deliberately *not* on the search path — a safety meas
 
 </details>
 
+Two refinements complete the picture. `type -a` shows *every* way a name resolves, not only the winner — the fastest way to discover that an alias is shadowing a binary. `command -v` is the POSIX-portable way to ask the same question, and because it is a builtin it keeps working even when `PATH` is broken:
+
+```bash
+type -a ls
+```
+
+**Output:**
+
+```text
+ls is aliased to `ls --color=auto'
+ls is /usr/bin/ls
+ls is /bin/ls
+```
+
+The listing ends with the external binaries in `PATH` order, but it *begins* with the alias that actually wins when you type `ls`. Ask `command -v` for the same name and you get just the winning form:
+
+```bash
+command -v ls
+```
+
+**Output:**
+
+```text
+alias ls='ls --color=auto'
+```
+
+Because `command -v` is specified by POSIX and built into the shell, it is the safer choice inside a script, where `which` may not be installed, and unlike `which` it reports aliases and functions rather than silently skipping them.
+
 ### 2.9 Filtering output with `grep`
+
+> **Concept.** `grep` matches **POSIX Basic Regular Expressions** by default, where `+`, `?`, `{` and `|` are literal unless escaped with a backslash; the `-E` flag switches to **Extended Regular Expressions** (ERE), where they become operators. `-F`, finally, treats the pattern as a fixed string with no regex syntax at all, which is both faster and impossible to get subtly wrong. Choosing the right dialect is half of writing a reliable search.
 
 Often you do not want *more* output, you want *less* of it — one particular line out of a hundred. `grep` reads text, either from a file you name or from its standard input, and prints only the lines matching the pattern you give it. Here we search `simple_bash.sh` for the string `echo`, passing `-i` to ignore case:
 
@@ -516,6 +571,8 @@ Useful flags to combine with `grep`: `-n` prefixes every matching line with its 
 </details>
 
 ### 2.10 Searching the file system with `find`
+
+> **Concept.** Every process starts with three open **file descriptors**: `0` standard input, `1` standard output and `2` standard error, each merely an index into the kernel's per-process table. Redirection such as `>` or `2>` is the shell calling `dup2(2)` to point one of those descriptors at a file, and a pipe `|` is the kernel handing the left process a descriptor for the write end and the right process one for the read end — which is why `2>/dev/null` and `cmd | grep` work without either program knowing anything about the other.
 
 `find` is the most powerful of the searching utilities, and the one that rewards a little study. Unlike `locate` it walks the file system live, examining every file as it goes, which lets it filter on far more than the name: creation or modification date, owner, group, permissions, size and type.
 
@@ -578,13 +635,15 @@ Flags worth keeping in your notes:
 * `-maxdepth 2` stops the walk from descending further than the second level
 * `-perm -4000` finds files with the SUID bit set — we will use this in section 6
 
-Finally, `find` can *do* things to what it finds, not merely print them, thanks to `-exec`: `find . -name "*.tmp" -exec rm {} \;` deletes every temporary file below the current directory. That is powerful enough to be genuinely dangerous, so test it first with `-print` in place of `-exec`.
+Finally, `find` can *do* things to what it finds, not merely print them, thanks to `-exec`: `find . -name "*.tmp" -exec rm {} \;` deletes every temporary file below the current directory. That is powerful enough to be genuinely dangerous, so test it first with `-print` in place of `-exec`. Mechanically, `{}` is replaced by the current path and the escaped `\;` marks the end of the command that `find` hands to `execve(2)`, so a single `find` may launch a great many short-lived processes — `-exec ... +` batches them into one instead.
 
 </details>
 
 ---
 
 ## 3. Everyday file and directory operations
+
+> **Concept.** Beneath the familiar path names sits the **Virtual File System (VFS)**, an abstraction that lets many file systems share one tree. A file is really an **inode** — its metadata (owner, mode, size, timestamps) plus pointers to its data blocks — and a directory is just a table mapping names to inode numbers. A **hard link** is another name for the same inode, whereas a **symbolic link** is a separate inode whose data is merely a path; that is why `mv` inside one file system only relinks the name and copies no data, and why the placement of `/bin`, `/etc`, `/usr` and `/var` is fixed by the Filesystem Hierarchy Standard (FHS).
 
 Now that we can move around, ask for help and search, it is time for the operations that make up most of the actual work: reading a file, creating one, making a directory, copying, moving, renaming and deleting. The concepts are simple, but type every one of them out rather than copying blindly — muscle memory for paths is half of what a Linux user is.
 
@@ -766,6 +825,8 @@ Combined, `cp -ri source-dir/ destination-dir/` copies a whole tree while prompt
 
 ### 3.5 `mv` — moving and renaming files
 
+> **Concept.** `mv` within a single file system is implemented with `rename(2)`: the directory entry is relinked to the existing inode, the inode number does not change and no data blocks are copied. Only when source and destination live on different file systems does `mv` fall back to copy-then-delete, which is why moving a huge file across devices takes time while the same move inside one device is instant.
+
 `mv` moves a file to a different directory *and* renames it, because on Linux those are the same operation: you are changing the name by which an inode is reached, and moving within the same file system copies no data at all, it merely relinks.
 
 ```bash
@@ -818,7 +879,7 @@ ls
 practice-notes.txt  tools
 ```
 
-There is no output on success and, more importantly, **there is no recycle bin**. The command unlinks the file's name from its inode, and once the last link is gone the data blocks are marked free for future use.
+There is no output on success and, more importantly, **there is no recycle bin**. The command unlinks the file's name from its inode, and once the last link is gone the data blocks are marked free for future use. Underneath, that deletion is the `unlink(2)` system call: it removes the directory entry, and the inode and its data are reclaimed only when the link count falls to zero, which is why a second hard link keeps the contents alive and why recovery is best-effort at best.
 
 <details>
 <summary><strong>Read more</strong> — the two defences every beginner needs</summary>
@@ -890,9 +951,136 @@ When a command is destructive, print the arguments first: run `echo rm -r ./dir`
 
 </details>
 
+### 3.8 `ln` — hard links and symbolic links
+
+A link is simply another name for a file, and `ln` creates one. With no option it makes a **hard link** — a second directory entry that points at the *same* inode — whereas `-s` makes a **symbolic link**, a tiny file whose data is the path of its target. Let us create a file and both kinds of link to it:
+
+```bash
+echo "shared data" > original.txt
+```
+
+The command writes text into a fresh file and, as usual, prints nothing. Now a hard link to it:
+
+```bash
+ln original.txt hardlink.txt
+```
+
+`ln` creates the hard link silently. Adding `-s` asks for a symbolic link instead:
+
+```bash
+ln -s original.txt symlink.txt
+```
+
+Both commands succeed without output. To see what actually happened, list the three names with `-i`, which adds the inode number to the long format:
+
+```bash
+ls -li original.txt hardlink.txt symlink.txt
+```
+
+**Output:**
+
+```text
+1200792 -rw-r--r-- 1 root root 12 Oct  8 12:20 hardlink.txt
+1200792 -rw-r--r-- 1 root root 12 Oct  8 12:20 original.txt
+1200794 lrwxrwxrwx 1 root root 12 Oct  8 12:20 symlink.txt -> original.txt
+```
+
+The hard link and the original share inode `1200792`, and the link count in the third column has risen to `2`; deleting either name would leave the data untouched because the other still points at it. The symbolic link has its own inode (`1200794`), the type letter `l`, and an arrow showing where it points. A hard link cannot cross a file-system boundary, because inode numbers are unique only within one file system, and it cannot point at a directory; a symbolic link can do both but breaks if its target is moved or deleted. That trade-off is why a directory such as `/usr/bin` is full of symbolic links to versioned binaries: the link survives an upgrade that only changes the target's name.
+
+### 3.9 `stat` and `file` — metadata and content type
+
+`ls -l` shows the fields people look at most; `stat` prints every piece of an inode's metadata, and `file` inspects a file's first bytes to say what kind of data it holds.
+
+```bash
+stat practice-notes.txt
+```
+
+**Output:**
+
+```text
+  File: practice-notes.txt
+  Size: 82        	Blocks: 8          IO Block: 4096   regular file
+Device: 801h/2049d	Inode: 1200792     Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2024-10-08 11:45:00.000000000 +0000
+Modify: 2024-10-08 11:45:00.000000000 +0000
+Change: 2024-10-08 11:45:00.000000000 +0000
+ Birth: 2024-10-08 11:45:00.000000000 +0000
+```
+
+Read `Inode`, `Links`, the numeric mode `0644` next to the symbolic `-rw-r--r--`, and the three timestamps: `Access` (the last read), `Modify` (the last content change) and `Change` (the last metadata change). `file`, by contrast, reads *content* rather than metadata:
+
+```bash
+file practice-notes.txt simple_bash.sh
+```
+
+**Output:**
+
+```text
+practice-notes.txt: ASCII text
+simple_bash.sh:     Bourne-Again shell script, ASCII text executable
+```
+
+`file` never trusts the extension — it reads the leading bytes and consults a magic-number database (`man 5 magic`), which is how it can classify a file that was renamed to the wrong suffix.
+
+### 3.10 `du` and `df` — disk usage and free space
+
+Two commands answer two different questions. `du` reports how much space the *files* in a tree occupy; `df` reports how much space each *file system* has left.
+
+```bash
+du -sh Documents/linux-lab
+```
+
+**Output:**
+
+```text
+20K	Documents/linux-lab
+```
+
+`-s` collapses the whole tree into a single line and `-h` prints human-readable units; without `-s`, `du` would print a line for every subdirectory on the way down. The other half of the pair looks at the devices themselves:
+
+```bash
+df -h
+```
+
+**Output:**
+
+```text
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        50G   12G   36G  25% /
+tmpfs           2.0G     0  2.0G   0% /dev/shm
+```
+
+Each line is one mounted file system: its device, total size, used and available space, the percentage in use, and the mount point whose layout the FHS fixes. `du` measures a tree you name; `df` reports the capacity of the device underneath it.
+
+### 3.11 `tar` — archiving a tree
+
+`tar` bundles many files into a single archive — the format behind `.tar`, `.tar.gz` and `.tgz` — and it preserves permissions and timestamps as it goes, which is why it is the usual way to move or back up a directory.
+
+```bash
+tar -czf lab-backup.tar.gz Documents/linux-lab
+```
+
+The command creates the archive silently. Before trusting it, list its table of contents:
+
+```bash
+tar -tzf lab-backup.tar.gz
+```
+
+**Output:**
+
+```text
+Documents/linux-lab/
+Documents/linux-lab/practice-notes.txt
+```
+
+Read the three letters that matter: `-c` creates, `-x` extracts and `-t` lists, while `-z` pipes the stream through `gzip` and `-f` names the archive file. Listing an archive with `tar -tzf` before you extract or delete anything is the archive equivalent of the `ls` verification used everywhere else in this guide.
+
 ---
 
 ## 4. Text manipulation
+
+> **Concept.** On Unix-like systems text is the universal interface, so the small filters that read and rewrite it compose into pipelines. Their pattern matching follows two dialects defined by POSIX: **Basic Regular Expressions (BRE)**, where `+`, `?` and `|` are ordinary characters unless escaped, and **Extended Regular Expressions (ERE)**, enabled with `-E`, where they are metacharacters. Most tools you meet here come from **GNU coreutils**, so their defaults are close to POSIX but a little richer; when portability matters, trust the POSIX.1 specification and the manual page over a blog post.
 
 On Linux almost everything you deal with is a **file**, and more often than not a *plain text* file: configuration lives in text, logs are text, user and group databases are text, the tables used by networking tools are text. Learning how to read, slice, number, search and modify text is therefore essential.
 
@@ -1047,6 +1235,8 @@ Two details distinguish `nl` from its simpler cousin `cat -n`. First, `nl` does 
 </details>
 
 ### 4.4 `sed` — finding and replacing text
+
+> **Concept.** `sed` is a stream editor: it applies a script to its input line by line and writes the result to standard output, never modifying the file unless you ask for it with `-i`. Its default syntax is **POSIX BRE**, where grouping and alternation must be escaped (`\(` `\)`, `\|`), and GNU `sed -E` enables ERE; the buffer it edits before printing is called the *pattern space*. Because it works on a stream, `sed` drops naturally into a pipeline and can rewrite text far faster than opening an editor.
 
 `sed` — the *stream editor* — searches for a word or a pattern and applies an action to it, without opening an editor. It reads its input line by line and applies your instructions as the text flows past, which is why it works perfectly inside pipelines. The most common instruction is **substitution**: `s/<what to find>/<what to put there>/`.
 
@@ -1213,9 +1403,64 @@ That *filter chain* is the characteristic way Linux users work: rather than a si
 
 </details>
 
+### 4.8 `tr` — translating characters
+
+`tr` reads a stream and translates or deletes single characters; it has no notion of words or regular expressions, only of one-to-one character sets.
+
+```bash
+echo "Hello, Linux!" | tr 'a-z' 'A-Z'
+```
+
+**Output:**
+
+```text
+HELLO, LINUX!
+```
+
+The two sets line up position by position, so every lowercase letter becomes its uppercase partner. `-d` deletes characters instead (`tr -d '\r'` strips Windows line endings), and `-s` squeezes a run of a repeated character into one.
+
+### 4.9 `awk` — a tiny language for fields
+
+`awk` is a complete text-processing language, but the idiomatic one-liner is simple: it splits each line into numbered fields and runs a small `pattern { action }` program over the lines that match.
+
+```bash
+awk '{print $1, $2}' dns-mappings.txt | head -3
+```
+
+**Output:**
+
+```text
+# DNS
+# Format:
+www.example.net 192.168.1.10
+```
+
+`$1`, `$2`, `$3` … are the fields of the current line and `$0` is the whole line, while `-F` changes the separator: `awk -F: '{print $1}' /etc/passwd` lists the usernames. A pattern can filter as it prints — `awk '$3 > 100 {print $1}'` — which is why one `awk` program often replaces a chain of `cut` and `grep`.
+
+### 4.10 `xargs` — turning input into arguments
+
+`xargs` bridges two worlds: it reads lines from standard input and appends them as *arguments* to the command you give it, splitting long input into several batches.
+
+```bash
+echo "one two three four" | xargs -n1 echo
+```
+
+**Output:**
+
+```text
+one
+two
+three
+four
+```
+
+`-n1` passes one argument per invocation; without a command, `xargs` defaults to `echo`. The classic use is to feed `find`'s output to a program that cannot run once per file efficiently, and `-0` pairs with `find -print0` to survive filenames that contain spaces.
+
 ---
 
 ## 5. Installing and removing software
+
+> **Concept.** A Debian package is an `ar` archive holding the files to install plus their metadata (the `.deb` format), and **`dpkg`** is the low-level tool that unpacks one — it installs exactly what it is handed and fails loudly on an unmet dependency. **`apt`/`apt-get`** sit on top as a dependency resolver: they read the package indexes under `/var/lib/apt/lists`, verify each repository's **GPG-signed** `InRelease` file before trusting it, compute an installation order, and only then call `dpkg`. When a command fails, read its exit status (`man 1 apt-get`), where codes such as `100` (a general error) and `14x` (problems fetching or storing the lists) tell you which layer broke.
 
 On Debian-based distributions such as Debian, Ubuntu, Kali and Parrot, the software manager is the **Advanced Package Tool**, or `apt`. The mental model is the one you already have from a phone: instead of downloading installers from random websites, you have **repositories** — servers holding a curated catalogue of software, already compiled and packaged — and a tool that searches it, downloads from it, verifies packages and resolves their dependencies.
 
@@ -1457,6 +1702,8 @@ A word of warning: add only repositories you actually trust. An experimental or 
 
 ## 6. Understanding and playing with permissions
 
+> **Concept.** The Unix permission model is a textbook application of the principle of **Complete Mediation** (Saltzer & Schroeder, 1975): the kernel re-checks every access against the **mode bits**, the caller's **UID/GID** and its group list, and holds no cached right that could bypass the check. The three special bits widen that uniform model: **SUID** and **SGID** let a process briefly assume a file's owner or group, while the **sticky bit** restricts deletion inside a shared directory. Broader privileges are managed separately as capabilities (`man 7 capabilities`), which split root's all-or-nothing power into named, auditable rights.
+
 Linux takes permissions far more seriously than a desktop operating system does, and the model is small enough to learn in one sitting.
 
 Every file and directory has an **owner** (a user) and a **group**, and every access check the kernel performs is a question about the identity of the process asking. Permissions are granted at three levels — the **owner**, the **group**, and **everyone else** (often called *others* or *the world*) — and at each level three rights can be granted or withheld:
@@ -1614,7 +1861,7 @@ The **numeric (octal)** notation represents each class by a single digit built f
 | 6 | 110 | `rw-` | read and write |
 | 7 | 111 | `rwx` | read, write and execute |
 
-You then give three digits, in the order **owner, group, others**. So `chmod 644 file` produces `rw-r--r--`, `chmod 755 file` produces `rwxr-xr-x`, and `chmod 600 file` produces `rw-------` — the correct setting for anything containing private data such as an SSH private key.
+You then give three digits, in the order **owner, group, others**. So `chmod 644 file` produces `rw-r--r--`, `chmod 755 file` produces `rwxr-xr-x`, and `chmod 600 file` produces `rw-------` — the correct setting for anything containing private data such as an SSH private key. A fourth, leading digit carries the special bits — SUID `4`, SGID `2`, sticky `1` — which the next three subsections put to work.
 
 Another way of arriving at the same result is the symbolic `chmod +x`, with no class letter, which means "the same change for every class":
 
@@ -1669,7 +1916,7 @@ One more piece of the permission story deserves a mention even though it is not 
 
 The SUID bit — *set user ID* — says something quite different from `rwx`. When it is set on an executable, any user may run that file, and while it runs the process carries the **permissions of the file's owner** rather than those of the person who started it. Those elevated rights apply only to that one execution: the caller does not become root, they merely run this one binary with the owner's authority.
 
-Numerically you add **4 before the three regular digits**, so a `644` file becomes `4644`:
+Numerically the leading **`4`** is not a fourth permission digit but the **set-user-ID bit**, a flag that occupies the octal position above the three permission digits; write it in front and a `644` file becomes `4644`:
 
 ```bash
 ls -l script-demo.sh
@@ -1733,7 +1980,7 @@ find / -perm -4000 -type f 2>/dev/null
 
 **SGID** — *set group ID* — is the group's version of the same idea. On an executable it means the process runs with the privileges of the file's owning **group**; on a directory it means something different and very useful: new files created inside inherit the directory's group instead of the creator's primary group.
 
-Numerically you add **2 before the regular permissions**, so a `644` file becomes `2644`:
+Numerically the leading **`2`** is the **set-group-ID bit**, again a flag rather than a permission digit, so a `644` file becomes `2644`:
 
 ```bash
 ls -l script-demo.sh
@@ -1910,6 +2157,8 @@ The pattern to take away is the verification step itself. In security work you w
 
 ## 7. Quick reference cheat sheet
 
+> **Concept.** A cheat sheet is only a memory aid, so use it to recall a flag and then confirm the detail in the manual. Two references do most of the work: the **POSIX.1/IEEE 1003** standard, which defines what is portable, and the **Filesystem Hierarchy Standard (FHS)**, which fixes where files live; `man` sections `1` (commands), `5` (file formats) and `7` (topics) are the third leg. When two tools disagree, the manual for *your* system (`man 1 ls`) outranks any generic tutorial.
+
 ### Navigation and orientation
 
 | Command | What it does | Typical use |
@@ -1929,6 +2178,9 @@ The pattern to take away is the verification step itself. In security work you w
 | `whereis <name>` | path of a binary plus its man pages | `whereis git` |
 | `which <name>` | the binary the shell would actually run | `which python3` |
 | `type <name>` | whether a name is a binary, alias, function or builtin | `type cd` |
+| `type -a <name>` | every way a name resolves, not just the winner | `type -a python3` |
+| `command -v <name>` | POSIX-builtin spelling of `which` (works when `PATH` is broken) | `command -v python3` |
+| `apropos <keyword>` | searches man-page descriptions (same as `man -k`) | `apropos password` |
 | `find <where> <what>` | live search by name, type, size, owner, time, permissions | `find / -type f -name "*.conf" 2>/dev/null` |
 | `grep <pattern> <file>` | prints matching lines | `grep -rin "password" /etc` |
 | `grep -v <pattern>` | prints non-matching lines | `ifconfig \| grep -v inet6` |
@@ -1945,6 +2197,14 @@ The pattern to take away is the verification step itself. In security work you w
 | `rm <file>` | deletes a file, permanently | `rm -i *.tmp` |
 | `rm -r <dir>` | deletes a directory and everything inside | `rm -ri old-dir/` |
 | `rmdir <dir>` | deletes an empty directory only | `rmdir empty-dir/` |
+| `ln <src> <dst>` | creates a hard link (same inode) | `ln original.txt hard.txt` |
+| `ln -s <src> <dst>` | creates a symbolic link | `ln -s python3.11 python3` |
+| `stat <file>` | shows inode, mode, link count and timestamps | `stat id_rsa` |
+| `file <file>` | reports a file's type from its contents | `file suspicious.bin` |
+| `du -sh <dir>` | space used by a tree | `du -sh /var/log` |
+| `df -h` | free space per file system | `df -h` |
+| `tar -czf <a> <dir>` | creates a compressed archive | `tar -czf backup.tar.gz etc/` |
+| `tar -tzf <a>` | lists an archive's contents | `tar -tzf backup.tar.gz` |
 
 ### Text handling
 
@@ -1960,6 +2220,9 @@ The pattern to take away is the verification step itself. In security work you w
 | `more <file>` / `less <file>` | one screenful at a time | `less /etc/ssh/sshd_config` |
 | `sort` / `uniq` / `cut -d -f` | sort, de-duplicate, extract columns | `cut -d: -f1 /etc/passwd \| sort` |
 | `tee <file>` | copies output to a file *and* the screen | `cmd \| tee log.txt` |
+| `tr '[:lower:]' '[:upper:]'` | translates or deletes characters | `tr '[:lower:]' '[:upper:]' < names.txt` |
+| `awk '{print $1}'` | extracts fields and runs small programs | `awk -F: '{print $1}' /etc/passwd` |
+| `xargs -n1 <cmd>` | turns input lines into command arguments | `find . -name '*.tmp' \| xargs rm` |
 
 ### Software management (Debian-family)
 
@@ -1994,6 +2257,8 @@ The pattern to take away is the verification step itself. In security work you w
 ---
 
 ## 8. Practice exercises
+
+> **Concept.** The exercises practise a method, not a memory test: establish your identity and location, read the plan a command prints, apply the smallest change that reaches the goal (least privilege), and verify the result with a second command. Every step mirrors how a real audit proceeds under **Complete Mediation** — you should be able to prove each change with evidence such as an `ls -l` line. Work on a disposable virtual machine, and treat destructive commands as rehearsals.
 
 The commands in this guide only become yours when you have typed them yourself. Work on a virtual machine or in a container, and use a throwaway user account for the permission parts.
 
