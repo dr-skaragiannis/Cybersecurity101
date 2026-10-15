@@ -75,22 +75,52 @@ Before installing anything, establish three facts about the host: which operatin
 
 ```bash
 cat /etc/os-release
-id
-ip -brief address
-sudo ss -tulpn
 ```
 
 **Output:**
 
 ```text
 PRETTY_NAME="Kali GNU/Linux Rolling"
+```
+
+`cat /etc/os-release` prints the distribution identity, which tells you that this host uses Debian-style package management.
+
+```bash
+id
+```
+
+**Output:**
+
+```text
 uid=1000(analyst) gid=1000(analyst) groups=1000(analyst),27(sudo)
+```
+
+`id` confirms the local user and whether they hold administrative privileges (here `27(sudo)`).
+
+```bash
+ip -brief address
+```
+
+**Output:**
+
+```text
 eth0             UP             192.168.56.20/24
+```
+
+`ip -brief address` shows the interface and the assigned lab address (`192.168.56.20/24`), which is the address the decoy will listen on.
+
+```bash
+sudo ss -tulpn
+```
+
+**Output:**
+
+```text
 Netid State  Local Address:Port  Process
 LISTEN 0      128    127.0.0.1:631  users:(('cupsd',pid=621,fd=6))
 ```
 
-The four commands describe the host from four angles: the distribution, your identity, the network address, and the listening sockets.
+`ss -tulpn` inventories services already listening on TCP or UDP ports.
 
 <details>
 <summary><strong>Read more</strong> — what each line tells you, and the port conflict to avoid</summary>
@@ -108,7 +138,6 @@ Update the underlying operating system before adding lab software:
 
 ```bash
 sudo apt update
-sudo apt upgrade -y
 ```
 
 **Output:**
@@ -117,10 +146,21 @@ sudo apt upgrade -y
 Hit:1 http://http.kali.org/kali kali-rolling InRelease
 Reading package lists... Done
 Building dependency tree... Done
+```
+
+`apt update` retrieves fresh package metadata from the repositories. It changes nothing on disk; it only refreshes which versions are available.
+
+```bash
+sudo apt upgrade -y
+```
+
+**Output:**
+
+```text
 0 upgraded, 0 newly installed, 0 to remove
 ```
 
-`apt update` retrieves package metadata, and `apt upgrade -y` applies available updates without asking for each confirmation. The final line indicates that no upgrades were waiting.
+`apt upgrade -y` applies the available updates and answers yes to each confirmation automatically. The final line indicates that no upgrades were waiting.
 
 <details>
 <summary><strong>Read more</strong> — keep the host patched even when the decoy is simple</summary>
@@ -135,11 +175,31 @@ A Ruby-based low-interaction honeypot tool may be distributed as source code. Cl
 
 ```bash
 sudo apt install -y git ruby
+```
+
+**Output:**
+
+```text
+Setting up git ...
+Setting up ruby ...
+```
+
+`apt install` brings in `git`, which retrieves version-controlled source code, and `ruby`, which provides the interpreter the tool needs.
+
+```bash
 mkdir -p ~/honeypot-lab
+```
+
+`mkdir -p` creates the dedicated project directory and succeeds silently if it already exists.
+
+```bash
 cd ~/honeypot-lab
+```
+
+`cd` moves the shell into the project directory. It prints nothing, so the clone lands in the right place.
+
+```bash
 git clone https://example.invalid/training/pentbox.git pentbox
-cd pentbox
-ruby --version
 ```
 
 **Output:**
@@ -147,10 +207,27 @@ ruby --version
 ```text
 Cloning into 'pentbox'...
 done.
+```
+
+`git clone` copies the reviewed repository into a directory named `pentbox`. The `example.invalid` host is a placeholder that will not resolve.
+
+```bash
+cd pentbox
+```
+
+`cd` enters the freshly cloned directory so the next commands run against the tool's own files.
+
+```bash
+ruby --version
+```
+
+**Output:**
+
+```text
 ruby 3.1.xp0 (202x-xx-xx revision ...) [x86_64-linux-gnu]
 ```
 
-`git` retrieves version-controlled source code and `ruby` provides the interpreter. The `ruby --version` line confirms that the runtime is installed.
+`ruby --version` confirms that the runtime is installed and available from the shell.
 
 <details>
 <summary><strong>Read more</strong> — the placeholder repository and the review rule</summary>
@@ -165,8 +242,6 @@ Inspect the files and the program's help before executing anything:
 
 ```bash
 find . -maxdepth 2 -type f | sort | head -30
-sed -n '1,80p' pentbox.rb
-ruby pentbox.rb --help
 ```
 
 **Output:**
@@ -176,10 +251,37 @@ ruby pentbox.rb --help
 ./README.md
 ./pentbox.rb
 ./other/log_honeypot.txt
+```
+
+The `find` command gives a compact inventory of the repository, and `sort | head -30` orders it and keeps the first thirty entries.
+
+```bash
+sed -n '1,80p' pentbox.rb
+```
+
+**Output:**
+
+```text
+#!/usr/bin/env ruby
+# Training copy — reviewed before use.
+require 'socket'
+require 'optparse'
+...
+```
+
+`sed -n '1,80p'` prints only the first eighty lines of the script so you can review it before running anything.
+
+```bash
+ruby pentbox.rb --help
+```
+
+**Output:**
+
+```text
 Usage: pentbox.rb [options]
 ```
 
-The `find` command gives a compact inventory of the repository. `sed -n '1,80p'` prints only the first portion of the script for review. The help output may differ between versions.
+Running the script with `--help` shows its intended options. The help output may differ between versions.
 
 <details>
 <summary><strong>Read more</strong> — if the tool does not support <code>--help</code></summary>
@@ -262,11 +364,77 @@ A host firewall should allow only intended lab access and should restrict unnece
 
 ```bash
 sudo ufw default deny incoming
+```
+
+**Output:**
+
+```text
+Default incoming policy changed to 'deny'
+```
+
+`ufw default deny incoming` sets the base policy so any unsolicited inbound connection is rejected unless a later rule permits it.
+
+```bash
 sudo ufw default deny outgoing
+```
+
+**Output:**
+
+```text
+Default outgoing policy changed to 'deny'
+```
+
+The matching outbound default denies traffic leaving the host, which is what keeps a compromised decoy from reaching the network.
+
+```bash
 sudo ufw allow from 192.168.56.0/24 to any port 22 proto tcp
+```
+
+**Output:**
+
+```text
+Rule added
+```
+
+This rule permits SSH management only from the lab subnet.
+
+```bash
 sudo ufw allow from 192.168.56.0/24 to any port 8088 proto tcp
+```
+
+**Output:**
+
+```text
+Rule added
+```
+
+This rule permits access to the decoy only from that same subnet.
+
+```bash
 sudo ufw allow out to 192.168.56.10 port 514 proto udp
+```
+
+**Output:**
+
+```text
+Rule added
+```
+
+This rule permits UDP syslog forwarding only to the designated log collector.
+
+```bash
 sudo ufw enable
+```
+
+**Output:**
+
+```text
+Firewall is active and enabled on system startup
+```
+
+`ufw enable` activates the ruleset and makes it persist across reboots.
+
+```bash
 sudo ufw status numbered
 ```
 
@@ -281,7 +449,7 @@ Status: active
 [ 3] 514/udp                    ALLOW OUT   192.168.56.10
 ```
 
-The default-deny policies reject unsolicited inbound and outbound traffic unless a later rule permits it.
+`status numbered` lists the active rules with an index, so you can see exactly what is permitted and in which order.
 
 <details>
 <summary><strong>Read more</strong> — rule by rule, and the temporary exceptions</summary>
@@ -427,8 +595,23 @@ Rotate a copy of the log before analysis and protect its permissions:
 
 ```bash
 install -d -m 0750 ~/honeypot-evidence
+```
+
+`install -d -m 0750` creates the evidence directory with mode `0750`, which limits access to the owner and group. It prints nothing on success.
+
+```bash
 cp --preserve=mode,timestamps ./other/log_honeypot.txt ~/honeypot-evidence/log_$(date +%F_%H%M%S).txt
+```
+
+`cp` copies the log to a timestamped name, and `--preserve` retains its mode and timestamps. It prints nothing when the copy succeeds.
+
+```bash
 chmod 0640 ~/honeypot-evidence/*.txt
+```
+
+`chmod 0640` removes access for `others` while keeping the owner and group able to read. Silence means the modes were applied.
+
+```bash
 sha256sum ~/honeypot-evidence/*.txt
 ```
 
@@ -438,7 +621,7 @@ sha256sum ~/honeypot-evidence/*.txt
 c9a4...e17b  /home/analyst/honeypot-evidence/log_2026-10-08_202700.txt
 ```
 
-The directory mode limits access to the owner and group, and `cp --preserve` retains useful metadata. The SHA-256 digest records a fingerprint of the evidence file: if the file changes, its digest will normally change.
+The SHA-256 digest records a fingerprint of the evidence file: if the file changes, its digest will normally change.
 
 <details>
 <summary><strong>Read more</strong> — integrity is not authorship</summary>
@@ -467,10 +650,32 @@ Then remove temporary firewall access if the lab no longer needs it:
 
 ```bash
 sudo ufw status numbered
+```
+
+**Output:**
+
+```text
+Status: active
+
+     To                         Action      From
+[ 1] 22/tcp                     ALLOW IN    192.168.56.0/24
+[ 2] 8088/tcp                   ALLOW IN    192.168.56.0/24
+[ 3] 514/udp                    ALLOW OUT   192.168.56.10
+```
+
+Run this immediately before deleting anything, because rule numbers and rule sets may have changed.
+
+```bash
 sudo ufw delete allow from 192.168.56.0/24 to any port 8088 proto tcp
 ```
 
-The first command should always be run immediately before deletion, because rule numbers and rule sets may have changed. The second removes the exact inbound exception for the decoy port.
+**Output:**
+
+```text
+Rule deleted
+```
+
+The `delete` subcommand removes the exact inbound exception for the decoy port by matching its rule text, not its index.
 
 <details>
 <summary><strong>Read more</strong> — leave nothing behind</summary>
