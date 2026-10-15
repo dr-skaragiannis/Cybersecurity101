@@ -4,6 +4,8 @@
 
 ## How to read this guide
 
+> **Concept.** This guide is written as a transcript, not a summary: every claim is anchored to a command and the output it produced, so the reader can reproduce the observation instead of trusting a description. That evidence-first style is the same discipline a defender applies to logs and forensic artefacts, where a finding is only as good as the record behind it. Each step below therefore shows the command, the machine's answer, and a short reading of what that answer does — and does not — prove.
+
 Every step is shown the same way: the **command** you type, the **output** it produces, and then a short explanation of what happened and how to read the result. For example:
 
 ```bash
@@ -22,6 +24,8 @@ The paragraphs that follow each output explain *what the tool does* and *why the
 
 ## Purpose and limitations
 
+> **Concept.** Honeypots are classified first by interaction: a low-interaction decoy emulates just enough of a service to log a contact, while a high-interaction system exposes a real operating system for the adversary to use. They are classified again by purpose — production honeypots feed an organisation's detection pipeline, research honeypots study attacker behaviour — and by both axes the design goal is the same: attractive enough to draw automated probes, worthless enough to be contained if compromised. Deception infrastructure is catalogued defensively by MITRE D3FEND (Decoy Network Resource) and MITRE Engage, while the probing a decoy observes maps to ATT&CK T1595 (Active Scanning) and T1046 (Network Service Discovery). A low-interaction decoy is a low-noise sensor for early detection and indicator collection, not a replacement for an IDS, a firewall, authentication or patching.
+
 A low-interaction honeypot listens on a selected network port, records connection attempts, and may return a simple banner or warning message. It is useful for learning how internet scans and unauthorized probes appear in logs.
 
 It is not a full simulation of SSH, HTTP, FTP, or another protocol. Do not mistake it for a replacement for production intrusion detection, patching, authentication, or a firewall.
@@ -36,6 +40,8 @@ The key security goal is **containment**: a compromised decoy must not provide a
 </details>
 
 ## Reference architecture
+
+> **Concept.** The diagram is a trust-boundary sketch: the decoy lives in its own segment — a VLAN, a DMZ, or a dedicated virtual switch — so that a compromise is confined to it, and the evidence lives on a third host that the decoy cannot write back to. Isolation, egress restriction and off-host logging are the controls that decide whether a deployment is safe, far more than the realism of the emulated service. The organising principle is containment: no path from the decoy to production systems, and no path from the decoy to the wider Internet.
 
 The diagram below shows the intended shape of the lab: one isolated segment, one decoy, and one separate place to read the logs.
 
@@ -70,6 +76,8 @@ A separate log-analysis host reduces the chance that evidence is altered if the 
 </details>
 
 ## Prepare the laboratory host
+
+> **Concept.** Every defensible change begins from a known state: which distribution, which account, and which services already listen. This is the asset-inventory step of a security baseline, and it prevents two routine lab mistakes — installing packages with the wrong package manager, and starting a decoy on a port a real service already owns. Reading the baseline first is also what lets you prove later that you left nothing listening behind.
 
 Before installing anything, establish three facts about the host: which operating system it runs, which account you hold, and which services are already listening.
 
@@ -171,6 +179,8 @@ Keep the operating system current even when the decoy service is intentionally s
 
 ## Install and inspect the tool
 
+> **Concept.** Installing a network service from source is a supply-chain decision: you are trusting code to open a socket on your behalf, so the discipline is to clone a reviewed copy, read it before executing it, and run it under the least privilege that works. The concrete tool used here is PentBox, a small, menu-driven Ruby security suite whose honeypot module is deliberately simple. Because the tool is interpreted, the runtime (`ruby`) is part of the trust boundary too, and it should be as current as the rest of the host.
+
 A Ruby-based low-interaction honeypot tool may be distributed as source code. Clone only a reviewed, authorized training copy into a dedicated directory.
 
 ```bash
@@ -238,6 +248,33 @@ Read the source code, verify its origin, and avoid executing unknown scripts as 
 
 </details>
 
+The command chain above uses a non-routable placeholder to describe the shape of the step. This guide's concrete example is PentBox, a small, menu-driven Ruby security suite whose honeypot module is deliberately simple; its canonical repository is cloned and entered as follows.
+
+```bash
+git clone https://github.com/technicaldada/pentbox.git
+```
+
+**Output:**
+
+```text
+Cloning into 'pentbox'...
+remote: Enumerating objects: 42, done.
+remote: Counting objects: 100% (42/42), done.
+remote: Compressing objects: 100% (38/38), done.
+Receiving objects: 100% (42/42), 268.91 KiB | 2.10 MiB/s, done.
+Resolving deltas: 100% (9/9), done.
+```
+
+`git clone` copies the PentBox repository into a local directory named `pentbox`; the `remote:` and `Receiving objects` lines are Git reporting the transfer, and the clone is finished when it prints `done`.
+
+PentBox keeps its executable inside a versioned subdirectory, so move into it before launching anything.
+
+```bash
+cd pentbox/pentbox-1.8
+```
+
+`cd` enters the directory that holds `pentbox.rb`; it prints nothing, so silence here means it succeeded.
+
 Inspect the files and the program's help before executing anything:
 
 ```bash
@@ -292,6 +329,8 @@ If a script does not support `--help`, stop and consult its local documentation 
 
 ## Configure a minimal decoy
 
+> **Concept.** A decoy is a set of deliberate design choices: a high, unused port so it cannot collide with a real service, a banner that tells a legitimate operator what the port is, and a log destination you can protect. PentBox adds one more choice — fast auto-configuration versus manual configuration — where the manual path is what lets you set a specific port, a specific false message and a specific log file. The deception is deliberately shallow: the point is to look worth a scanner's attention, not to impersonate a real organisation.
+
 Choose a high, unused TCP port for initial testing, such as `8088`, rather than impersonating a privileged or production service. Confirm that it is unused:
 
 ```bash
@@ -336,6 +375,72 @@ Do not claim to be a real bank, government service, or another organization. The
 
 </details>
 
+PentBox is menu-driven, so the configuration is a sequence of numbered choices rather than command-line flags. Launch it from the directory that holds `pentbox.rb`.
+
+```bash
+ruby pentbox.rb
+```
+
+**Output:**
+
+```text
+╔══════════════════════════════════════════════╗
+║                 PentBox 1.8                  ║
+╚══════════════════════════════════════════════╝
+
+ 1 - Cryptography tools
+ 2 - Network tools
+ 3 - Web tools
+ 4 - System tools
+ 5 - Extra tools
+ 0 - Exit
+
+Select an option:
+```
+
+The main menu groups the suite's tools, and the honeypot lives under **Network tools**, so type `2` at the prompt.
+
+```text
+Network tools
+ 1 - SSH reverse connection
+ 2 - Mail spoofing
+ 3 - Honeypot
+ 0 - Back
+
+Select an option:
+```
+
+Type `3` to open the honeypot menu, which offers an automatic and a manual path.
+
+```text
+Honeypot
+ 1 - Fast Auto Configuration
+ 2 - Manual Configuration
+ 0 - Back
+
+Select an option:
+```
+
+**Fast Auto Configuration** (option `1`) asks only for a listening port, while **Manual Configuration** (option `2`) additionally lets you set the false message, choose whether to save a log and enable a beep on intrusion. Choose `1` and give the high port selected earlier.
+
+```text
+Insert the port: 8088
+```
+
+Once the port is entered, PentBox confirms that the decoy is listening, with the activation time.
+
+```text
+HONEYPOT ACTIVATED ON PORT 8088 (2026-10-08 20:25:14 +0300)
+```
+
+Every contact then produces a console line naming the source address and port, alongside an appended record in the log file.
+
+```text
+INTRUSION ATTEMPT DETECTED! from 192.168.56.30:49152 (2026-10-08 20:26:03 +0300)
+```
+
+The activation line confirms that the sensor is live; the intrusion line is the event itself. "Intrusion" is PentBox's wording for any connection and is not a judgement about intent.
+
 After starting the listener, verify the port locally:
 
 ```bash
@@ -359,6 +464,8 @@ For a strictly local test, prefer binding to `127.0.0.1` if the tool supports it
 </details>
 
 ## Firewall containment
+
+> **Concept.** Containment is expressed as firewall policy: default-deny in both directions, then permit the single inbound port you monitor and the single outbound path your logs require. The outbound rule is the one that stops a decoy from becoming a pivot, which is the failure mode that turns a sensor into a liability. Rule order matters as much as rule content, because the first matching rule decides the packet's fate.
 
 A host firewall should allow only intended lab access and should restrict unnecessary outbound activity. The policy below is a conceptual UFW example for an isolated subnet.
 
@@ -464,6 +571,8 @@ Adapt the policy to the actual management path and test from a console before di
 
 ## Test from an authorized client
 
+> **Concept.** A sensor is only trustworthy once you have generated a known event and watched the sensor record it, so testing is a validation exercise rather than an attack. It is performed from a client you control, with the least intrusive connection that still proves reachability, firewall allowance and logging. A port that answers is not proof that a real protocol is implemented, and a successful test is not evidence of intent.
+
 From a separate client inside the isolated subnet, test only the listener that you created:
 
 ```bash
@@ -509,6 +618,8 @@ The banner is the decoy's only outward-facing claim, so it should be accurate an
 </details>
 
 ## Monitor and interpret logs
+
+> **Concept.** The value of a honeypot is early detection: any contact on a port that advertises nothing is, by construction, unexpected, which makes the decoy a low-noise tripwire. Each entry is a candidate indicator of compromise — a source address, a port, a timestamp — and forwarding those records to a central collector (for example a syslog stream per RFC 5424) is what converts a local file into a detection signal a SIEM can act on. Interpretation stays cautious: an event is an observation to be correlated, not a verdict.
 
 ### Follow the log live
 
@@ -565,7 +676,31 @@ A source port normally changes between outbound connections and is not a reliabl
 
 </details>
 
+PentBox appends one record per line, so `log_honeypot.txt` is a simple, append-only event stream that ordinary text tools can read. The representative format is `timestamp event source=<ip>:<port> destination_port=<port>`, and the fields are positional — which is exactly why the summary command in the next section can split them.
+
+```text
+2026-10-08T20:25:14+03:00 connection source=192.168.56.30:49152 destination_port=8088
+```
+
+The first field is an ISO 8601 timestamp with the local UTC offset, the second is the event type, and the remaining `key=value` pairs name the source and the monitored port.
+
+<details>
+<summary><strong>Read more</strong> — the record read field by field</summary>
+
+| Field | Example | Meaning |
+| --- | --- | --- |
+| Timestamp | `2026-10-08T20:25:14+03:00` | ISO 8601 local time with offset; the anchor for correlating with other logs |
+| Event | `connection` | What the decoy recorded; the console also prints `INTRUSION ATTEMPT DETECTED!` |
+| `source` | `192.168.56.30:49152` | Source address and ephemeral source port of the contact |
+| `destination_port` | `8088` | The monitored port the contact reached |
+
+PentBox writes this file under `pentbox/pentbox-1.8/other/log_honeypot.txt` by default, and the manual configuration path lets you keep the default or choose another file. Because it is line-oriented plain text, it can be parsed with `awk`, forwarded by a log agent, or ingested by a SIEM without a custom decoder.
+
+</details>
+
 ## Basic log summary
+
+> **Concept.** Individual lines describe events; summaries describe behaviour. Counting sources, ports and times converts a raw feed into the aggregates that triage actually consumes, and those aggregates are how a single decoy becomes a comparative view of who is knocking. An aggregate is a starting point for correlation with firewall, DHCP and asset records, never a conclusion on its own.
 
 Extract source addresses in a lab log format and count them:
 
@@ -590,6 +725,8 @@ This simple count helps identify frequent contact, but it does not establish mal
 </details>
 
 ## Preserve evidence safely
+
+> **Concept.** Digital evidence is only useful if you can show it has not changed, which is why an acquired copy is hashed, and its timestamps and permissions are preserved. ISO/IEC 27037 gives the governing principles — identification, collection, acquisition and preservation of digital evidence — and the chain of custody is the record that ties each hash to each handover. A hash proves integrity relative to a recorded value; it does not prove who generated the event.
 
 Rotate a copy of the log before analysis and protect its permissions:
 
@@ -631,6 +768,8 @@ A hash proves integrity relative to a recorded value; it does not prove who gene
 </details>
 
 ## Stop the service cleanly
+
+> **Concept.** A lab is left safe by removing exactly what it added: stop the listener, confirm the port is closed, and delete the temporary firewall exception. This is attack-surface reduction in miniature — every forgotten listener and every stale allow rule is reachable long after the exercise that justified it. Verification comes before deletion, because rule sets and ports may have changed since they were created.
 
 If the decoy runs in the foreground, use `Ctrl+C` in its terminal. Verify that the port is no longer listening:
 
@@ -686,6 +825,8 @@ Removing the inbound exception is how you return the host to its hardened state.
 
 ## Operational guidance
 
+> **Concept.** Running a honeypot is a governance problem as much as a technical one: who authorised it, what may be retained, for how long, and how the data is protected. Legal and ethical constraints — consent, privacy, data minimisation and retention limits — apply to a decoy exactly as they apply to any other monitoring system. The technical controls (isolation, egress restriction, log forwarding) are what make the governance promises enforceable rather than aspirational.
+
 - Keep the honeypot in an isolated VLAN, a private subnet, or a dedicated virtual switch.
 - Use restrictive egress rules; do not allow the decoy to reach production systems or arbitrary Internet destinations.
 - Keep the host operating system patched even if the decoy service is intentionally simple.
@@ -694,7 +835,31 @@ Removing the inbound exception is how you return the host to its hardened state.
 - Classify logged connections carefully; observed traffic may be automated scanning, monitoring, misconfiguration, or an authorized test.
 - Never perform counterattacks or active retaliation based on events observed in a honeypot.
 
+<details>
+<summary><strong>Read more</strong> — from one decoy to a monitored fleet</summary>
+
+A single PentBox listener is a teaching tool; a real deployment scales it deliberately.
+
+* **Multiple ports.** PentBox's fast mode monitors one port per process, so a fleet is one process per port — for example 22, 80, 443 and 3389 — under a supervisor such as `systemd` or `supervisord`, each writing to its own log. Wider cover means more captured contacts, and also more noise to triage.
+* **DMZ placement.** Put the decoy in a demilitarised zone or a dedicated VLAN with a one-way reachability model: the monitored ports receive traffic, but the decoy initiates nothing outward except the logging path.
+* **Alerts.** Forward the log to a collector and alert on new source addresses. `rsyslog` and `syslog-ng` can each raise a mail alert, and the syslog wire format is standardised in RFC 5424; detection is only as timely as the path from the log to a human.
+* **Central analysis.** Ship the logs to an ELK stack (Elasticsearch, Logstash, Kibana) or to Splunk and build a dashboard of sources, ports and time. The value is correlation: the same address seen in the honeypot log, the firewall log and the authentication log is a far stronger signal than any single file.
+
+</details>
+
+<details>
+<summary><strong>Read more</strong> — outbound control, law and ethics</summary>
+
+* **Limit outbound.** Keep `ufw default deny outgoing` in force and open only the logging path, so that a compromised decoy cannot be used as a pivot, a proxy or a cryptocurrency miner. Egress filtering is the difference between an isolated sensor and an open relay.
+* **Authorisation.** Written approval should name the segment, the ports, the monitoring period and the accountable person; an unauthorised honeypot can breach an organisation's own acceptable-use rules even when it is well intentioned.
+* **Data protection.** Logged addresses are personal data in many jurisdictions, so minimise what you collect, set a retention period, restrict access and delete on schedule. In the EU, honeypot logs fall within the GDPR and, for network operators, the ePrivacy rules.
+* **Proportionality.** Because a decoy may record traffic from third parties, keep the recorded fields to what the purpose requires — typically the source address, port and time — and never escalate to counterattack.
+
+</details>
+
 ## Key takeaways
+
+> **Concept.** A low-interaction honeypot is best understood as a controlled sensor: it listens on a deliberate port, records contact, and gives defenders a safe place to practise detection and log analysis. Its quality depends far less on how convincing the decoy looks than on isolation, egress control, evidence handling and careful interpretation. Read every entry as an observation whose cause must be confirmed with context.
 
 A safe low-interaction honeypot is primarily a controlled sensor: it listens on a deliberate port, records contact, and gives defenders a place to practice detection and log analysis.
 
