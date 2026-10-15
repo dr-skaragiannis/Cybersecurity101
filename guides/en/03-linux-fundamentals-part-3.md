@@ -4,7 +4,12 @@
 
 ## Introduction
 
-Parts 1 and 2 were about *using* a Linux machine: finding your way around it, editing what is on it, reading its network configuration, seeing what it is running and shaping the environment it hands to your programs. This part is about making the machine do the work. It has three parts, and they build on one another neatly.
+Parts 1 and 2 were about *using* a Linux machine: finding your way around it, editing what is on it, reading its network configuration, seeing what it is running and shaping the environment it hands to your programs.
+
+This part is about making the machine do the work. It has three parts, and they build on one another neatly: **Bash scripting**, **scheduling**, and **services**.
+
+<details>
+<summary><strong>Read more</strong> — what the three parts of this guide cover</summary>
 
 First, **Bash scripting**. Everything you have typed so far has been a conversation with the shell: one command at a time, each one waiting for you to type the next. A script turns a sequence of those commands into a file that the machine can run without you — which is how anything repetitive gets done reliably, and how you stop being the slowest and most error-prone component in your own workflow. You will write a script that takes input, makes a decision, and calls another tool.
 
@@ -12,11 +17,15 @@ Second, **scheduling**. A script that exists is useful; a script that runs itsel
 
 Third, **services**. A service is a program that keeps running in the background, waiting for something to talk to it. Apache is a service that serves web pages, OpenSSH is a service that accepts remote shells, FTP is a service that moves files. Learning to start, stop, inspect and configure them is the last big gap between "I can use Linux" and "I understand what this machine is doing" — and it is also where the security-relevant surface of a host lives, because a service is a listening socket with a program behind it, and every misconfiguration in that program is reachable from the network.
 
+</details>
+
 > **A word of caution before you start.** This part asks you to install and expose network services. Do it on an isolated lab network, never on a machine that shares a network with anything you do not own: an Apache server left running with default content, an FTP server that accepts anonymous logins, and a cron job that scans a subnet are all things you want on a disposable virtual machine and nowhere else. Take a snapshot before you begin.
 
 ### How to read the transcripts
 
-The conventions are the same as in Parts 1 and 2, with one addition that matters here: because this part is about writing files, scripts are shown in full, exactly as you would type them into an editor, followed by a transcript of the script being run. When you see a block labelled as a script, type it into the file named in the surrounding paragraph; when you see a transcript with a prompt, that is you at the shell.
+The conventions are the same as in Parts 1 and 2, with one addition that matters here: because this part is about writing files, scripts are shown in full, exactly as you would type them into an editor, followed by a transcript of the script being run.
+
+When you see a block labelled as a script, type it into the file named in the surrounding paragraph. When you see a transcript with a prompt, that is you at the shell.
 
 * `root@kali:~#` is a shell running as root, and the trailing `#` is the warning that comes with it. `student@kali:~$` is an ordinary user.
 * Everything on a prompt line after the prompt is what was typed; the lines underneath, up to the next prompt, are output.
@@ -36,9 +45,13 @@ The conventions are the same as in Parts 1 and 2, with one addition that matters
 
 ## 1. Bash scripting basics
 
-When you have to run the same set of commands repeatedly, or compile the output of several tools into one result, the answer is to write a small program. On Linux the natural language for that is the one you have been speaking all along: the shell. A shell is the interface between you and the operating system, and there are several to choose from — `sh`, `bash`, `zsh`, `dash`, `fish` — each with its own dialect. The one used throughout this guide is **bash**, the Bourne Again SHell, which is the default interactive shell on most Linux distributions and on virtually every security distribution.
+When you have to run the same set of commands repeatedly, or compile the output of several tools into one result, the answer is to write a small program. On Linux the natural language for that is the one you have been speaking all along: the shell.
 
-Learning bash has a specific advantage over learning a general-purpose language for this job: a bash script can run any system command, utility or application directly, with no bindings, libraries or wrappers in between. The tools you already know how to use on the command line — `nmap`, `grep`, `find`, `curl`, `ssh` — are the same tools you write scripts with. The only thing needed to get started is a text editor; `nano` is used here because Part 1 introduced it, and the choice makes no difference to the script itself.
+A shell is the interface between you and the operating system, and there are several to choose from — `sh`, `bash`, `zsh`, `dash`, `fish` — each with its own dialect. The one used throughout this guide is **bash**, the Bourne Again SHell, which is the default interactive shell on most Linux distributions and on virtually every security distribution.
+
+Learning bash has a specific advantage over learning a general-purpose language for this job: a bash script can run any system command, utility or application directly, with no bindings, libraries or wrappers in between. The tools you already know how to use on the command line — `nmap`, `grep`, `find`, `curl`, `ssh` — are the same tools you write scripts with.
+
+The only thing needed to get started is a text editor; `nano` is used here because Part 1 introduced it, and the choice makes no difference to the script itself.
 
 ### 1.1 The shebang
 
@@ -50,11 +63,20 @@ Create a new file called `first_script` and put this on the first line:
 #!/bin/bash
 ```
 
-The shebang is not a comment, even though it starts with the character that usually introduces one. When the kernel is asked to execute a file directly, it reads the first two bytes; if they are `#!`, it takes the rest of the line as the path to an interpreter and runs the file *with that program*. So the line above means "execute everything below with `/bin/bash`", and it is why a script can be run simply by typing its name once it is executable, rather than being prefixed with `bash` every time.
+The shebang is not a comment, even though it starts with the character that usually introduces one. When the kernel is asked to execute a file directly, it reads the first two bytes; if they are `#!`, it takes the rest of the line as the path to an interpreter and runs the file *with that program*.
 
-Two variants are worth knowing. `#!/bin/bash` names one specific interpreter, which is correct on any system where bash is installed at that path — true on every mainstream distribution. `#!/usr/bin/env bash` asks the `env` utility to find bash in the current `PATH`, which makes the script portable to systems where bash lives somewhere else (a BSD, a macOS machine, a container with an unusual layout) at the cost of a slightly less predictable interpreter. For scripts that will travel, `env` is usually the better choice; for scripts that stay on one Debian-family machine, `/bin/bash` is fine. What you must not do is write the path with a stray character in it — a trailing slash in `#!/bin/bash/` produces the confusing error `bash: ./first_script: /bin/bash/: bad interpreter: Not a directory`, which is exactly the class of typo that the shebang's unusual position makes easy and that costs beginners an hour.
+So the line above means "execute everything below with `/bin/bash`", and it is why a script can be run simply by typing its name once it is executable, rather than being prefixed with `bash` every time.
+
+<details>
+<summary><strong>Read more</strong> — the two shebang variants, the trailing-slash trap, and ordinary comments</summary>
+
+Two variants are worth knowing. `#!/bin/bash` names one specific interpreter, which is correct on any system where bash is installed at that path — true on every mainstream distribution. `#!/usr/bin/env bash` asks the `env` utility to find bash in the current `PATH`, which makes the script portable to systems where bash lives somewhere else (a BSD, a macOS machine, a container with an unusual layout) at the cost of a slightly less predictable interpreter. For scripts that will travel, `env` is usually the better choice; for scripts that stay on one Debian-family machine, `/bin/bash` is fine.
+
+What you must not do is write the path with a stray character in it. A trailing slash in `#!/bin/bash/` produces the confusing error `bash: ./first_script: /bin/bash/: bad interpreter: Not a directory`, which is exactly the class of typo that the shebang's unusual position makes easy and that costs beginners an hour.
 
 There is one more detail that matters when your fingers are used to the command line: a plain `#` later in the file *is* an ordinary comment, and everything after it on that line is ignored by the shell. Comments cost nothing to write and are the only documentation a future reader of your script — usually you, six months later — will have.
+
+</details>
 
 ### 1.2 `echo` — printing a message
 
@@ -66,9 +88,20 @@ The first command in nearly every scripting tutorial is `echo`, which writes its
 echo "Hello World"
 ```
 
-Nothing about `echo` is surprising here: it prints the string it was given, in double quotes so that the shell treats the spaces as part of a single argument rather than as separators. Those quotes are not decoration — without them, `echo Hello World` also prints `Hello World`, because `echo` joins its arguments with spaces, but the difference becomes visible the moment you want more than one space, a variable that might be empty, or a literal `*` that should not be expanded into filenames. Quoting is the single most important habit in shell scripting, and starting with it early is the cheapest way to avoid learning it the hard way.
+Nothing about `echo` is surprising here: it prints the string it was given, in double quotes so that the shell treats the spaces as part of a single argument rather than as separators.
 
-`echo` has two limitations worth knowing about before you rely on it. First, its behaviour with escape sequences such as `\n` varies between implementations and is controlled by the `-e` flag and the shell's `xpg_echo` setting, so when you need precise control of the output, `printf` is the tool to reach for: `printf "user: %s\n" "$USER"` is unambiguous and works identically everywhere. Second, `echo` cannot easily print an unknown number of arguments with separators, which `printf` handles naturally.
+Those quotes are not decoration. Without them, `echo Hello World` also prints `Hello World`, because `echo` joins its arguments with spaces, but the difference becomes visible the moment you want more than one space, a variable that might be empty, or a literal `*` that should not be expanded into filenames.
+
+Quoting is the single most important habit in shell scripting, and starting with it early is the cheapest way to avoid learning it the hard way.
+
+<details>
+<summary><strong>Read more</strong> — the two limits of <code>echo</code>, and why <code>printf</code> exists</summary>
+
+`echo` has two limitations worth knowing about before you rely on it. First, its behaviour with escape sequences such as `\n` varies between implementations and is controlled by the `-e` flag and the shell's `xpg_echo` setting, so when you need precise control of the output, `printf` is the tool to reach for: `printf "user: %s\n" "$USER"` is unambiguous and works identically everywhere.
+
+Second, `echo` cannot easily print an unknown number of arguments with separators, which `printf` handles naturally.
+
+</details>
 
 ### 1.3 Making the script executable and running it
 
@@ -98,9 +131,13 @@ ls -l first_script
 Hello World
 ```
 
-The permission string changed from `-rw-r--r--` to `-rwxr-xr-x`, and the file name may now be shown in green in your terminal — the usual visual cue for an executable. Then the script ran and printed its one line of output. If you forget the `chmod`, the shell will answer `bash: ./first_script: Permission denied`, which is not an error about the script's contents but about the file's mode.
+The permission string changed from `-rw-r--r--` to `-rwxr-xr-x`, and the file name may now be shown in green in your terminal — the usual visual cue for an executable. Then the script ran and printed its one line of output.
 
-The `./` in front of the name is the second thing beginners find confusing, and the reason is in Part 1, section 2.8 as well. Current directory is **not** on the `PATH`, deliberately, so that a file called `ls` sitting in a shared folder cannot be run by accident when somebody types `ls`. Writing `./first_script` means "the file called `first_script` in the current directory", which is unambiguous. Typing just `first_script` produces `bash: first_script: command not found` even though the file is right there — the shell searched every directory in `PATH`, and the current one was not among them.
+If you forget the `chmod`, the shell will answer `bash: ./first_script: Permission denied`, which is not an error about the script's contents but about the file's mode.
+
+The `./` in front of the name is the second thing beginners find confusing, and the reason is in Part 1, section 2.8 as well. Current directory is **not** on the `PATH`, deliberately, so that a file called `ls` sitting in a shared folder cannot be run by accident when somebody types `ls`.
+
+Writing `./first_script` means "the file called `first_script` in the current directory", which is unambiguous. Typing just `first_script` produces `bash: first_script: command not found` even though the file is right there — the shell searched every directory in `PATH`, and the current one was not among them.
 
 There is a way to run a script without touching its permissions at all, and it is worth knowing for the times you want to test something quickly: hand the file to the interpreter as an argument.
 
@@ -118,11 +155,20 @@ bash first_script
 Hello World
 ```
 
-`bash first_script` works regardless of the executable bit, because `bash` opens and reads the file itself — the kernel is never asked to execute it, so the permission check and the shebang are both irrelevant. This is also why a script with a broken shebang will still run when invoked this way, which makes it a useful diagnostic: if `bash myscript.sh` works and `./myscript.sh` fails, the problem is in the first line or the permissions, not in the script.
+`bash first_script` works regardless of the executable bit, because `bash` opens and reads the file itself — the kernel is never asked to execute it, so the permission check and the shebang are both irrelevant.
+
+<details>
+<summary><strong>Read more</strong> — why that makes <code>bash script</code> a diagnostic tool</summary>
+
+Because a script with a broken shebang will still run when invoked this way, `bash myscript.sh` is a useful diagnostic: if `bash myscript.sh` works and `./myscript.sh` fails, the problem is in the first line or the permissions, not in the script.
+
+</details>
 
 ### 1.4 Variables and user input
 
-A variable is a named place in memory that holds a value — a string, a number, a path — and it is how a script keeps track of something for longer than one command. Bash variables are created by assigning them, with no `declare`, no types and no spaces around the equals sign, exactly as in Part 2, section 3.3. What makes them useful in a script is that they can be filled with **input from the user**, which turns a fixed sequence of commands into a small tool.
+A variable is a named place in memory that holds a value — a string, a number, a path — and it is how a script keeps track of something for longer than one command. Bash variables are created by assigning them, with no `declare`, no types and no spaces around the equals sign, exactly as in Part 2, section 3.3.
+
+What makes them useful in a script is that they can be filled with **input from the user**, which turns a fixed sequence of commands into a small tool.
 
 Create a second file, `greeting`, containing this:
 
@@ -152,17 +198,36 @@ Analyst
 Welcome, Analyst
 ```
 
-The script paused after printing its question, the word `Analyst` was typed and echoed by the terminal (the shell's line editor shows what you type even though the program has not read it yet), and the last line used the value. The mechanics are worth spelling out because two of the three lines are doing something specific. `echo` prints the question, with no trailing special characters — it just happens to end in a question mark. `read name` then *blocks*, waiting for a line of input from standard input, and stores everything up to the newline in the variable `name`. The final `echo` contains `$name`, and the shell substitutes the variable's value before `echo` ever sees the string, exactly like the environment variables in Part 2 — the difference being that this variable is a plain shell variable belonging to the script, not an exported one.
+The script paused after printing its question, the word `Analyst` was typed and echoed by the terminal, and the last line used the value.
 
-`read` has a few forms that are worth having in your fingers. `read -p "What is your name? " name` prints the prompt itself and avoids a separate `echo`; note the trailing space inside the quotes, which is what keeps the cursor one character away from the question mark. `read -r line` disables the interpretation of backslashes, which is what you almost always want when reading arbitrary text such as a path or a URL. `read -s -p "Password: " pw` reads without echoing the characters, which is the right way to accept a secret. And `read a b c` splits the typed line on whitespace into three variables, with the last one receiving everything that is left.
+The mechanics are worth spelling out because two of the three lines are doing something specific. `echo` prints the question, with no trailing special characters — it just happens to end in a question mark. `read name` then *blocks*, waiting for a line of input from standard input, and stores everything up to the newline in the variable `name`.
+
+The final `echo` contains `$name`, and the shell substitutes the variable's value before `echo` ever sees the string, exactly like the environment variables in Part 2 — the difference being that this variable is a plain shell variable belonging to the script, not an exported one.
 
 One habit to build immediately: reference variables with quotes. `"$name"` is correct in every context; `$name` works only while the value contains no spaces and no glob characters. The classic way this bites is a file with a space in its name, where an unquoted variable silently becomes two arguments and the command acts on two paths instead of one.
 
+<details>
+<summary><strong>Read more</strong> — the four <code>read</code> forms worth having in your fingers</summary>
+
+`read -p "What is your name? " name` prints the prompt itself and avoids a separate `echo`; note the trailing space inside the quotes, which is what keeps the cursor one character away from the question mark.
+
+`read -r line` disables the interpretation of backslashes, which is what you almost always want when reading arbitrary text such as a path or a URL.
+
+`read -s -p "Password: " pw` reads without echoing the characters, which is the right way to accept a secret.
+
+And `read a b c` splits the typed line on whitespace into three variables, with the last one receiving everything that is left.
+
+</details>
+
 ### 1.5 A script that does something useful: a network scanner
 
-The mechanics are now in place — a shebang, some commands, a variable and an input — so the next step is to assemble them into something you would actually use. The example here is a script that sweeps a network for live hosts, which is a reasonable first genuinely useful tool: it is short enough to understand completely, it exercises every idea in this section, and it is the first thing an assessor runs on an unfamiliar network.
+The mechanics are now in place — a shebang, some commands, a variable and an input — so the next step is to assemble them into something you would actually use.
 
-The tool it drives is `nmap`, the standard network mapper. Its job is to discover what is on a network, which ports are open on each host, which services are behind those ports, and often which operating system the host runs. Its general syntax is `nmap <type of scan> <target>`, and for the job of finding live hosts the scan type is a **ping scan**, written `-sn`. Part 2's interface work gives you the reason a ping scan is meaningful: on a local network, a host that answers an ARP request or a ping is up, and the set of hosts that answer is the set of machines you can talk to.
+The example here is a script that sweeps a network for live hosts, which is a reasonable first genuinely useful tool: it is short enough to understand completely, it exercises every idea in this section, and it is the first thing an assessor runs on an unfamiliar network.
+
+The tool it drives is `nmap`, the standard network mapper. Its job is to discover what is on a network, which ports are open on each host, which services are behind those ports, and often which operating system the host runs. Its general syntax is `nmap <type of scan> <target>`, and for the job of finding live hosts the scan type is a **ping scan**, written `-sn`.
+
+Part 2's interface work gives you the reason a ping scan is meaningful: on a local network, a host that answers an ARP request or a ping is up, and the set of hosts that answer is the set of machines you can talk to.
 
 ```bash
 #!/bin/bash
@@ -191,7 +256,9 @@ Enter the network prefix (for example 192.168.1): 192.168.1
 192.168.1.20
 ```
 
-Four addresses came back, and they are the lab gateway, the Ubuntu target, the attacker machine and one other host. The interesting content is in the pipeline, so it is worth unpacking stage by stage, because this is the pattern that almost every useful script is built from. `nmap -sn "192.168.1.0/24"` performs the scan; writing `/24` after the network address tells nmap to sweep all 256 addresses in that range. The raw output of the command is a short paragraph per live host, most of which is not the address:
+Four addresses came back, and they are the lab gateway, the Ubuntu target, the attacker machine and one other host.
+
+The interesting content is in the pipeline, so it is worth unpacking stage by stage, because this is the pattern that almost every useful script is built from. `nmap -sn "192.168.1.0/24"` performs the scan; writing `/24` after the network address tells nmap to sweep all 256 addresses in that range. The raw output of the command is a short paragraph per live host, most of which is not the address:
 
 ```bash
 nmap -sn 192.168.1.0/24
@@ -212,7 +279,11 @@ Host is up (0.0013s latency).
 Nmap done: 256 IP addresses (4 hosts up) scanned in 2.61 seconds
 ```
 
-The `grep "Nmap scan report"` keeps only the lines that name a host, dropping the latency lines and the summary. The `cut -d " " -f 5` then splits each surviving line on spaces and takes the fifth field: for `Nmap scan report for 192.168.1.1` the fields are `Nmap`, `scan`, `report`, `for`, `192.168.1.1`, so field five is the address. That works — for three of the four hosts. Look again at the fourth: `Nmap scan report for server.lab (192.168.1.20)` is what nmap prints when it manages to reverse-resolve an address to a name, and field five of that line is `server.lab`, not an address. The script's output above happens to be correct because the lab resolver did not know about `server.lab`; on a network with working reverse DNS, the same script would print hostnames mixed in with addresses, and a later script that expected addresses would break.
+The `grep "Nmap scan report"` keeps only the lines that name a host, dropping the latency lines and the summary. The `cut -d " " -f 5` then splits each surviving line on spaces and takes the fifth field.
+
+For `Nmap scan report for 192.168.1.1` the fields are `Nmap`, `scan`, `report`, `for`, `192.168.1.1`, so field five is the address.
+
+That works — for three of the four hosts. Look again at the fourth: `Nmap scan report for server.lab (192.168.1.20)` is what nmap prints when it manages to reverse-resolve an address to a name, and field five of that line is `server.lab`, not an address.
 
 The robust fix is to stop relying on field positions and extract only what actually looks like an address. Replacing the last two stages with a single pattern match does exactly that:
 
@@ -223,7 +294,18 @@ read -p "Enter the network prefix (for example 192.168.1): " net
 nmap -sn "$net.0/24" | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}'
 ```
 
-The `-o` flag tells `grep` to print only the matched part of the line rather than the whole line, and `-E` enables extended regular expressions. The pattern `([0-9]{1,3}\.){3}[0-9]{1,3}` says "one to three digits, then a dot, repeated three times, then one to three digits" — which is everything that looks like an IPv4 address and nothing else. Running it against the same network now yields a clean list regardless of whether names resolve, and it is a good illustration of a general principle: a script that depends on *where* something appears in an output format breaks when the tool changes its formatting or adds an alternative form, while a script that depends on *what* the thing looks like tends to survive.
+The `-o` flag tells `grep` to print only the matched part of the line rather than the whole line, and `-E` enables extended regular expressions.
+
+<details>
+<summary><strong>Read more</strong> — why position-based parsing breaks, and the general principle behind it</summary>
+
+The pattern `([0-9]{1,3}\.){3}[0-9]{1,3}` says "one to three digits, then a dot, repeated three times, then one to three digits" — which is everything that looks like an IPv4 address and nothing else. Running it against the same network now yields a clean list regardless of whether names resolve.
+
+The script's output above happens to be correct because the lab resolver did not know about `server.lab`. On a network with working reverse DNS, the same script would print hostnames mixed in with addresses, and a later script that expected addresses would break.
+
+This is a good illustration of a general principle: a script that depends on *where* something appears in an output format breaks when the tool changes its formatting or adds an alternative form, while a script that depends on *what* the thing looks like tends to survive.
+
+</details>
 
 ### 1.6 Making a script robust
 
@@ -246,23 +328,42 @@ net="$1"
 nmap -sn "$net.0/24" | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}'
 ```
 
-This version takes its input as an **argument** (`$1`) instead of prompting, which is what makes a script usable from cron, from another script, or in a loop over many networks — and it is worth noting the three special variables that come with arguments: `$1`, `$2` and so on are the positional parameters, `$#` is how many were given, and `$0` is the name of the script itself. The `[ $# -ne 1 ]` test therefore means "if the script was not given exactly one argument", and the message it prints goes to **standard error** (`>&2`) rather than standard output, so that a caller redirecting the output to a file does not capture the error message into the data. `basename "$0"` strips the directory from the script's own name so the usage message reads `sweep` rather than `./sweep`.
+This version takes its input as an **argument** (`$1`) instead of prompting, which is what makes a script usable from cron, from another script, or in a loop over many networks.
 
-The `set -euo pipefail` line at the top is three settings in one and it changes the script's behaviour in ways that prevent a large family of silent failures. `-e` makes the script exit immediately if any command fails, instead of ploughing on with the wreckage of a failed step. `-u` makes referencing an unset variable an error rather than a silent empty substitution — the trap from Part 2, section 3.5. `-o pipefail` makes a pipeline report failure if *any* stage in it failed, not just the last one; without it, `nmap ... | grep ...` can report success because `grep` was happy, even when `nmap` never ran. The `command -v nmap` test checks that a required tool exists before trying to use it, which produces a clear message instead of a `command not found` halfway through.
+There are three special variables that come with arguments: `$1`, `$2` and so on are the positional parameters, `$#` is how many were given, and `$0` is the name of the script itself.
+
+The `[ $# -ne 1 ]` test therefore means "if the script was not given exactly one argument". The message it prints goes to **standard error** (`>&2`) rather than standard output, so that a caller redirecting the output to a file does not capture the error message into the data. `basename "$0"` strips the directory from the script's own name so the usage message reads `sweep` rather than `./sweep`.
+
+<details>
+<summary><strong>Read more</strong> — what <code>set -euo pipefail</code> buys you, and the two habits that follow from it</summary>
+
+The `set -euo pipefail` line at the top is three settings in one and it changes the script's behaviour in ways that prevent a large family of silent failures.
+
+`-e` makes the script exit immediately if any command fails, instead of ploughing on with the wreckage of a failed step. `-u` makes referencing an unset variable an error rather than a silent empty substitution — the trap from Part 2, section 3.5. `-o pipefail` makes a pipeline report failure if *any* stage in it failed, not just the last one; without it, `nmap ... | grep ...` can report success because `grep` was happy, even when `nmap` never ran.
+
+The `command -v nmap` test checks that a required tool exists before trying to use it, which produces a clear message instead of a `command not found` halfway through.
 
 Two more habits belong in this list because they are what separate script authors from script maintainers. Write comments that say *why*, not *what*: `# -sn is a ping scan; -sP is the same thing under the old name` is valuable, `# run nmap` is not. And test a script with tools that analyse it. `shellcheck` is available in every distribution's repository, understands both bash and POSIX `sh`, and will point out unquoted variables, misused tests, and the other hundred ways shell syntax quietly does something different from what you meant. Running it habitually is the closest thing shell scripting has to a compiler.
+
+</details>
 
 ---
 
 ## 2. Scheduling your tasks
 
-There are times when a task needs to happen on a schedule rather than when you remember it: a nightly backup, a weekly report, a check that runs every hour. Linux has had an answer to this for decades in the **cron** daemon, and it remains the mechanism you will meet on almost every server. This section covers the modern way (a user's crontab), then the older machinery underneath that decides what starts when the machine boots, and finally how both map onto the systemd model that current distributions actually use — because a security practitioner needs to recognise all three.
+There are times when a task needs to happen on a schedule rather than when you remember it: a nightly backup, a weekly report, a check that runs every hour. Linux has had an answer to this for decades in the **cron** daemon, and it remains the mechanism you will meet on almost every server.
+
+This section covers the modern way (a user's crontab), then the older machinery underneath that decides what starts when the machine boots, and finally how both map onto the systemd model that current distributions actually use — because a security practitioner needs to recognise all three.
 
 ### 2.1 The cron daemon and the crontab
 
-The `cron` daemon runs in the background, wakes up once a minute, and reads one or more **crontabs** — plain text tables of jobs — to see whether anything is due. If something is, it runs it. Nothing else happens; there is no interactive prompt, no confirmation, and no output unless you arrange for it.
+The `cron` daemon runs in the background, wakes up once a minute, and reads one or more **crontabs** — plain text tables of jobs — to see whether anything is due. If something is, it runs it.
 
-Two kinds of crontab exist and they look slightly different, which is a common source of confusion. The user crontab is edited with `crontab -e` and contains five time fields followed by the command to run, because the user is implied by whose crontab it is. The system crontab, at `/etc/crontab`, has **seven** fields: the five time fields, then the user the job should run as, then the command. The example below is the system file, which is why the sixth field is there:
+Nothing else happens; there is no interactive prompt, no confirmation, and no output unless you arrange for it.
+
+Two kinds of crontab exist and they look slightly different, which is a common source of confusion. The user crontab is edited with `crontab -e` and contains five time fields followed by the command to run, because the user is implied by whose crontab it is.
+
+The system crontab, at `/etc/crontab`, has **seven** fields: the five time fields, then the user the job should run as, then the command. The example below is the system file, which is why the sixth field is there:
 
 ```
 # /etc/crontab: system-wide crontab
@@ -283,11 +384,22 @@ The first five fields are the schedule, and each one restricts the matching jobs
 | 4 | Month | 1–12 |
 | 5 | Day of the week | 0–7 (0 and 7 are both Sunday) |
 
-An asterisk means "every value", so the first job above runs at minute 17 of *every* hour. A number means exactly that value, `25 6` means 06:25, and a `7` in the last field means Sunday. More than one value can be given with a comma (`1,15`), a range with a dash (`1-5` for weekdays), and a step with a slash (`*/10` for every tenth minute, `0-30/5` for every five minutes in the first half hour). The last two fields in `/etc/crontab` are the account to run as and the command line itself, and it is here that the difference from a user crontab shows: in your own crontab you would write the same schedule and then just the command.
+An asterisk means "every value", so the first job above runs at minute 17 of *every* hour. A number means exactly that value: `25 6` means 06:25, and a `7` in the last field means Sunday.
+
+<details>
+<summary><strong>Read more</strong> — lists, ranges and steps, and where the seventh field matters</summary>
+
+More than one value can be given with a comma (`1,15`), a range with a dash (`1-5` for weekdays), and a step with a slash (`*/10` for every tenth minute, `0-30/5` for every five minutes in the first half hour).
+
+The last two fields in `/etc/crontab` are the account to run as and the command line itself, and it is here that the difference from a user crontab shows: in your own crontab you would write the same schedule and then just the command.
+
+</details>
 
 ### 2.2 Checking and starting the cron service
 
-Before scheduling anything it is worth confirming that the daemon is actually running, because cron is not enabled on every minimal installation and it is trivially easy to add a job to a table that nothing reads. The traditional way to ask is the `service` command, and the modern way is `systemctl`; both are shown because you will meet both.
+Before scheduling anything it is worth confirming that the daemon is actually running, because cron is not enabled on every minimal installation and it is trivially easy to add a job to a table that nothing reads.
+
+The traditional way to ask is the `service` command, and the modern way is `systemctl`; both are shown because you will meet both.
 
 ```bash
 service cron status
@@ -327,9 +439,20 @@ systemctl is-active cron
 active
 ```
 
-The status output is a systemd report, which is what `service` wraps on a modern distribution. Reading it from the top: `Loaded` tells you whether the unit file exists and whether the service is *enabled* — that is, whether it will start at boot — while `Active:` tells you whether it is running right now. In this case the two disagree, which is exactly the situation the section warns about: the service is enabled but not currently running, so a job scheduled now would sit in the table until the machine was rebooted. The `systemctl is-active` form is the machine-readable version of the same question and is what you would use in a script, since it prints a single word and returns an exit status; `service cron start` then started the daemon, and the follow-up check confirms `active`.
+The status output is a systemd report, which is what `service` wraps on a modern distribution. Reading it from the top: `Loaded` tells you whether the unit file exists and whether the service is *enabled* — that is, whether it will start at boot — while `Active:` tells you whether it is running right now.
 
-On a systemd machine the same operations are available directly, and the pairs are worth learning side by side: `systemctl start cron` and `systemctl stop cron` start and stop it now, `systemctl enable cron` makes it start at boot, `systemctl status cron` shows both facts at once, and `systemctl list-timers` shows any systemd timers, which are the modern alternative to cron and are covered at the end of this section. On Debian-family systems the unit is called `cron`; on Red Hat-family systems it is `crond`, which is why a `service crond status` copied from another tutorial may report that no such service exists.
+In this case the two disagree, which is exactly the situation the section warns about: the service is enabled but not currently running, so a job scheduled now would sit in the table until the machine was rebooted.
+
+The `systemctl is-active` form is the machine-readable version of the same question and is what you would use in a script, since it prints a single word and returns an exit status; `service cron start` then started the daemon, and the follow-up check confirms `active`.
+
+<details>
+<summary><strong>Read more</strong> — the systemd pairs worth learning side by side, and the <code>cron</code>/<code>crond</code> naming trap</summary>
+
+On a systemd machine the same operations are available directly, and the pairs are worth learning side by side: `systemctl start cron` and `systemctl stop cron` start and stop it now, `systemctl enable cron` makes it start at boot, `systemctl status cron` shows both facts at once, and `systemctl list-timers` shows any systemd timers, which are the modern alternative to cron and are covered at the end of this section.
+
+On Debian-family systems the unit is called `cron`; on Red Hat-family systems it is `crond`, which is why a `service crond status` copied from another tutorial may report that no such service exists.
+
+</details>
 
 ### 2.3 Editing your crontab
 
@@ -355,20 +478,33 @@ Choose 1-5 [1]: 1
 crontab: installing new crontab
 ```
 
-The editor menu appears the first time only, on Debian-family systems, and the choice is remembered in `~/.selected_editor`; `1` selects `nano`, which is the sensible answer for anyone following this guide. In the editor, the file starts with a short comment block explaining the field layout, which is worth reading once. Scroll to the bottom, past the comments, and add the job:
+The editor menu appears the first time only, on Debian-family systems, and the choice is remembered in `~/.selected_editor`; `1` selects `nano`, which is the sensible answer for anyone following this guide.
+
+In the editor, the file starts with a short comment block explaining the field layout, which is worth reading once. Scroll to the bottom, past the comments, and add the job:
 
 ```
 # m h  dom mon dow   command
 55 23 * * * /root/sweep 192.168.1
 ```
 
-Save and exit (`Ctrl+O`, Enter, `Ctrl+X` in nano), and crontab reports `installing new crontab`. The schedule reads: at minute 55 of hour 23, every day of every month, whatever the day of the week — in other words, 23:55 every night — run the script `/root/sweep` with the argument `192.168.1`. The `crontab -l` command lists the installed table without opening an editor, and `crontab -r` removes it entirely, which is a command to type carefully because there is no confirmation and no undo.
+Save and exit (`Ctrl+O`, Enter, `Ctrl+X` in nano), and crontab reports `installing new crontab`.
 
-That job line is worth studying for two details that catch almost everyone. The first is the **absolute path**. `cron` does not run your shell, does not read your startup files, and does not have your `PATH`; it runs the command in a minimal environment where `PATH` is often just `/usr/bin:/bin`. Writing `/root/sweep` rather than `sweep` removes the ambiguity, and any tool the script itself calls should be referenced the same way or added to a `PATH=` line at the top of the crontab. The second detail is the **missing output**: whatever the job prints goes nowhere you will see it. The daemon captures stdout and stderr and mails them to the local user, which on a machine with no mail configured means the text is discarded — so a job that fails on the first night fails silently every night. The defence is to redirect the job's output to a file yourself, with the time and a separator so the log stays readable:
+The schedule reads: at minute 55 of hour 23, every day of every month, whatever the day of the week — in other words, 23:55 every night — run the script `/root/sweep` with the argument `192.168.1`.
+
+The `crontab -l` command lists the installed table without opening an editor, and `crontab -r` removes it entirely, which is a command to type carefully because there is no confirmation and no undo.
+
+<details>
+<summary><strong>Read more</strong> — the two details of a job line that catch almost everyone</summary>
+
+That job line is worth studying for two details. The first is the **absolute path**. `cron` does not run your shell, does not read your startup files, and does not have your `PATH`; it runs the command in a minimal environment where `PATH` is often just `/usr/bin:/bin`. Writing `/root/sweep` rather than `sweep` removes the ambiguity, and any tool the script itself calls should be referenced the same way or added to a `PATH=` line at the top of the crontab.
+
+The second detail is the **missing output**: whatever the job prints goes nowhere you will see it. The daemon captures stdout and stderr and mails them to the local user, which on a machine with no mail configured means the text is discarded — so a job that fails on the first night fails silently every night. The defence is to redirect the job's output to a file yourself, with the time and a separator so the log stays readable:
 
 ```
 55 23 * * * /root/sweep 192.168.1 >> /var/log/sweep.log 2>&1
 ```
+
+</details>
 
 Once jobs are running, their execution is recorded in the system log even when their output is not, which is the first place to look when a schedule seems not to fire:
 
@@ -383,15 +519,30 @@ Oct  9 23:55:01 kali CRON[7123]: (root) CMD (/root/sweep 192.168.1 >> /var/log/s
 Oct  9 23:55:03 kali CRON[7122]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
 ```
 
-Those lines answer the two questions that matter: did cron *start* the job, and as which user? If a line appears but the job produced no result, the problem is inside the command — a tool that is missing from the minimal `PATH`, a script that assumed it was being run from its own directory, or a relative path that resolved somewhere unexpected. If no line appears at all, the problem is in the schedule, the crontab, or the daemon — and the checks in section 2.2 are the way to narrow it down. On Ubuntu, `cron` logs to `/var/log/syslog`; on systemd-focused systems you may need `journalctl -u cron`, and on Red Hat-family systems it is `/var/log/cron`.
+Those lines answer the two questions that matter: did cron *start* the job, and as which user?
 
-A few last refinements are worth having. The `%` character is special in a crontab — it terminates the command and everything after it becomes standard input to it — so a literal percent sign must be escaped as `\%`, which matters when you schedule anything involving `date +%Y%m%d`. Cron runs jobs with a minimal environment, so anything that depends on a variable set in `/etc/environment` or `~/.bashrc` will not have it. And if you need a job to run at a time that has already passed today, cron will not run it until tomorrow; that is what the `at` command from Part 2, section 2.9 is for.
+If a line appears but the job produced no result, the problem is inside the command — a tool that is missing from the minimal `PATH`, a script that assumed it was being run from its own directory, or a relative path that resolved somewhere unexpected. If no line appears at all, the problem is in the schedule, the crontab, or the daemon — and the checks in section 2.2 are the way to narrow it down.
+
+<details>
+<summary><strong>Read more</strong> — where the log lives on other systems, and three refinements worth knowing</summary>
+
+On Ubuntu, `cron` logs to `/var/log/syslog`; on systemd-focused systems you may need `journalctl -u cron`, and on Red Hat-family systems it is `/var/log/cron`.
+
+A few last refinements are worth having. The `%` character is special in a crontab — it terminates the command and everything after it becomes standard input to it — so a literal percent sign must be escaped as `\%`, which matters when you schedule anything involving `date +%Y%m%d`.
+
+Cron runs jobs with a minimal environment, so anything that depends on a variable set in `/etc/environment` or `~/.bashrc` will not have it. And if you need a job to run at a time that has already passed today, cron will not run it until tomorrow; that is what the `at` command from Part 2, section 2.9 is for.
 
 Systemd timers are the modern equivalent and are worth knowing by name. Where cron expresses a schedule as five fields, a timer pairs a `.timer` unit with a `.service` unit and can express things cron cannot — "run this 10 minutes after boot", "run this once, three hours from now", "run this an hour after the system was last active". `systemctl list-timers --all` lists what is scheduled on such a system, and the classic entries for `apt-daily` and `fstrim` show up there on any current Ubuntu machine. Timers are not a replacement for cron in every case, but on a distribution that already manages services with systemd they are the more consistent choice, and they log to the journal in the same way as everything else.
 
+</details>
+
 ### 2.4 Boot-time startup: rc scripts, init and runlevels
 
-Scheduling a job is one form of automation; the other is deciding what runs when the machine starts, and that machinery is older than cron. When a Linux machine is switched on, a large number of processes have to run in order to bring the system to a usable state — mounting file systems, starting the network, launching the daemons that will accept connections. The scripts that perform these steps are known as **rc scripts**, short for *run commands*, and the traditional layout keeps them in `/etc/init.d/`, one file per service, each with a standard set of subcommands (`start`, `stop`, `restart`, `status`).
+Scheduling a job is one form of automation; the other is deciding what runs when the machine starts, and that machinery is older than cron.
+
+When a Linux machine is switched on, a large number of processes have to run in order to bring the system to a usable state — mounting file systems, starting the network, launching the daemons that will accept connections.
+
+The scripts that perform these steps are known as **rc scripts**, short for *run commands*, and the traditional layout keeps them in `/etc/init.d/`, one file per service, each with a standard set of subcommands (`start`, `stop`, `restart`, `status`).
 
 The daemon responsible for running them was **init**, the first process the kernel starts (process ID 1), which read the scripts and executed them in the order the current **runlevel** dictated. A runlevel is a number that tells the system which set of services should be running, and the traditional set is small:
 
@@ -402,11 +553,13 @@ The daemon responsible for running them was **init**, the first process the kern
 | 2–5 | Multiuser modes — normal operation, with 5 traditionally meaning "with a graphical login" |
 | 6 | Reboot the system |
 
-Zero and six are the two you must not confuse: `init 0` powers the machine off and `init 6` reboots it, so a mistyped digit on a remote server is the difference between an outage and an outage that comes back. Runlevel 1 is the one worth remembering for its usefulness rather than its danger: in single-user mode the machine comes up with a root shell, no network and almost no services, which is why it is the standard way back into a system whose normal boot has broken.
+Zero and six are the two you must not confuse: `init 0` powers the machine off and `init 6` reboots it, so a mistyped digit on a remote server is the difference between an outage and an outage that comes back.
 
-The runlevel a machine starts in is decided by a set of symbolic links, one directory per runlevel — `/etc/rc2.d`, `/etc/rc3.d` and so on — each containing links named `Snn<service>` or `Knn<service>`. The `S` links are started and the `K` links are killed when that runlevel is entered, and the two-digit numbers set the order: `S01networking` starts before `S20apache2`. The whole scheme is a way of declaring, declaratively, which services belong to which operating mode.
+Runlevel 1 is the one worth remembering for its usefulness rather than its danger: in single-user mode the machine comes up with a root shell, no network and almost no services, which is why it is the standard way back into a system whose normal boot has broken.
 
-Adding a service to that scheme is what `update-rc.d` is for: it creates and removes the appropriate links so that you do not have to manage them by hand.
+The runlevel a machine starts in is decided by a set of symbolic links, one directory per runlevel — `/etc/rc2.d`, `/etc/rc3.d` and so on — each containing links named `Snn<service>` or `Knn<service>`. The `S` links are started and the `K` links are killed when that runlevel is entered, and the two-digit numbers set the order: `S01networking` starts before `S20apache2`.
+
+The whole scheme is a way of declaring, declaratively, which services belong to which operating mode. Adding a service to that scheme is what `update-rc.d` is for: it creates and removes the appropriate links so that you do not have to manage them by hand.
 
 ```bash
 update-rc.d mysql defaults
@@ -426,7 +579,11 @@ Adding system startup for /etc/init.d/mysql ...
    /etc/rc5.d/S01mysql -> ../init.d/mysql
 ```
 
-The word `defaults` is one of the four actions the command accepts — `defaults`, `remove`, `disable` and `enable` — and it means "use the standard sequence for this service". The output shows exactly what the sections above described: one link per runlevel, `S` links for the multiuser runlevels 2 to 5 so MySQL starts when they are entered, and `K` links for runlevels 0, 1 and 6 so it stops cleanly before the machine halts, drops to single-user mode or reboots. After a reboot the service is running, and the way to confirm that is a tool from Part 2:
+The word `defaults` is one of the four actions the command accepts — `defaults`, `remove`, `disable` and `enable` — and it means "use the standard sequence for this service".
+
+The output shows exactly what the sections above described: one link per runlevel, `S` links for the multiuser runlevels 2 to 5 so MySQL starts when they are entered, and `K` links for runlevels 0, 1 and 6 so it stops cleanly before the machine halts, drops to single-user mode or reboots.
+
+After a reboot the service is running, and the way to confirm that is a tool from Part 2:
 
 ```bash
 ps aux | grep -v grep | grep mysql
@@ -440,6 +597,9 @@ mysql       1204  0.4  5.1 3310420 208144 ?      Ssl  14:31   0:02 /usr/sbin/mys
 
 One process, owned by the `mysql` account, with no controlling terminal — a daemon, started automatically, running as a non-privileged user, which is exactly what a well-behaved service looks like. (The `grep -v grep` stage removes the search command's own line from the output, the bycatch explained in Part 2, section 2.3.)
 
+<details>
+<summary><strong>Read more</strong> — the modern picture: systemd targets, and why this whole subsection matters for security</summary>
+
 The parts of this that have changed matter more than the parts that have not, so here is the modern picture. On a systemd machine, `/sbin/init` is a link to systemd, and the runlevels are implemented as **targets** with aliases that keep the old numbers working:
 
 | Runlevel | systemd target |
@@ -450,21 +610,36 @@ The parts of this that have changed matter more than the parts that have not, so
 | 5 | `graphical.target` |
 | 6 | `reboot.target` |
 
-`systemctl get-default` reports which target the machine boots into (`multi-user.target` or `graphical.target`, normally), `systemctl set-default graphical.target` changes it, and `systemctl enable <service>` is the modern equivalent of `update-rc.d <service> defaults`, with `disable` to undo it. The `update-rc.d` command above still works on such a system because of a compatibility layer that translates the old interface into unit changes — which is why you will see it in older documentation and why it is worth recognising rather than being confused by. Two smaller tools complete the picture: `runlevel` prints the previous and current runlevel numbers, and `who -r` prints the same information in a wordier form; both are thin wrappers over the systemd state.
+`systemctl get-default` reports which target the machine boots into (`multi-user.target` or `graphical.target`, normally), `systemctl set-default graphical.target` changes it, and `systemctl enable <service>` is the modern equivalent of `update-rc.d <service> defaults`, with `disable` to undo it.
+
+The `update-rc.d` command above still works on such a system because of a compatibility layer that translates the old interface into unit changes — which is why you will see it in older documentation and why it is worth recognising rather than being confused by. Two smaller tools complete the picture: `runlevel` prints the previous and current runlevel numbers, and `who -r` prints the same information in a wordier form; both are thin wrappers over the systemd state.
 
 For security work, the whole of this subsection matters for one practical reason: **a service that starts at boot is a service that is running when you arrive**. Enumerating what is enabled — `systemctl list-unit-files --type=service --state=enabled`, or the contents of `/etc/rc*.d/` — tells you what will be listening before you have run a single scan, and it is how you spot a service that an administrator disabled by hand but which came back because its links were never removed.
+
+</details>
 
 ---
 
 ## 3. Using services in Linux
 
-A **service** is a program that runs in the background and waits to be used: it holds a socket open, or keeps a queue moving, or watches a file, and it does this whether or not anyone is logged in. Most of what a server does is services. Apache serves web pages, OpenSSH accepts remote shells, FTP transfers files, MySQL answers database queries, and a mail server sits quietly queueing messages. Several come preinstalled, and the rest are one package away.
+A **service** is a program that runs in the background and waits to be used: it holds a socket open, or keeps a queue moving, or watches a file, and it does this whether or not anyone is logged in. Most of what a server does is services.
 
-Learning to manage them — start, stop, restart, inspect, enable — is the last piece of the picture this guide has been building. It is also where the security-relevant surface of a host lives, so the section treats each of the three example services from both directions: how to run it, and what an assessor sees when they find it misconfigured. That second view is not a digression. The most common findings on a real engagement are not exotic exploits; they are a service that was installed for a demo and never removed, an FTP server that still allows anonymous logins, or a web directory whose permissions allow more than the administrator intended.
+Apache serves web pages, OpenSSH accepts remote shells, FTP transfers files, MySQL answers database queries, and a mail server sits quietly queueing messages. Several come preinstalled, and the rest are one package away.
+
+Learning to manage them — start, stop, restart, inspect, enable — is the last piece of the picture this guide has been building. It is also where the security-relevant surface of a host lives, so the section treats each of the three example services from both directions: how to run it, and what an assessor sees when they find it misconfigured.
+
+<details>
+<summary><strong>Read more</strong> — why the second view is not a digression</summary>
+
+The most common findings on a real engagement are not exotic exploits; they are a service that was installed for a demo and never removed, an FTP server that still allows anonymous logins, or a web directory whose permissions allow more than the administrator intended.
+
+</details>
 
 ### 3.1 Managing a service
 
-The traditional interface is the `service` command, and its grammar is small enough to memorise in one line: `service <name> <action>`, where the actions are `start`, `stop`, `restart` and `status`. The same actions exist in systemd as `systemctl <action> <name>`, and on a modern distribution `service` is a wrapper around `systemctl`, so the two are interchangeable for these four verbs. The differences appear for the operations that systemd added — `enable`, `disable`, `mask` — which have no equivalent in the older command.
+The traditional interface is the `service` command, and its grammar is small enough to memorise in one line: `service <name> <action>`, where the actions are `start`, `stop`, `restart` and `status`.
+
+The same actions exist in systemd as `systemctl <action> <name>`, and on a modern distribution `service` is a wrapper around `systemctl`, so the two are interchangeable for these four verbs. The differences appear for the operations that systemd added — `enable`, `disable`, `mask` — which have no equivalent in the older command.
 
 ```bash
 service apache2 start
@@ -508,11 +683,22 @@ service apache2 status
      Active: inactive (dead) since Fri 2026-10-09 14:35:41 UTC; 3s ago
 ```
 
-The status output is worth reading properly because it answers four separate questions. `Loaded` and its `enabled` word tell you whether the service will start at boot — so this Apache will come back after a reboot even though it is stopped right now. `Active: active (running)` is the present state, along with the time it has been that way. `Main PID` and the `CGroup` tree show the processes involved, and the tree is instructive: Apache is not one process but a parent and a set of children, which is how it handles several connections at once — the master process binds the port and the children serve requests. `Status: "Processing requests..."` is the service's own self-report, which comes from Apache rather than from systemd.
+The status output is worth reading properly because it answers four separate questions. `Loaded` and its `enabled` word tell you whether the service will start at boot — so this Apache will come back after a reboot even though it is stopped right now. `Active: active (running)` is the present state, along with the time it has been that way.
+
+`Main PID` and the `CGroup` tree show the processes involved, and the tree is instructive: Apache is not one process but a parent and a set of children, which is how it handles several connections at once — the master process binds the port and the children serve requests. `Status: "Processing requests..."` is the service's own self-report, which comes from Apache rather than from systemd.
+
+<details>
+<summary><strong>Read more</strong> — the <code>activating</code> state, <code>is-enabled</code>, and the real difference between restart and reload</summary>
 
 Some services take a moment to come up, and a status polled immediately after `start` can legitimately read `activating` rather than `active`; `systemctl is-active` returns `activating` as a distinct state for exactly that reason, and a script that tests for the word `active` will misread it. The complementary command `systemctl is-enabled` answers the boot question on its own, printing `enabled`, `disabled`, `static` or `masked`.
 
-`restart` is the fourth verb and the one with the most subtlety, because there are two ways to apply a configuration change and they are not equivalent. A **restart** stops the service and starts it again, which guarantees the new configuration is in effect but drops every connection that was open — acceptable for a lab web server, unacceptable for a database or an SSH daemon somebody is logged into. A **reload** asks the running process to re-read its configuration without stopping: `service apache2 reload`, or `systemctl reload apache2`, or for a daemon that has no reload support at all, the `kill -1` signal from Part 2, section 2.7. The habit worth forming is to check the configuration before either one, because a service that fails to start is an outage while a service that was never restarted is not:
+`restart` is the fourth verb and the one with the most subtlety, because there are two ways to apply a configuration change and they are not equivalent. A **restart** stops the service and starts it again, which guarantees the new configuration is in effect but drops every connection that was open — acceptable for a lab web server, unacceptable for a database or an SSH daemon somebody is logged into.
+
+A **reload** asks the running process to re-read its configuration without stopping: `service apache2 reload`, or `systemctl reload apache2`, or for a daemon that has no reload support at all, the `kill -1` signal from Part 2, section 2.7.
+
+</details>
+
+The habit worth forming is to check the configuration before either one, because a service that fails to start is an outage while a service that was never restarted is not:
 
 ```bash
 apache2ctl configtest
@@ -532,7 +718,9 @@ Every service has an equivalent validation step — `sshd -t` for SSH, `nginx -t
 
 ### 3.2 Apache: deploying a web server
 
-Apache is the most widely deployed web server in the world, and for anyone heading into security work it is worth running once by hand, because the vast majority of engagements involve a web application. Installing it is one package, and it is worth noting that the package is named `apache2` on Debian-family systems and `httpd` on Red Hat-family systems — a difference that breaks a surprising number of copied commands.
+Apache is the most widely deployed web server in the world, and for anyone heading into security work it is worth running once by hand, because the vast majority of engagements involve a web application.
+
+Installing it is one package, and it is worth noting that the package is named `apache2` on Debian-family systems and `httpd` on Red Hat-family systems — a difference that breaks a surprising number of copied commands.
 
 ```bash
 apt-get install -y apache2
@@ -568,7 +756,13 @@ LISTEN 0      511          0.0.0.0:80        0.0.0.0:*    users:(("apache2",pid=
 LISTEN 0      511             [::]:80           [::]:*    users:(("apache2",pid=3312,fd=4))
 ```
 
-Two lines of that output deserve attention. The `Created symlink ... multi-user.target.wants/apache2.service` line is systemd recording that the service is now *enabled*: it will start at boot, which is what the packaging system decided is right for a web server, and which is worth knowing before you install one on a machine you did not intend to turn into a web server. The `ss -tlnp` output — the socket-listing tool that Part 2 names as the modern replacement for `netstat`, and that the [SSH guide](04-ssh-penetration-testing.md) demonstrates against a live daemon — confirms the practical consequence: something is now listening on port 80, on every interface (`0.0.0.0` and `[::]`), as the `apache2` process. A port bound to all addresses is reachable by anything that can route to the machine, so this is the exact moment a lab machine becomes visible on the network.
+Two lines of that output deserve attention.
+
+The `Created symlink ... multi-user.target.wants/apache2.service` line is systemd recording that the service is now *enabled*: it will start at boot, which is what the packaging system decided is right for a web server, and which is worth knowing before you install one on a machine you did not intend to turn into a web server.
+
+The `ss -tlnp` output — the socket-listing tool that Part 2 names as the modern replacement for `netstat`, and that the [SSH guide](04-ssh-penetration-testing.md) demonstrates against a live daemon — confirms the practical consequence: something is now listening on port 80, on every interface (`0.0.0.0` and `[::]`), as the `apache2` process.
+
+A port bound to all addresses is reachable by anything that can route to the machine, so this is the exact moment a lab machine becomes visible on the network.
 
 The page that Apache serves by default lives at `/var/www/html/index.html` within the **document root**, the directory whose contents are published. Opening it in an editor shows a small forest of HTML comments and a placeholder page:
 
@@ -644,17 +838,37 @@ curl -s -o /dev/null -w "%{http_code}\n" http://192.168.1.9/
 200
 ```
 
-`curl http://localhost/` sends the request to the loopback interface, which Apache answers because it is bound to every interface, and prints the response body. The second command asks the same question but discards the body and prints only the HTTP status code: `200`. That one-liner is the standard way to test whether a web service is reachable, and it is worth adding to your notes because it is equally useful in a script — a `200` means the page is there, `404` means the server is up but the path is wrong, and a connection failure means nothing is listening at all.
+`curl http://localhost/` sends the request to the loopback interface, which Apache answers because it is bound to every interface, and prints the response body. The second command asks the same question but discards the body and prints only the HTTP status code: `200`.
 
-Three details of the layout are worth knowing before moving on, because they come up constantly. The **configuration** lives in `/etc/apache2/`, with `apache2.conf` as the main file and `sites-available/` and `sites-enabled/` holding the per-site virtual host definitions; enabling a site is a matter of `a2ensite` creating a symbolic link, and `a2enmod` does the same job for modules. The **logs** are at `/var/log/apache2/access.log` and `/var/log/apache2/error.log`, the first recording every request with the client's address, the method, the path and the status code, and the second recording the server's own complaints; between them they are the single best record of what has been done to a web server, and the first thing to read after any suspected compromise. And the **permissions** on `/var/www/html` are a classic source of findings: the directory is usually owned by `root` with group `www-data`, and an administrator who "fixes" a broken upload by running `chmod -R 777 /var/www` has created a document root that any local user can rewrite — which converts a low-privileged account on the box into control of the website it serves.
+That one-liner is the standard way to test whether a web service is reachable, and it is worth adding to your notes because it is equally useful in a script — a `200` means the page is there, `404` means the server is up but the path is wrong, and a connection failure means nothing is listening at all.
+
+<details>
+<summary><strong>Read more</strong> — the three layout facts that come up constantly, and the security view of them</summary>
+
+Three details of the layout are worth knowing before moving on, because they come up constantly. The **configuration** lives in `/etc/apache2/`, with `apache2.conf` as the main file and `sites-available/` and `sites-enabled/` holding the per-site virtual host definitions; enabling a site is a matter of `a2ensite` creating a symbolic link, and `a2enmod` does the same job for modules.
+
+The **logs** are at `/var/log/apache2/access.log` and `/var/log/apache2/error.log`, the first recording every request with the client's address, the method, the path and the status code, and the second recording the server's own complaints; between them they are the single best record of what has been done to a web server, and the first thing to read after any suspected compromise.
+
+And the **permissions** on `/var/www/html` are a classic source of findings: the directory is usually owned by `root` with group `www-data`, and an administrator who "fixes" a broken upload by running `chmod -R 777 /var/www` has created a document root that any local user can rewrite — which converts a low-privileged account on the box into control of the website it serves.
 
 That last observation is the bridge to the security view of this section. When you meet an Apache server on an engagement, the questions worth asking are the same ones that make it useful here: what is in the document root beyond the intended application (backup files, `.git` directories, configuration files with credentials), whether directory listing is enabled and reveals a file tree, which modules are loaded, and what the access and error logs say about who has been there before you. Almost none of those are exploits; all of them are findings.
 
+</details>
+
 ### 3.3 OpenSSH as a service
 
-The second example service is one you have already used. SSH — the Secure Shell — is what lets you open a terminal on a remote machine, and it is the subject of the companion guide in this repository, [SSH Penetration Testing - Port 22](04-ssh-penetration-testing.md), which covers the service from an offensive and defensive angle in detail. Here the interest is only in what makes it a *service*: it is a daemon that listens on a port, it has a name in the service manager, and it can be started, stopped and inspected like any other. The one thing worth saying in this guide's context is what it replaced.
+The second example service is one you have already used. SSH — the Secure Shell — is what lets you open a terminal on a remote machine, and it is the subject of the companion guide in this repository, [SSH Penetration Testing - Port 22](04-ssh-penetration-testing.md), which covers the service from an offensive and defensive angle in detail.
 
-SSH's ancestor was **telnet**, which performed the same job of giving you a remote terminal and did it in cleartext — every keystroke, including the password, crossing the network in a form anybody on the path could read. SSH encrypts the whole channel and authenticates the server with a host key, which is why it displaced telnet entirely for administration; you will still meet telnet in lab environments as an intentionally vulnerable service, and its presence on a production network is a finding in itself.
+Here the interest is only in what makes it a *service*: it is a daemon that listens on a port, it has a name in the service manager, and it can be started, stopped and inspected like any other. The one thing worth saying in this guide's context is what it replaced.
+
+<details>
+<summary><strong>Read more</strong> — what SSH replaced, and why telnet still turns up in labs</summary>
+
+SSH's ancestor was **telnet**, which performed the same job of giving you a remote terminal and did it in cleartext — every keystroke, including the password, crossing the network in a form anybody on the path could read. SSH encrypts the whole channel and authenticates the server with a host key, which is why it displaced telnet entirely for administration.
+
+You will still meet telnet in lab environments as an intentionally vulnerable service, and its presence on a production network is a finding in itself.
+
+</details>
 
 Starting the service and connecting are two commands, and the prompt tells you when it worked:
 
@@ -671,11 +885,17 @@ Last login: Fri Oct  9 14:44:10 2026 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
 ```
 
-The `enable` output is a small piece of archaeology worth one sentence: systemd reports that it is synchronising state with a SysV init script, which means the unit is being translated through the compatibility layer described in section 2.4 — the same layer that lets `update-rc.d` still work. Then `ss` shows the daemon listening, and the `ssh` command from the attacker machine authenticates, prints the target's login banner and hands over a prompt on the remote host. The syntax is `ssh <username>@<address>`, and everything about what happens next — host keys, passwords against keys, port forwarding — is covered in the companion guide.
+The `enable` output is a small piece of archaeology worth one sentence: systemd reports that it is synchronising state with a SysV init script, which means the unit is being translated through the compatibility layer described in section 2.4 — the same layer that lets `update-rc.d` still work.
+
+Then `ss` shows the daemon listening, and the `ssh` command from the attacker machine authenticates, prints the target's login banner and hands over a prompt on the remote host. The syntax is `ssh <username>@<address>`, and everything about what happens next — host keys, passwords against keys, port forwarding — is covered in the companion guide.
 
 ### 3.4 Working with FTP
 
-The **File Transfer Protocol** is the third example, and it is included because it is instructive rather than because it is good practice. FTP was the standard way to move files between machines for decades: a client connects to a server on port 21, authenticates, and can then list, upload and download. Its design predates any notion of security — credentials and data both travel in cleartext — and it has largely been replaced by SFTP and by HTTPS-based transfers. It remains in this guide for two reasons: it is still installed on a surprising number of internal networks, and its failure modes (anonymous access, cleartext credentials, and a data channel that most firewalls and monitors handle badly) are the sort of thing you will be asked to look for.
+The **File Transfer Protocol** is the third example, and it is included because it is instructive rather than because it is good practice.
+
+FTP was the standard way to move files between machines for decades: a client connects to a server on port 21, authenticates, and can then list, upload and download. Its design predates any notion of security — credentials and data both travel in cleartext — and it has largely been replaced by SFTP and by HTTPS-based transfers.
+
+It remains in this guide for two reasons: it is still installed on a surprising number of internal networks, and its failure modes (anonymous access, cleartext credentials, and a data channel that most firewalls and monitors handle badly) are the sort of thing you will be asked to look for.
 
 Setting up a server to practise against takes one package, and it should be done on the isolated lab network only. The example server is the Ubuntu target from the earlier parts, at `192.168.1.9`:
 
@@ -750,11 +970,30 @@ ls -l readme.txt
 -rw-r--r-- 1 root root 1024 Oct  9 14:02 readme.txt
 ```
 
-Reading the transcript in order: `220 (vsFTPd 3.0.5)` is the server's greeting, and it hands you the product and version without being asked, which is reconnaissance for free. The `Name` prompt was answered with `anonymous` — the conventional account for a public file server, which requests a password only as a formality (any address is accepted by a polite server, and `anonymous` typed again works). `230 Login successful` means the server accepted it, and everything after that is a conversation in the same numbered-reply style: `ls` lists, `cd` changes directory, `get` downloads, and `bye` closes the session. Each transfer is preceded by a `229 Entering Extended Passive Mode` line, which is the server telling the client to open a *second* connection to an ephemeral port for the data — a design decision that is the reason FTP is so awkward to firewall and to monitor, and the reason passive and active modes exist as a topic.
+Reading the transcript in order: `220 (vsFTPd 3.0.5)` is the server's greeting, and it hands you the product and version without being asked, which is reconnaissance for free.
 
-Two things about this example are worth stating plainly, because the transcript above could be mistaken for a recommendation. The first is that **anonymous FTP is an access-control failure by definition**. A server that lets anyone in, even read-only, publishes whatever is in its reachable directories to anyone who can route to port 21, and the classic finding is that the directory tree above the intended public folder is also reachable. The second is that even an authenticated FTP session sends its password in cleartext, so anyone who can observe the network — a colleague on the same switch, a compromised router, a wireless access point — has the credentials. The secure replacements are worth knowing by name: `sftp`, which speaks the file-transfer protocol *over* SSH and therefore inherits its encryption and its authentication (and is simply the `sftp` subcommand of a normal SSH client); `scp` for simple copies; `lftp` and `curl` for scripted transfers over SFTP, FTPS or HTTPS; and `rsync` for anything involving large trees or repeated synchronisation. If FTP must be kept for a legacy client, the mitigations are to disable anonymous access, force TLS with `ssl_enable=YES` in the configuration, restrict the reachable directory tree with `chroot_local_user=YES`, and firewall port 21 to the hosts that genuinely need it.
+The `Name` prompt was answered with `anonymous` — the conventional account for a public file server, which requests a password only as a formality (any address is accepted by a polite server, and `anonymous` typed again works). `230 Login successful` means the server accepted it.
 
-The security view of this whole section, then, is one idea applied three times. A service is a listening socket with a program behind it, and the questions that matter are the same for all of them: what is listening (`ss -tlnp`), who started it and with what configuration (`systemctl status`, then the configuration file), does it accept input from the network that it should not (`anonymous` FTP, an Apache directory listing, a password prompt), and will it come back after a reboot whether or not anyone wants it (`systemctl is-enabled`). Enumerating services is the first substantive step of both administering a machine and assessing one, and the command is the same in both cases.
+Everything after that is a conversation in the same numbered-reply style: `ls` lists, `cd` changes directory, `get` downloads, and `bye` closes the session. Each transfer is preceded by a `229 Entering Extended Passive Mode` line, which is the server telling the client to open a *second* connection to an ephemeral port for the data.
+
+<details>
+<summary><strong>Read more</strong> — why FTP is awkward to firewall, and the two things worth stating plainly</summary>
+
+That two-channel design decision is the reason FTP is so awkward to firewall and to monitor, and the reason passive and active modes exist as a topic.
+
+Two things about this example are worth stating plainly, because the transcript above could be mistaken for a recommendation. The first is that **anonymous FTP is an access-control failure by definition**. A server that lets anyone in, even read-only, publishes whatever is in its reachable directories to anyone who can route to port 21, and the classic finding is that the directory tree above the intended public folder is also reachable.
+
+The second is that even an authenticated FTP session sends its password in cleartext, so anyone who can observe the network — a colleague on the same switch, a compromised router, a wireless access point — has the credentials.
+
+The secure replacements are worth knowing by name: `sftp`, which speaks the file-transfer protocol *over* SSH and therefore inherits its encryption and its authentication (and is simply the `sftp` subcommand of a normal SSH client); `scp` for simple copies; `lftp` and `curl` for scripted transfers over SFTP, FTPS or HTTPS; and `rsync` for anything involving large trees or repeated synchronisation.
+
+If FTP must be kept for a legacy client, the mitigations are to disable anonymous access, force TLS with `ssl_enable=YES` in the configuration, restrict the reachable directory tree with `chroot_local_user=YES`, and firewall port 21 to the hosts that genuinely need it.
+
+</details>
+
+The security view of this whole section, then, is one idea applied three times. A service is a listening socket with a program behind it, and the questions that matter are the same for all of them: what is listening (`ss -tlnp`), who started it and with what configuration (`systemctl status`, then the configuration file), does it accept input from the network that it should not (`anonymous` FTP, an Apache directory listing, a password prompt), and will it come back after a reboot whether or not anyone wants it (`systemctl is-enabled`).
+
+Enumerating services is the first substantive step of both administering a machine and assessing one, and the command is the same in both cases.
 
 ---
 
@@ -845,8 +1084,18 @@ If you can complete these four exercises without looking anything up, you have w
 
 ## Closing notes
 
-Scripting, scheduling and services are the three mechanisms by which a Linux machine stops being something you operate and starts being something that operates. Everything in this part is really one idea seen from three angles: *the machine can run your commands without you*. A script is that idea applied to a sequence; a cron job is that idea applied to a moment in time; a service is that idea applied to a condition — "whenever someone connects to this port". Understanding all three is what makes the difference between a machine you administer by hand and a machine that administers itself.
+Scripting, scheduling and services are the three mechanisms by which a Linux machine stops being something you operate and starts being something that operates. Everything in this part is really one idea seen from three angles: *the machine can run your commands without you*.
 
-Two habits from the earlier parts matter more than ever here, because the material in this part runs unattended. The first is to *give everything a way to be observed*: log a cron job's output, read the access log of the web server you just built, check `systemctl is-active` rather than assuming, and know where each service's error messages go. Something that runs without a terminal produces no visible evidence unless you arrange for it, and the most expensive mistakes in this material are silent ones. The second is to *assume that anything you enable is permanent*: a service enabled at boot comes back after every reboot, a cron job keeps running after you have forgotten writing it, and a script copied to `/usr/local/bin` is a command from then on. The craft of automation is as much about being able to turn things off as it is about turning them on, so keep notes — what you enabled, where, and why.
+A script is that idea applied to a sequence; a cron job is that idea applied to a moment in time; a service is that idea applied to a condition — "whenever someone connects to this port". Understanding all three is what makes the difference between a machine you administer by hand and a machine that administers itself.
 
-And one habit specific to this part, which follows from the three services you ran. Anything that listens on a socket has an audience, and the audience is not the one you chose. Anonymous FTP, a default Apache page, a web directory somebody chmod'ed to `777` — these are not clever attacks, and they are what a large proportion of real findings actually look like. Whether you go on to administer systems, assess them, or both, the useful instinct to carry away is the one this part has been building all along: before asking whether something *works*, ask what it *exposes*.
+Two habits from the earlier parts matter more than ever here, because the material in this part runs unattended. The first is to *give everything a way to be observed*: log a cron job's output, read the access log of the web server you just built, check `systemctl is-active` rather than assuming, and know where each service's error messages go.
+
+Something that runs without a terminal produces no visible evidence unless you arrange for it, and the most expensive mistakes in this material are silent ones. The second is to *assume that anything you enable is permanent*: a service enabled at boot comes back after every reboot, a cron job keeps running after you have forgotten writing it, and a script copied to `/usr/local/bin` is a command from then on.
+
+The craft of automation is as much about being able to turn things off as it is about turning them on, so keep notes — what you enabled, where, and why.
+
+And one habit specific to this part, which follows from the three services you ran. Anything that listens on a socket has an audience, and the audience is not the one you chose.
+
+Anonymous FTP, a default Apache page, a web directory somebody chmod'ed to `777` — these are not clever attacks, and they are what a large proportion of real findings actually look like.
+
+Whether you go on to administer systems, assess them, or both, the useful instinct to carry away is the one this part has been building all along: before asking whether something *works*, ask what it *exposes*.
