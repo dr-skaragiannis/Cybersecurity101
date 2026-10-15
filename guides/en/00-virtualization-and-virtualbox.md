@@ -32,9 +32,6 @@ Hypervisors come in two tiers:
 *   **Type-1 (bare-metal):** run directly on the hardware with no host operating system beneath them (VMware ESXi, KVM, Xen, Proxmox VE). They are fast and low-latency, which makes them the standard for data-centre infrastructure.
 *   **Type-2 (hosted):** install as an ordinary program inside a conventional operating system (Oracle VM VirtualBox, VMware Workstation). The host manages the physical devices; the hypervisor mediates the guest.
 
-<details>
-<summary><strong>Read more</strong> — how a Type-2 hypervisor sits on your machine</summary>
-
 ```
 +--------------------------------------------------------------+
 |                     Host Hardware (CPU, RAM, NIC)            |
@@ -49,6 +46,9 @@ Hypervisors come in two tiers:
 |   | Virtual Devices/NIC  |   |   | Virtual Devices/NIC  |    |
 +---+----------------------+---+---+----------------------+----+
 ```
+
+<details>
+<summary><strong>Read more</strong> — how a Type-2 hypervisor sits on your machine</summary>
 
 **What is Oracle VM VirtualBox?** An open-source, cross-platform Type-2 hypervisor for Windows, Linux and macOS hosts. It gives each guest virtualized CPU cores, configurable memory, emulated storage controllers (SATA, NVMe, SCSI, IDE) and software-defined network interfaces. That isolation makes it a standard tool for security evaluation, automated build pipelines, protocol analysis and cross-platform testing.
 

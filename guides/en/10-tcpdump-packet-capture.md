@@ -100,11 +100,38 @@ The client generates the traffic, the capture host observes it, and the analysis
 
 ## Install and identify interfaces
 
-On Debian-based systems, install tcpdump and list capture-capable interfaces:
+On Debian-based systems, refresh the package index, install tcpdump, and list capture-capable interfaces. Start by updating the local package list:
 
 ```bash
 sudo apt update
+```
+
+**Output:**
+
+```text
+Hit:1 http://deb.debian.org/debian stable InRelease
+Reading package lists... Done
+```
+
+`apt update` refreshes the local package metadata so that later install commands see current package versions. It changes nothing else, and it normally ends with `Reading package lists... Done`.
+
+Install the capture utility:
+
+```bash
 sudo apt install -y tcpdump
+```
+
+**Output:**
+
+```text
+Setting up tcpdump (4.x) ...
+```
+
+`apt install -y tcpdump` installs tcpdump and its dependencies, and `-y` answers the confirmation prompt automatically. When the command returns without an error, the `tcpdump` binary is available for the next step.
+
+List the interfaces tcpdump is allowed to capture on:
+
+```bash
 sudo tcpdump -D
 ```
 
@@ -116,9 +143,7 @@ sudo tcpdump -D
 3.any (Pseudo-device that captures on all interfaces)
 ```
 
-`apt update` refreshes available package metadata; `apt install` installs the capture utility. `tcpdump -D` lists the interfaces tcpdump can use.
-
-`eth0` is commonly an Ethernet-style network interface, `lo` is the local loopback interface, and `any` captures across multiple interfaces.
+`tcpdump -D` lists the interfaces tcpdump can use. `eth0` is commonly an Ethernet-style network interface, `lo` is the local loopback interface, and `any` captures across multiple interfaces.
 
 <details>
 <summary><strong>Read more</strong> — interface names differ from one distribution to the next</summary>
@@ -127,11 +152,10 @@ Interface names may be `ens33`, `enp0s3`, `wlan0`, or another distribution-speci
 
 </details>
 
-View version and usage information:
+View the installed version and the usage summary. First, the version:
 
 ```bash
 tcpdump --version
-tcpdump --help | head -25
 ```
 
 **Output:**
@@ -139,10 +163,23 @@ tcpdump --help | head -25
 ```text
 tcpdump version 4.x
 libpcap version 1.x
+```
+
+The version output identifies the tcpdump and the libpcap builds it links against; the exact numbers differ per distribution.
+
+Then print the first lines of the usage text:
+
+```bash
+tcpdump --help | head -25
+```
+
+**Output:**
+
+```text
 Usage: tcpdump [ -AbdDefhHIJKlLnNOpqStuUvxX# ] ...
 ```
 
-The version output identifies the tcpdump and libpcap builds. The help summary lists the command options.
+The help summary lists the command options. Piping it through `head -25` keeps the output short, showing only the first 25 lines.
 
 <details>
 <summary><strong>Read more</strong> — features differ between releases</summary>
@@ -256,14 +293,35 @@ IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
 
 The filter `port 80` matches packets whose source or destination port is 80. To restrict to a server-side destination port, use `dst port 80`; to observe traffic originating from port 80, use `src port 80`.
 
+Capture only traffic involving one host:
+
 ```bash
 sudo tcpdump -i eth0 -c 10 -nn host 192.168.56.30
+```
+
+**Output:**
+
+```text
+IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+The `host` filter matches packets in either direction that involve the single address `192.168.56.30`. It is the simplest way to watch everything a specific host sends and receives.
+
+Restrict the capture to a whole subnet:
+
+```bash
 sudo tcpdump -i eth0 -c 10 -nn net 192.168.56.0/24
 ```
 
-The `host` filter matches either direction involving one address. The `net` filter matches traffic to or from the stated network.
+**Output:**
 
-Narrow filters reduce unrelated collection and improve readability.
+```text
+IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+The `net` filter matches traffic to or from the stated network. Narrow filters reduce unrelated collection and improve readability.
 
 A port range can be useful when testing a group of related services:
 
@@ -284,14 +342,33 @@ The quoting matters. `'port 80'` is passed to the filter compiler as one argumen
 
 ## Direction and link-layer information
 
-On platforms that support capture direction, restrict output to inbound or outbound packets:
+On platforms that support capture direction, restrict output to inbound or outbound packets. Show only the packets the interface receives:
 
 ```bash
 sudo tcpdump -i eth0 -c 5 -nn -Q in
+```
+
+**Output:**
+
+```text
+IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], seq 987650, ack 125431, win 65160, length 0
+```
+
+`-Q in` displays packets received by the interface, that is, inbound traffic.
+
+Show only the packets the interface sends:
+
+```bash
 sudo tcpdump -i eth0 -c 5 -nn -Q out
 ```
 
-`-Q in` displays packets received by the interface, while `-Q out` displays packets sent by it. Support is platform and driver dependent.
+**Output:**
+
+```text
+IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], seq 125430, win 64240, length 0
+```
+
+`-Q out` displays packets sent by the interface. Support for both directions is platform and driver dependent; if it is unsupported, tcpdump reports an error.
 
 Include Ethernet-level headers:
 
@@ -318,35 +395,110 @@ MAC addresses are normally meaningful only on the local Layer-2 segment: they ch
 
 ## Verbosity and timestamps
 
-Increase decoding detail only when it is useful:
+Increase decoding detail only when it is useful, starting with `-v`:
 
 ```bash
 sudo tcpdump -i eth0 -c 2 -nn -v
-sudo tcpdump -i eth0 -c 2 -nn -vv
-sudo tcpdump -i eth0 -c 2 -nn -vvv
 ```
 
-**Output (verbose packet):**
+**Output:**
 
 ```text
 IP (tos 0x0, ttl 64, id 22301, offset 0, flags [DF], proto TCP (6), length 60)
-    192.168.56.30.49152 > 192.168.56.20.80: Flags [S], cksum 0xabcd (correct), seq 125430, win 64240, options [mss 1460,sackOK,TS val 100 ecr 0,nop,wscale 7], length 0
+    192.168.56.30.49152 > 192.168.56.20.80: Flags [S], seq 125430, win 64240, length 0
 ```
 
-The IPv4 section includes type of service, time-to-live, packet ID, fragmentation information, protocol number, and total length. The TCP section includes flags, checksum status, sequence number, receive window, and negotiation options.
+`-v` adds an IPv4 header line with type of service, time-to-live, packet ID, fragmentation information, protocol number, and total length.
 
-Extra verbosity can make troubleshooting easier but creates more output to review.
+Add more protocol detail with a second `v`:
 
-Timestamp formats change presentation, not packet contents:
+```bash
+sudo tcpdump -i eth0 -c 2 -nn -vv
+```
+
+**Output:**
+
+```text
+IP (tos 0x0, ttl 64, id 22301, offset 0, flags [DF], proto TCP (6), length 60)
+    192.168.56.30.49152 > 192.168.56.20.80: Flags [S], cksum 0xabcd (correct), seq 125430, win 64240, length 0
+```
+
+`-vv` adds further protocol fields, including the checksum status of the TCP segment.
+
+Reserve the third level for genuinely deep protocol debugging:
+
+```bash
+sudo tcpdump -i eth0 -c 2 -nn -vvv
+```
+
+**Output:**
+
+```text
+IP (tos 0x0, ttl 64, id 22301, offset 0, flags [DF], proto TCP (6), length 60)
+    192.168.56.30.49152 > 192.168.56.20.80: Flags [S], cksum 0xabcd (correct), seq 125430:125430, win 64240, options [mss 1460,sackOK,TS val 100 ecr 0,nop,wscale 7], length 0
+```
+
+`-vvv` decodes the most fields, including the negotiated TCP options such as `mss`, `sackOK`, `wscale` and timestamps. Extra verbosity can make troubleshooting easier but creates more output to review.
+
+Timestamp formats change presentation, not packet contents. Omit timestamps entirely with `-t`:
 
 ```bash
 sudo tcpdump -i eth0 -c 2 -nn -t
+```
+
+**Output:**
+
+```text
+IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+`-t` omits the timestamp column, leaving only the packet summary.
+
+Print an absolute Unix-style timestamp with `-tt`:
+
+```bash
 sudo tcpdump -i eth0 -c 2 -nn -tt
+```
+
+**Output:**
+
+```text
+1759951801.102431 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+1759951801.102580 IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+`-tt` prints an absolute Unix-style timestamp, measured in seconds since the epoch.
+
+Measure the delay between packets with `-ttt`:
+
+```bash
 sudo tcpdump -i eth0 -c 2 -nn -ttt
+```
+
+**Output:**
+
+```text
+00:00:00.000000 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+00:00:00.000149 IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+`-ttt` prints the time difference from the previous packet, which is useful for latency and timing analysis.
+
+Use a human-readable date with `-tttt`:
+
+```bash
 sudo tcpdump -i eth0 -c 2 -nn -tttt
 ```
 
-`-t` omits timestamps. `-tt` prints an absolute Unix-style timestamp. `-ttt` prints the time difference from the previous packet, which is useful for latency and timing analysis. `-tttt` displays a date and time in a human-readable format.
+**Output:**
+
+```text
+2026-10-08 20:40:01.000010 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+2026-10-08 20:40:01.000149 IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+`-tttt` displays a date and time in a human-readable format instead of a bare clock time.
 
 <details>
 <summary><strong>Read more</strong> — choosing the right level of detail</summary>
@@ -468,19 +620,29 @@ Write raw packets to a PCAP file for later analysis. Avoid recording an unlimite
 
 ```bash
 sudo tcpdump -i eth0 -c 100 -nn -w lab-web-test.pcap 'tcp port 8080'
-ls -lh lab-web-test.pcap
 ```
 
 **Output:**
 
 ```text
 100 packets captured
+```
+
+`-w` writes binary packet records rather than readable lines, so no per-packet output appears. The resulting PCAP can be opened later by tcpdump or a graphical analyzer.
+
+Inspect the file that was created:
+
+```bash
+ls -lh lab-web-test.pcap
+```
+
+**Output:**
+
+```text
 -rw-r----- 1 root root 42K Oct  8 20:40 lab-web-test.pcap
 ```
 
-`-w` writes binary packet records rather than readable lines. The resulting PCAP can be opened by tcpdump or a graphical analyzer.
-
-The permissions and owner shown by `ls -lh` should be reviewed, because capture files may include sensitive payloads.
+`ls -lh` shows the human-readable size, owner and permissions. The permissions and owner should be reviewed, because capture files may include sensitive payloads.
 
 Read the file without needing live traffic:
 
@@ -542,14 +704,32 @@ Treat the two as complements: capture with tcpdump, then analyse the protected c
 
 ## Remote capture with safeguards
 
-For an authorized remote host, write a PCAP locally rather than sending a live binary stream to an untrusted destination:
+For an authorized remote host, write a PCAP locally rather than sending a live binary stream to an untrusted destination. Perform a bounded capture on the remote host:
 
 ```bash
 sudo tcpdump -i eth0 -c 50 -nn -w /var/tmp/lab-capture.pcap 'tcp port 8080'
+```
+
+**Output:**
+
+```text
+50 packets captured
+```
+
+This performs a bounded capture on the remote host, so the file stops growing after 50 packets.
+
+Then limit read access to the file owner and group:
+
+```bash
 sudo chmod 0640 /var/tmp/lab-capture.pcap
 ```
 
-The first command performs a bounded capture on the remote host. The second limits read access to the file owner and group.
+**Output:**
+
+```text
+```
+
+`chmod 0640` limits access to the owner and group, and it succeeds silently: as elsewhere in Linux, no output means the change was accepted.
 
 Transfer it only through an approved authenticated channel and delete it according to your evidence-retention policy. Avoid commands that expose passwords in shells, logs, command history, or capture data.
 

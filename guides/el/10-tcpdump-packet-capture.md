@@ -100,11 +100,38 @@ uid=1000(student) gid=1000(student) groups=1000(student),27(sudo)
 
 ## Εγκατάσταση και εντοπισμός interfaces
 
-Σε Debian-based συστήματα, εγκαταστήστε το tcpdump και καταγράψτε τα interfaces που μπορούν να συλλέξουν:
+Σε Debian-based συστήματα, ανανεώστε το package index, εγκαταστήστε το tcpdump και καταγράψτε τα interfaces που μπορούν να συλλέξουν. Πρώτα ανανεώστε τη λίστα πακέτων:
 
 ```bash
 sudo apt update
+```
+
+**Έξοδος:**
+
+```text
+Hit:1 http://deb.debian.org/debian stable InRelease
+Reading package lists... Done
+```
+
+Η `apt update` ανανεώνει τα τοπικά package metadata ώστε οι επόμενες εγκαταστάσεις να βλέπουν τις τρέχουσες εκδόσεις. Δεν αλλάζει τίποτα άλλο και συνήθως τελειώνει με `Reading package lists... Done`.
+
+Εγκαταστήστε το capture utility:
+
+```bash
 sudo apt install -y tcpdump
+```
+
+**Έξοδος:**
+
+```text
+Setting up tcpdump (4.x) ...
+```
+
+Η `apt install -y tcpdump` εγκαθιστά το tcpdump και τις εξαρτήσεις του, ενώ το `-y` απαντά αυτόματα στην ερώτηση επιβεβαίωσης. Όταν η εντολή επιστρέψει χωρίς σφάλμα, το εκτελέσιμο `tcpdump` είναι διαθέσιμο.
+
+Καταγράψτε τα interfaces στα οποία επιτρέπεται συλλογή:
+
+```bash
 sudo tcpdump -D
 ```
 
@@ -116,9 +143,7 @@ sudo tcpdump -D
 3.any (Pseudo-device that captures on all interfaces)
 ```
 
-Η `apt update` ανανεώνει package metadata και η `apt install` εγκαθιστά το capture utility. Η `tcpdump -D` εμφανίζει τα interfaces που μπορεί να χρησιμοποιήσει το tcpdump.
-
-Το `eth0` είναι συνήθως Ethernet-style interface, το `lo` είναι local loopback και το `any` καταγράφει από πολλαπλά interfaces.
+Η `tcpdump -D` εμφανίζει τα interfaces που μπορεί να χρησιμοποιήσει το tcpdump. Το `eth0` είναι συνήθως Ethernet-style interface, το `lo` είναι local loopback και το `any` καταγράφει από πολλαπλά interfaces.
 
 <details>
 <summary><strong>Περισσότερα</strong> — τα ονόματα interfaces διαφέρουν από διανομή σε διανομή</summary>
@@ -127,11 +152,10 @@ sudo tcpdump -D
 
 </details>
 
-Δείτε την έκδοση και τις πληροφορίες χρήσης:
+Δείτε την εγκατεστημένη έκδοση και τη σύνοψη χρήσης. Πρώτα την έκδοση:
 
 ```bash
 tcpdump --version
-tcpdump --help | head -25
 ```
 
 **Έξοδος:**
@@ -139,10 +163,23 @@ tcpdump --help | head -25
 ```text
 tcpdump version 4.x
 libpcap version 1.x
+```
+
+Η έξοδος έκδοσης δείχνει ποιο build tcpdump και ποιο build libpcap χρησιμοποιούνται· οι ακριβείς αριθμοί διαφέρουν ανά διανομή.
+
+Έπειτα, εκτυπώστε τις πρώτες γραμμές της βοήθειας:
+
+```bash
+tcpdump --help | head -25
+```
+
+**Έξοδος:**
+
+```text
 Usage: tcpdump [ -AbdDefhHIJKlLnNOpqStuUvxX# ] ...
 ```
 
-Η έξοδος έκδοσης δείχνει τα builds tcpdump και libpcap. Η σύνοψη βοήθειας εμφανίζει τα διαθέσιμα options.
+Η σύνοψη βοήθειας εμφανίζει τα διαθέσιμα options. Η διοχέτευση μέσω `head -25` κρατά την έξοδο σύντομη, δείχνοντας μόνο τις πρώτες 25 γραμμές.
 
 <details>
 <summary><strong>Περισσότερα</strong> — τα features διαφέρουν μεταξύ εκδόσεων</summary>
@@ -256,14 +293,35 @@ IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
 
 Το filter `port 80` ταιριάζει με πακέτα όπου source ή destination port είναι 80. Για server-side destination χρησιμοποιήστε `dst port 80`· για traffic που ξεκινά από port 80 χρησιμοποιήστε `src port 80`.
 
+Καταγράψτε μόνο το traffic που αφορά έναν host:
+
 ```bash
 sudo tcpdump -i eth0 -c 10 -nn host 192.168.56.30
+```
+
+**Έξοδος:**
+
+```text
+IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+Το `host` ταιριάζει με πακέτα και στις δύο κατευθύνσεις που αφορούν τη συγκεκριμένη address `192.168.56.30`. Είναι ο απλούστερος τρόπος να παρακολουθείτε ό,τι στέλνει και λαμβάνει ένας host.
+
+Περιορίστε τη συλλογή σε ολόκληρο υποδίκτυο:
+
+```bash
 sudo tcpdump -i eth0 -c 10 -nn net 192.168.56.0/24
 ```
 
-Το `host` ταιριάζει και στις δύο κατευθύνσεις μιας address. Το `net` ταιριάζει με traffic προς ή από το δηλωμένο network.
+**Έξοδος:**
 
-Τα στενά filters μειώνουν την άσχετη συλλογή και βελτιώνουν την αναγνωσιμότητα.
+```text
+IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+Το `net` ταιριάζει με traffic προς ή από το δηλωμένο network. Τα στενά filters μειώνουν την άσχετη συλλογή και βελτιώνουν την αναγνωσιμότητα.
 
 Ένα port range είναι χρήσιμο όταν δοκιμάζετε μια ομάδα σχετικών υπηρεσιών:
 
@@ -284,14 +342,33 @@ sudo tcpdump -i eth0 -c 10 -nn 'portrange 8000-8100'
 
 ## Κατεύθυνση και link-layer πληροφορίες
 
-Σε συστήματα που υποστηρίζουν capture direction, περιορίστε την έξοδο σε εισερχόμενα ή εξερχόμενα πακέτα:
+Σε συστήματα που υποστηρίζουν capture direction, περιορίστε την έξοδο σε εισερχόμενα ή εξερχόμενα πακέτα. Δείξτε μόνο τα πακέτα που λαμβάνει το interface:
 
 ```bash
 sudo tcpdump -i eth0 -c 5 -nn -Q in
+```
+
+**Έξοδος:**
+
+```text
+IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], seq 987650, ack 125431, win 65160, length 0
+```
+
+Η `-Q in` εμφανίζει πακέτα που λαμβάνει το interface, δηλαδή εισερχόμενη κίνηση.
+
+Δείξτε μόνο τα πακέτα που στέλνει το interface:
+
+```bash
 sudo tcpdump -i eth0 -c 5 -nn -Q out
 ```
 
-Η `-Q in` εμφανίζει πακέτα που λαμβάνει το interface, ενώ η `-Q out` πακέτα που στέλνει. Η υποστήριξη εξαρτάται από platform και driver.
+**Έξοδος:**
+
+```text
+IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], seq 125430, win 64240, length 0
+```
+
+Η `-Q out` εμφανίζει πακέτα που στέλνει το interface. Η υποστήριξη και των δύο κατευθύνσεων εξαρτάται από platform και driver· αν δεν υποστηρίζεται, το tcpdump επιστρέφει σφάλμα.
 
 Συμπεριλάβετε headers επιπέδου Ethernet:
 
@@ -318,35 +395,110 @@ sudo tcpdump -i eth0 -c 2 -nn -e
 
 ## Verbosity και timestamps
 
-Αυξήστε το protocol detail μόνο όταν είναι χρήσιμο:
+Αυξήστε το protocol detail μόνο όταν είναι χρήσιμο, ξεκινώντας με `-v`:
 
 ```bash
 sudo tcpdump -i eth0 -c 2 -nn -v
-sudo tcpdump -i eth0 -c 2 -nn -vv
-sudo tcpdump -i eth0 -c 2 -nn -vvv
 ```
 
-**Έξοδος (verbose packet):**
+**Έξοδος:**
 
 ```text
 IP (tos 0x0, ttl 64, id 22301, offset 0, flags [DF], proto TCP (6), length 60)
-    192.168.56.30.49152 > 192.168.56.20.80: Flags [S], cksum 0xabcd (correct), seq 125430, win 64240, options [mss 1460,sackOK,TS val 100 ecr 0,nop,wscale 7], length 0
+    192.168.56.30.49152 > 192.168.56.20.80: Flags [S], seq 125430, win 64240, length 0
 ```
 
-Το τμήμα IPv4 περιλαμβάνει type of service, time-to-live, packet ID, fragmentation πληροφορίες, protocol number και συνολικό μήκος. Το τμήμα TCP περιλαμβάνει flags, checksum status, sequence number, receive window και negotiation options.
+Η `-v` προσθέτει γραμμή IPv4 header με type of service, time-to-live, packet ID, fragmentation πληροφορίες, protocol number και συνολικό μήκος.
 
-Η επιπλέον verbosity κάνει το troubleshooting ευκολότερο αλλά αυξάνει τον όγκο εξόδου.
+Προσθέστε περισσότερες protocol λεπτομέρειες με δεύτερο `v`:
 
-Οι μορφές timestamps αλλάζουν την παρουσίαση, όχι το περιεχόμενο των πακέτων:
+```bash
+sudo tcpdump -i eth0 -c 2 -nn -vv
+```
+
+**Έξοδος:**
+
+```text
+IP (tos 0x0, ttl 64, id 22301, offset 0, flags [DF], proto TCP (6), length 60)
+    192.168.56.30.49152 > 192.168.56.20.80: Flags [S], cksum 0xabcd (correct), seq 125430, win 64240, length 0
+```
+
+Η `-vv` προσθέτει ακόμη περισσότερα protocol fields, όπως την κατάσταση checksum του TCP τμήματος.
+
+Κρατήστε το τρίτο επίπεδο για πραγματικά βαθύ protocol debugging:
+
+```bash
+sudo tcpdump -i eth0 -c 2 -nn -vvv
+```
+
+**Έξοδος:**
+
+```text
+IP (tos 0x0, ttl 64, id 22301, offset 0, flags [DF], proto TCP (6), length 60)
+    192.168.56.30.49152 > 192.168.56.20.80: Flags [S], cksum 0xabcd (correct), seq 125430:125430, win 64240, options [mss 1460,sackOK,TS val 100 ecr 0,nop,wscale 7], length 0
+```
+
+Η `-vvv` αποκωδικοποιεί τα περισσότερα πεδία, μαζί με τα διαπραγματευμένα TCP options όπως `mss`, `sackOK`, `wscale` και timestamps. Η επιπλέον verbosity κάνει το troubleshooting ευκολότερο αλλά αυξάνει τον όγκο εξόδου.
+
+Οι μορφές timestamps αλλάζουν την παρουσίαση, όχι το περιεχόμενο των πακέτων. Αποκρύψτε τα timestamps εντελώς με `-t`:
 
 ```bash
 sudo tcpdump -i eth0 -c 2 -nn -t
+```
+
+**Έξοδος:**
+
+```text
+IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+Η `-t` αποκρύπτει τη στήλη timestamp, αφήνοντας μόνο τη σύνοψη του πακέτου.
+
+Εμφανίστε απόλυτο Unix-style timestamp με `-tt`:
+
+```bash
 sudo tcpdump -i eth0 -c 2 -nn -tt
+```
+
+**Έξοδος:**
+
+```text
+1759951801.102431 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+1759951801.102580 IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+Η `-tt` εμφανίζει απόλυτο Unix-style timestamp, σε δευτερόλεπτα από την εποχή (epoch).
+
+Μετρήστε την καθυστέρηση μεταξύ πακέτων με `-ttt`:
+
+```bash
 sudo tcpdump -i eth0 -c 2 -nn -ttt
+```
+
+**Έξοδος:**
+
+```text
+00:00:00.000000 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+00:00:00.000149 IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+Η `-ttt` εμφανίζει τη διαφορά χρόνου από το προηγούμενο πακέτο, χρήσιμη για latency και timing analysis.
+
+Χρησιμοποιήστε human-readable ημερομηνία με `-tttt`:
+
+```bash
 sudo tcpdump -i eth0 -c 2 -nn -tttt
 ```
 
-Η `-t` αποκρύπτει timestamps. Η `-tt` εμφανίζει απόλυτο Unix-style timestamp. Η `-ttt` εμφανίζει τη διαφορά χρόνου από το προηγούμενο πακέτο, χρήσιμη για latency και timing analysis. Η `-tttt` δείχνει ημερομηνία και ώρα σε human-readable μορφή.
+**Έξοδος:**
+
+```text
+2026-10-08 20:40:01.000010 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
+2026-10-08 20:40:01.000149 IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [S.], length 0
+```
+
+Η `-tttt` δείχνει ημερομηνία και ώρα σε human-readable μορφή αντί για σκέτη ώρα.
 
 <details>
 <summary><strong>Περισσότερα</strong> — επιλέγοντας το σωστό επίπεδο λεπτομέρειας</summary>
@@ -468,19 +620,29 @@ sudo tcpdump -i eth0 -nn -S -c 3 tcp
 
 ```bash
 sudo tcpdump -i eth0 -c 100 -nn -w lab-web-test.pcap 'tcp port 8080'
-ls -lh lab-web-test.pcap
 ```
 
 **Έξοδος:**
 
 ```text
 100 packets captured
+```
+
+Η `-w` γράφει binary packet records αντί για readable γραμμές, οπότε δεν εμφανίζεται έξοδος ανά πακέτο. Το PCAP που προκύπτει ανοίγει αργότερα με tcpdump ή graphical analyzer.
+
+Ελέγξτε το αρχείο που δημιουργήθηκε:
+
+```bash
+ls -lh lab-web-test.pcap
+```
+
+**Έξοδος:**
+
+```text
 -rw-r----- 1 root root 42K Oct  8 20:40 lab-web-test.pcap
 ```
 
-Η `-w` γράφει binary packet records αντί για readable γραμμές. Το PCAP που προκύπτει ανοίγει με tcpdump ή graphical analyzer.
-
-Τα permissions και ο owner που δείχνει η `ls -lh` πρέπει να ελέγχονται, γιατί τα capture files μπορεί να περιέχουν ευαίσθητα payloads.
+Η `ls -lh` δείχνει το μέγεθος σε human-readable μορφή, τον owner και τα permissions. Τα permissions και ο owner πρέπει να ελέγχονται, γιατί τα capture files μπορεί να περιέχουν ευαίσθητα payloads.
 
 Διαβάστε το αρχείο χωρίς να χρειάζεστε live traffic:
 
@@ -542,14 +704,32 @@ reading from file lab-web-test.pcap, link-type EN10MB (Ethernet), snapshot lengt
 
 ## Remote capture με safeguards
 
-Για εξουσιοδοτημένο remote host, γράψτε το PCAP τοπικά αντί να στέλνετε live binary stream σε μη έμπιστο προορισμό:
+Για εξουσιοδοτημένο remote host, γράψτε το PCAP τοπικά αντί να στέλνετε live binary stream σε μη έμπιστο προορισμό. Κάντε bounded capture στον remote host:
 
 ```bash
 sudo tcpdump -i eth0 -c 50 -nn -w /var/tmp/lab-capture.pcap 'tcp port 8080'
+```
+
+**Έξοδος:**
+
+```text
+50 packets captured
+```
+
+Αυτό κάνει bounded capture στον remote host, ώστε το αρχείο να σταματήσει να μεγαλώνει μετά τα 50 πακέτα.
+
+Έπειτα περιορίστε την read access στον owner και στην group του αρχείου:
+
+```bash
 sudo chmod 0640 /var/tmp/lab-capture.pcap
 ```
 
-Η πρώτη εντολή κάνει bounded capture στον remote host. Η δεύτερη περιορίζει την read access στον owner και στην group του αρχείου.
+**Έξοδος:**
+
+```text
+```
+
+Η `chmod 0640` περιορίζει την πρόσβαση στον owner και στη group, και πετυχαίνει σιωπηλά: όπως αλλού στο Linux, η απουσία εξόδου σημαίνει ότι η αλλαγή έγινε δεκτή.
 
 Μεταφέρετέ το μόνο μέσω approved authenticated channel και διαγράψτε το σύμφωνα με την evidence-retention policy σας. Αποφεύγετε εντολές που εκθέτουν passwords σε shell, logs, command history ή capture data.
 
