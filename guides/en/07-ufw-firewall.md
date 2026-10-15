@@ -52,6 +52,8 @@ Anything longer — extra flags, pitfalls, background theory, alternatives and w
 
 ## 1. What UFW does
 
+> **Concept.** A Linux firewall is enforced inside the kernel by **Netfilter**, which exposes hooks along the packet path — input, forward and output — together with a connection-tracking facility, `conntrack`, that remembers the state of every flow. The modern kernel backend is **nftables**, with the older **iptables** as its predecessor; UFW is neither, but a *frontend* that translates readable rules into one of those backends (`man 8 ufw`, `man 5 ufw`, `nft(8)`). Keeping that abstraction in view is what lets you reason about UFW: it owns a policy, not a data path. NIST SP 800-41, *Guidelines on Firewalls and Firewall Policy*, frames the host firewall as one control in a layered boundary rather than a replacement for the others.
+
 UFW, or Uncomplicated Firewall, is a command-line management layer for Linux firewall rules.
 
 It makes common allow and deny operations easier to read than directly editing low-level packet-filtering rules. UFW can control access by source IP address, subnet, service profile, port, and protocol. It is commonly available on Debian-based distributions such as Ubuntu and Debian.
@@ -70,6 +72,8 @@ It also does not describe traffic that belongs to a connection established befor
 ---
 
 ## 2. Prerequisites and safety
+
+> **Concept.** A firewall rule set is only meaningful against an inventory of what the host actually offers, so the first artefact is not a rule but a list of listening sockets. Saltzer & Schroeder's *fail-safe defaults* principle (1975) says a system should deny by default and grant only by explicit exception, while *complete mediation* says every access must be checked — here, every new connection. Enumerate first, decide the policy second, and never enable enforcement over a path you cannot re-enter.
 
 You need administrative privileges for every UFW command in this guide.
 
@@ -115,6 +119,8 @@ Before you enable any firewall remotely, keep an existing SSH session open, conf
 ---
 
 ## 3. Install UFW
+
+> **Concept.** Installing UFW places a userspace tool, its application profiles and `/etc/default/ufw` on disk; it does not touch the running packet filter, which changes only when rules are committed (`man 8 ufw`). That separation is deliberate — policy is composed while enforcement is off, so the machine is never briefly exposed by a half-written rule set. The installed state becomes the "before" snapshot against which every later change can be compared.
 
 On a Debian-based system, refresh package metadata and install UFW:
 
@@ -177,6 +183,8 @@ That separation is the whole reason the workflow in this guide exists: build the
 
 ## 4. Establish a safe baseline
 
+> **Concept.** The default policies are the *end of the rule search*: a new connection that matches no rule is decided by them, which is the fail-safe-default posture in practice. Because Netfilter is **stateful**, replies to connections the host itself started are matched by the connection-tracking rule (`ESTABLISHED,RELATED`) instead of by a fresh opening — which is why an allow-outgoing policy does not also need an inbound hole. Getting these two defaults right is what makes every later rule an *exception* rather than the whole policy.
+
 Before enabling UFW, choose default policies. A common server baseline denies unsolicited incoming connections and permits outgoing connections:
 
 ```bash
@@ -216,6 +224,8 @@ The defaults are the *fallback*: they describe what happens to a connection that
 
 ## 5. Allow SSH before enabling
 
+> **Concept.** Rules are evaluated in order and the first match decides the verdict, so the order in which they are added is part of the policy. Allowing the real SSH port before enforcement is the single step that prevents a remote lockout, because a host firewall that denies new inbound connections will drop your next session — an existing one survives on its `ESTABLISHED` state. `ufw limit` goes a step further and rate-limits new connections to a port, turning sustained guessing into a slow, visible trickle.
+
 Allow the actual SSH port before activating the firewall:
 
 ```bash
@@ -248,9 +258,44 @@ Keeping an existing session open matters because the session is already *establi
 
 </details>
 
+A plain `allow` accepts every new connection to a port. To slow repeated authentication attempts against SSH, UFW can rate-limit them with `limit`, which opens the port but throttles connections from a single source:
+
+```bash
+sudo ufw limit ssh
+```
+
+**Output:**
+
+```text
+Rule added
+Rule added (v6)
+```
+
+`ufw limit` installs the same allow rule plus a rate limit — by default about six connections from one address within thirty seconds — after which further attempts from that source are dropped. It is a speed bump for brute-force and connection-flood tools, not a replacement for key-based authentication.
+
+To confirm the rule landed with its limit flag, read the numbered table:
+
+```bash
+sudo ufw status numbered
+```
+
+**Output:**
+
+```text
+Status: active
+
+     To                         Action      From
+[ 1] 22/tcp                     LIMIT IN    Anywhere
+[ 2] 22/tcp (v6)                LIMIT IN    Anywhere (v6)
+```
+
+The `Action` column now reads `LIMIT IN` instead of `ALLOW IN`, which is how a throttled rule is distinguished from a plain one. Because rate limiting only blunts guessing, it belongs alongside strong passwords or keys rather than instead of them.
+
 ---
 
 ## 6. Allow application services
+
+> **Concept.** An application profile is a small declaration file under `/etc/ufw/applications.d` that maps a friendly name to a set of ports and protocols (`man 5 ufw`). A profile is convenience, not policy: the thing that actually opens a port is the expansion UFW writes into the backend, so reading the profile with `app info` must precede trusting it with `app allow`. This is least privilege applied at the level of service definitions rather than of individual rules.
 
 UFW can use named application profiles:
 
@@ -315,6 +360,8 @@ A profile is a small file, usually under `/etc/ufw/applications.d/`, that gives 
 
 ## 7. Allow a specific IP address
 
+> **Concept.** A source-scoped rule narrows the *who* of the policy while leaving the *what* open, and the two dimensions compose. Pairing a source with a destination port and protocol yields a rule as small as the requirement allows — least privilege expressed as the intersection of two constraints. Because rules are first-match, where this rule sits relative to a broader `allow` decides whether it ever actually fires.
+
 To allow all supported traffic from one trusted source address:
 
 ```bash
@@ -362,6 +409,8 @@ Because a rule's meaning depends on every part of it, UFW deletes a rule by find
 
 ## 8. Allow an entire subnet
 
+> **Concept.** CIDR notation is the trust boundary written in bits: the prefix length fixes how many addresses share the policy. Widening a trusted subnet is a change of design, not a syntax tweak, because every host inside inherits the access. The governing habit is to keep the trusted set as small as the requirement permits and to record why the boundary sits where it does.
+
 ```bash
 sudo ufw allow from 192.168.1.0/24 to any port 22 proto tcp
 ```
@@ -388,6 +437,8 @@ The rule of thumb is to make the trusted network as small as the requirement all
 ---
 
 ## 9. Inspect and delete numbered rules
+
+> **Concept.** A firewall is an ordered list, and `status numbered` renders that list with stable, positional indices — the same order in which the backend evaluates it. Deleting by number is complete mediation over the policy itself: you see the exact rule text before it is removed. The cost is that indices shift after every deletion, which is why the list is re-read rather than remembered.
 
 ```bash
 sudo ufw status numbered
@@ -436,6 +487,8 @@ The cost is that numbers are positional: remove rule 2 and the old rule 3 become
 
 ## 10. Deny an address or subnet
 
+> **Concept.** A deny rule is placed *before* the general allow it is meant to override, because first-match means a later allow can never rescue traffic an earlier deny has already rejected. Deny and reject differ only in feedback — silence versus an explicit refusal — but both are edge controls: an address block is a blunt instrument whose collateral (monitoring, health checks, colleagues) is easy to forget. Every block deserves a recorded reason and, where possible, an expiry.
+
 To block a source address:
 
 ```bash
@@ -482,6 +535,29 @@ The reason to be careful is that a deny is easy to write and hard to reason abou
 ---
 
 ## 11. Enable and verify the firewall
+
+> **Concept.** Enabling commits the rule set to the kernel and registers it for boot, so enforcement now exists and will reappear after a restart. `--dry-run` renders the rules UFW *would* install without loading them — a way to read the generated policy before it becomes live. Verification is the complement of configuration: the rule table states intent, a test connection states behaviour, and only both together close the loop.
+
+Before committing the policy, render it without loading it. The `--dry-run` flag runs the command and prints the backend rules UFW would install, but changes nothing:
+
+```bash
+sudo ufw --dry-run enable
+```
+
+**Output:**
+
+```text
+*filter
+:ufw-user-input - [0:0]
+:ufw-user-output - [0:0]
+:ufw-user-forward - [0:0]
+-A ufw-user-input -p tcp --dport 22 -j ACCEPT
+-A ufw-user-input -p tcp --dport 80 -j ACCEPT
+-A ufw-user-input -p tcp --dport 443 -j ACCEPT
+COMMIT
+```
+
+The output is the raw rule set in the backend's own syntax — `iptables-restore` format on an iptables system, or the equivalent nftables expressions on a modern kernel — which is the lower layer UFW has been abstracting. Because nothing was committed, the firewall is still inactive; the preview shows exactly what `enable` would install without installing it.
 
 After adding all required rules, enable UFW:
 
@@ -539,6 +615,20 @@ ufw allow 443/tcp
 
 `show added` lists exactly the rules entered through `ufw` commands, which is handy for reviewing or recreating your policy later.
 
+The address-family toggle that produces the IPv6 half of every rule lives in `/etc/default/ufw`:
+
+```bash
+grep -i '^IPV6' /etc/default/ufw
+```
+
+**Output:**
+
+```text
+IPV6=yes
+```
+
+`IPV6=yes` tells UFW to generate IPv6 rules alongside the IPv4 ones, which is why each `Rule added` above was printed twice and why the table shows separate `(v6)` entries. Setting it to `no` silently drops IPv6 from the policy and leaves the host's IPv6 stack unfiltered, so confirm this value rather than assuming it.
+
 <details>
 <summary><strong>Read more</strong> — reading the verbose header line by line</summary>
 
@@ -551,6 +641,8 @@ The final decision is always the rule table: if a port appears with `ALLOW IN`, 
 ---
 
 ## 12. Logging and troubleshooting
+
+> **Concept.** Blocked packets are evidence, and the logging level decides how much of that evidence reaches the kernel log without drowning it. A `UFW BLOCK` entry carries the five-tuple — source, destination, protocol and port — which is what separates a scan from a legitimate connection you forgot to allow. Observability is itself a control: a firewall nobody can read is a firewall nobody can safely change.
 
 Enable moderate logging when you need visibility into blocked traffic:
 
@@ -608,6 +700,8 @@ Logging levels run from `off` upward; the higher the level, the more detail per 
 
 ## 13. Reload, reset, and disable
 
+> **Concept.** The three verbs differ in their blast radius. `reload` re-applies the current policy, `disable` stops enforcement while keeping the rules, and `reset` discards the rule set and restores installation defaults. Each one changes what is enforced, so each belongs to a moment when you have console access or a tested recovery path — and because the SSH exception is a "user rule", it is exactly what `reset` removes.
+
 After manual changes to supported UFW configuration, reload the rules:
 
 ```bash
@@ -664,6 +758,8 @@ The common thread is that all three change what is enforced, so all three belong
 
 ## 14. ICMP and ping considerations
 
+> **Concept.** ICMP is a layer-3 signalling protocol, not a transport: it carries both diagnostics (echo requests) and essential machinery such as path-MTU discovery and IPv6's neighbour discovery. `/etc/ufw/before.rules` holds the raw rules UFW inserts ahead of the user rules — including the connection-tracking and ICMP handling — written in the backend's own syntax (`nft(8)` or its iptables predecessor). Because it sits closer to Netfilter than anything you type with `ufw`, it is edited deliberately and reloaded where the result can be watched.
+
 Ping uses ICMP, which is not TCP or UDP. Blocking ping does not make a server invisible and can interfere with monitoring, path MTU discovery, diagnostics, and IPv6 operation.
 
 In most environments, it is better to permit necessary ICMP types and rely on authentication, patching, least privilege, and monitoring for security.
@@ -696,6 +792,21 @@ Firewall reloaded
 
 Test both intended and unintended traffic afterward, and consider IPv6 configuration separately because IPv4 ICMP rules do not automatically describe IPv6 behavior.
 
+The connection-tracking rule that lets replies back in lives in that same file, and it is worth seeing in place:
+
+```bash
+grep -n 'ESTABLISHED' /etc/ufw/before.rules
+```
+
+**Output:**
+
+```text
+88:-A ufw-before-input -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+89:-A ufw-before-output -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+```
+
+Both chains accept packets that belong to an established flow or to a related one, such as an ICMP error returning from a request you made. Removing or mistyping this pair is the classic way to break DNS, updates and live sessions while leaving the rest of the firewall apparently intact.
+
 <details>
 <summary><strong>Read more</strong> — what <code>before.rules</code> is and why it is edited last</summary>
 
@@ -708,6 +819,8 @@ That is why the backup-with-`cp -a` step comes first, why the edit runs through 
 ---
 
 ## 15. Verification checklist
+
+> **Concept.** Verification tests the policy rather than restating it: the rule table confirms intent, a connection from an allowed source and a refusal from a disallowed one confirm behaviour. Reading the policy beside the listening-socket inventory catches both forgotten services and forgotten closures. This closes the loop that fail-safe defaults opened — nothing is assumed, everything is checked.
 
 After configuration, validate from an authorized management host and from the server itself:
 
@@ -764,6 +877,8 @@ Combine the two commands above for a reason: the first is your policy, the secon
 ---
 
 ## 16. Key lessons
+
+> **Concept.** The whole workflow is Saltzer & Schroeder applied to a packet filter: fail-safe defaults (deny, then allow by exception), least privilege (the smallest source, subnet, port and protocol), complete mediation (every new connection is matched) and recorded reasoning (a change nobody wrote down cannot be safely undone). NIST SP 800-41 supplies the same discipline as a standard: derive the policy from the requirement, not from a copied command.
 
 A firewall policy should be built from an inventory of services and trusted sources, not from copied commands alone.
 
