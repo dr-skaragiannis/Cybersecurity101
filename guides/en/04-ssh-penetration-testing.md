@@ -2,6 +2,8 @@
 
 ## Introduction
 
+> **Concept.** SSH is a layered protocol specified across a family of RFCs: RFC 4251 fixes the architecture, RFC 4253 defines the transport layer that provides a cryptographically authenticated, encrypted byte stream over TCP, RFC 4252 the user-authentication layer above it, and RFC 4254 the connection layer that multiplexes logical channels — a shell, a file transfer, a port forward — over that single transport. Every capability this guide exercises, from login to tunnelling to a reverse shell, is ultimately one of those channels, and a single authentication decision governs all of them. This walkthrough follows the phases of the Penetration Testing Execution Standard: reconnaissance, authentication-surface enumeration, exploitation, post-exploitation and reporting.
+
 SSH, the Secure Shell, is one of the most widely deployed remote-access protocols in the world. It provides encrypted communication between a client and a server, which makes it the backbone of system administration, deployment pipelines and cloud infrastructure: whenever an engineer needs a shell on a machine that is not in front of them, SSH is almost certainly what carries the session.
 
 That ubiquity is exactly what makes it interesting from a security point of view. A hardened server often exposes nothing at all to the internet except SSH, so an assessment of that server frequently reduces to an assessment of one service — and if that one service falls, everything behind it falls with it.
@@ -60,6 +62,8 @@ The terminal sessions follow the conventions of the shell itself, and a few of t
 ---
 
 ## 1. Lab setup — installing the OpenSSH server
+
+> **Concept.** The package installs `sshd(8)`, the OpenSSH server daemon, as a systemd unit; Ubuntu's post-install script enables and starts it and leaves the configuration at the vendor default (`man 5 sshd_config`). That default accepts password authentication — a setting the protocol permits (RFC 4252 §8) but that every hardening baseline, including the CIS Benchmark for Ubuntu Linux, discourages. Installing the server is not itself an attack; it is the state change that creates the target the rest of the assessment measures.
 
 Before any testing can begin, the target has to actually be running the service we intend to attack. On a freshly provisioned Ubuntu server the client tools are usually present but the *server* is not, because Ubuntu's default installation does not expose a remote shell unless the administrator asks for one.
 
@@ -188,11 +192,13 @@ Authentication events are logged to `/var/log/auth.log` on Ubuntu (or to the sys
 
 ## 2. Reconnaissance — service enumeration with nmap
 
+> **Concept.** Reconnaissance is the first phase of PTES and maps to the discovery tactic of MITRE ATT&CK (T1046, Network Service Scanning). A server identifies itself with a cleartext identification string of the form `SSH-2.0-<software>` that is exchanged before the key exchange begins (RFC 4253 §4.2), and that string is exactly what `nmap -sV` reads. The version banner therefore discloses the implementation and its package revision without authentication, which is the fact the next phase depends on.
+
 Reconnaissance is the first phase of any engagement. Before attempting to exploit a service you must confirm that it is running, identify its exact version, and map out the ways in which it will let you authenticate.
 
 Version information matters because every implementation carries a release history. Knowing that a target runs `OpenSSH 8.9p1` on Ubuntu 22.04 tells you which default configuration applies and — more practically for this lab — that the default `sshd_config` allows passwords.
 
-The scan itself is a single nmap invocation. The `-sV` flag turns on version detection, which makes nmap perform protocol-specific probes rather than simply reporting that a port is open. The `-p 22` flag narrows the scan to the SSH port so that the output stays short.
+The scan itself is a single nmap invocation. The `-sV` flag turns on version detection, which makes nmap perform protocol-specific probes rather than simply reporting that a port is open; for SSH it reads the cleartext identification string mandated by RFC 4253 §4.2. The `-p 22` flag narrows the scan to the SSH port so that the output stays short.
 
 ```bash
 nmap -sV -p 22 192.168.1.9
@@ -235,7 +241,9 @@ In a real engagement you would also follow up with a full-range scan (`-p-`), be
 
 ## 3. Enumerating the authentication surface
 
-Knowing that SSH is running tells you nothing about *how* it will let you in, and that is the question that determines which attack makes sense. SSH supports several authentication mechanisms — password, public key, keyboard-interactive, GSSAPI, host-based — and a server advertises the ones it is willing to accept during the early phase of a connection, before any credential is sent.
+> **Concept.** The user-authentication layer (RFC 4252) is a negotiation rather than a single gate: the client sends `SSH_MSG_USERAUTH_REQUEST` and the server answers with `SSH_MSG_USERAUTH_FAILURE`, whose payload is a `name-list` of the methods it will accept (§5.1). Because that list is transmitted before any credential is verified, it is retrievable anonymously — the property that turns a protocol detail into reconnaissance.
+
+Knowing that SSH is running tells you nothing about *how* it will let you in, and that is the question that determines which attack makes sense. SSH supports several authentication mechanisms — password, public key, keyboard-interactive, GSSAPI, host-based (RFC 4252 §10, with keyboard-interactive defined separately in RFC 4256) — and a server advertises the ones it is willing to accept during the early phase of a connection, before any credential is sent.
 
 That advertisement can be read without an account, which makes it excellent reconnaissance. The `ssh-auth-methods` nmap script does exactly this, and it takes a username because some servers vary their answer depending on whether the account exists.
 
@@ -278,9 +286,11 @@ The same script is the natural verification tool for the hardening work in secti
 
 ## 4. Credential attacks — Hydra and NetExec
 
+> **Concept.** Both techniques below are online guessing attacks against the password authenticator: MITRE ATT&CK T1110 (Brute Force), with T1110.001 (Password Guessing) for the dictionary attack and T1110.003 (Password Spraying) for the second. They differ in the shape of the search rather than its target — a dictionary attack concentrates many secrets on one account, a spray spreads one secret across many accounts — and only the spray stays beneath a per-account lockout threshold. NIST SP 800-63B §5.2.2 is the standard that would have rejected these passwords at enrolment.
+
 Password authentication is enabled, so the next question is whether the passwords in use are any good. Two complementary techniques answer it.
 
-A *dictionary attack* tries many passwords against a small number of known accounts, and is effective when the password itself appears in a well-known wordlist. A *password spray* tries a small number of common passwords against many accounts, and is effective when the same weak password has been reused — and it is much stealthier.
+A *dictionary attack* tries many passwords against a small number of known accounts, and is effective when the password itself appears in a well-known wordlist (ATT&CK T1110.001). A *password spray* tries a small number of common passwords against many accounts, and is effective when the same weak password has been reused (ATT&CK T1110.003) — and it is much stealthier.
 
 Both techniques need input files. In a real engagement these would come from earlier reconnaissance: usernames harvested from a web application or a leaked employee list, passwords from previous breach corpora. In the lab, a handful of entries is enough to demonstrate the mechanic.
 
@@ -331,6 +341,8 @@ Four usernames multiplied by six passwords yields 24 base combinations (or 28 wh
 
 ### 4.1 Dictionary attack with Hydra
 
+> **Concept.** Hydra drives the SSH password method (RFC 4252 §8) directly: for each candidate it opens a transport, completes the key exchange, and submits one `SSH_MSG_USERAUTH_REQUEST`. Parallelism multiplies the number of authentication attempts per second, which is precisely the signal a rate limiter or a login-anomaly detector is built to catch.
+
 Hydra is a parallelised online password-guessing tool that speaks dozens of protocols, and its SSH module is one of the most commonly used. The invocation has three parts: `-L users.txt` supplies the list of *logins*, `-P pass.txt` supplies the list of *passwords*, and the trailing `ssh` selects the protocol module.
 
 ```bash
@@ -367,6 +379,8 @@ One caution belongs in any discussion of online guessing. Hydra's default behavi
 </details>
 
 ### 4.2 Password spraying with NetExec
+
+> **Concept.** A spray inverts the ratio of a dictionary attack so that each account accumulates at most one failure, and a counter that locks an account after N failures therefore never fires. This is ATT&CK T1110.003; NIST SP 800-63B's banned-password list is the control that removes the small set of weak secrets a spray depends on.
 
 Hydra answered the question "does this account have a weak password?" NetExec answers a different and often more valuable question: "have any of these accounts reused *the same* weak password?"
 
@@ -435,11 +449,15 @@ That is why the spray was worth running even though Hydra had already found a pa
 ---
 ## 5. Initial access — shell, remote commands and Meterpreter
 
+> **Concept.** SSH separates authentication from the session that follows it: once the transport is authenticated, the connection layer (RFC 4254) opens numbered *channels* — a session channel for a shell or a single command, a direct-tcpip channel for a forward. An interactive login, a one-shot remote command and a Meterpreter stager are three different ways of using the same authenticated transport, and ATT&CK records the SSH-borne remote access as T1021.004 (Remote Services: SSH).
+
 With `pentest` and `123` in hand there are several ways onto the machine, and they are not interchangeable. An interactive SSH session is what a human administrator uses, a single remote command is what a script uses, and a Meterpreter session is what a post-exploitation framework uses.
 
 This section demonstrates all three, in order from the plainest method to the richest, so that the added capabilities of each are obvious.
 
 ### 5.1 Direct SSH login
+
+> **Concept.** The first connection to an unknown host exposes the trust-on-first-use (TOFU) problem: `sshd` proves its identity with a public *host key* (RSA, ECDSA or Ed25519), and the client can only compare a fingerprint it has never seen against out-of-band knowledge (`man 5 sshd`, `man 5 ssh_config`). Accepting whatever key is offered is the precondition for a man-in-the-middle, because the client's only real defence is a fingerprint it already trusts.
 
 The simplest thing that works is the SSH client itself, which is already installed on the attacker machine. The syntax is `ssh <user>@<host>`, and the very first connection to a new host produces a prompt about the host key that every beginner eventually has to understand.
 
@@ -503,6 +521,8 @@ The value of this session is that it is *interactive*: a full pseudo-terminal, j
 
 ### 5.2 Running single commands over SSH
 
+> **Concept.** A non-interactive login still allocates a session channel (RFC 4254 §6.5) and runs the command through the remote user's login shell; without `-t` no pseudo-terminal is requested, so standard output, standard error and the remote exit status are all that cross the channel. That exit-status propagation is exactly what makes the one-shot form composable inside a script.
+
 Not every task needs an interactive session. The SSH client can execute one command on the remote host and return its output, which is exactly what you want inside a loop or a script. Anything appended after the host is passed to the remote shell as a command string.
 
 ```bash
@@ -558,6 +578,8 @@ nxc ssh 192.168.1.9 -u pentest -p 123 -x 'cat /tmp/file.txt'
 The transcript shows NetExec's three-step rhythm: an informational line announcing the server banner, a success marker for authentication, and then `Executed command` followed by the output. Because authentication is re-established for each invocation, this style suits a quick, non-interactive sweep of a host.
 
 ### 5.3 Meterpreter over SSH with `exploit/multi/ssh/sshexec`
+
+> **Concept.** `exploit/multi/ssh/sshexec` authenticates as a legitimate client and then abuses the authenticated channel to stage a payload: because the connection layer carries arbitrary bytes, the module can deliver a command stager whose chunks reconstruct and execute a second-stage Meterpreter binary in memory (ATT&CK T1021.004 for the access and T1059 for the execution). Nothing about it violates the SSH protocol, which is why detection has to come from what the session *does*, not from how it authenticates.
 
 An interactive shell is enough for most of what follows, but it has limits. It is noisy in the sense that a shell process is visible to any user who runs `w` or `who`, it depends on the remote machine's own tools, and it does not survive a network hiccup.
 
@@ -717,6 +739,8 @@ The trade-off is that Meterpreter is a memory-resident, signature-rich artifact:
 
 ## 6. Changing the SSH listening port
 
+> **Concept.** Moving the service port is security through obscurity: the daemon still speaks the same protocol (RFC 4253) and the weakness — a guessable password accepted online — is untouched. It is a filter against scanners that probe a fixed list of common ports (the nmap default top-1000), not a control, and the full-range scan (`-p-`) demonstrated below removes even that benefit. The procedure itself is a configuration change read from `sshd_config` (`man 5 sshd_config`).
+
 Sooner or later every administrator considers moving SSH off port 22. The reasoning is that automated scanners and botnets sweep the internet for port 22 continuously, and that a service on a non-standard port will simply not be found by that noise.
 
 Before adopting the practice it is worth understanding precisely what it buys and what it does not. The best way to understand it is to do the move and then attack it again.
@@ -853,6 +877,8 @@ It is a reasonable complement to a real control, an unacceptable substitute for 
 
 ## 7. Key-based authentication and disabling passwords
 
+> **Concept.** Public-key authentication (RFC 4252 §7) replaces a shared secret with a proof of possession: the client signs a session-bound challenge with its private key and the server verifies the signature against a public key held in `authorized_keys` (`man 5 authorized_keys`, RFC 8332 for RSA with SHA-2). Because the private key never crosses the wire and the signature is bound to the exchange hash, a recorded session yields nothing replayable — which is why disabling passwords removes the entire online guessing category rather than merely raising its cost.
+
 The correct fix for everything in sections 4 to 6 is to stop accepting passwords over the network. Public-key authentication is fundamentally stronger than a password for one simple reason: **the private key never travels**.
 
 The client proves possession of the key by signing a challenge, and the server verifies the signature against a public key it already trusts. An attacker who records the entire session learns nothing that can be replayed, and there is no password prompt to guess, so every online password-guessing attack becomes impossible rather than merely difficult.
@@ -860,6 +886,8 @@ The client proves possession of the key by signing a challenge, and the server v
 This section sets up key-based authentication on the target, then disables password authentication and verifies the change with the same tool we used during reconnaissance.
 
 ### 7.1 Generating a key pair with `ssh-keygen`
+
+> **Concept.** `ssh-keygen(1)` produces an asymmetric key pair; the default type on a modern OpenSSH is Ed25519, a 256-bit Edwards-curve signature scheme with small keys and no tunable parameters, while RSA keys are constrained by RFC 8332 to the SHA-2 family (`rsa-sha2-256`/`rsa-sha2-512`). The private half is encrypted at rest with a key derived from the passphrase, and that passphrase is the only thing protecting the key if the file is stolen.
 
 The client-side tool for making a key pair is `ssh-keygen`. Run with no arguments it asks three questions — where to save the key, what passphrase to protect it with, and what key type and size to use.
 
@@ -922,6 +950,8 @@ The file permissions are enforced rather than suggested. The private key is crea
 </details>
 
 ### 7.2 Installing the public key in `authorized_keys`
+
+> **Concept.** `authorized_keys` is the server-side trust list: any public key in it authorises the holder of the matching private key to log in as that account (`man 5 authorized_keys`). OpenSSH refuses the file if it or its `~/.ssh` directory is writable by group or world, because write access to the file is equivalent to the ability to authenticate as the user — the "complete mediation" principle articulated by Saltzer & Schroeder (1975).
 
 Trusting the key is a second, separate step performed on the *server*: the public key must be appended to the `~/.ssh/authorized_keys` file of the account that should be allowed to log in with it.
 
@@ -994,6 +1024,8 @@ The whole trust chain is therefore: the directory must not be writable by others
 </details>
 
 ### 7.3 Disabling password authentication
+
+> **Concept.** `PasswordAuthentication no` removes the `password` method from the `name-list` the server advertises (RFC 4252 §5.1), but `KbdInteractiveAuthentication` (RFC 4256) can reach the same PAM-backed password stack and must be considered alongside it. The authoritative view of what the daemon will actually honour is `sshd -T` (`man 8 sshd`), because OpenSSH merges `sshd_config` with the `sshd_config.d/` drop-ins and the first value found for a keyword wins.
 
 Now that a working key exists, the password entry point can be closed. The directive lives in `sshd_config`, where the packaged default is present but commented:
 
@@ -1079,6 +1111,8 @@ Hydra's own error message states the conclusion better than any report could: *d
 
 ### 7.4 Logging in with the private key
 
+> **Concept.** The client enforces that a private key is not readable by others: a file with mode `0644` is refused outright, because a key that another local user can read is treated as disclosed. This is least privilege applied to key material, and it is one of the few places where a Unix tool actively prevents an insecure configuration rather than merely warning about it (`man 1 ssh`).
+
 With the key installed, logins are made by pointing the client at the private key file with `-i`. The key file, however, has to satisfy the client's permission requirements, and violating them produces one of the most-quoted error messages in SSH administration.
 
 ```bash
@@ -1150,6 +1184,8 @@ On a real engagement the same checks appear in reverse: when a private key is fo
 
 ## 8. Cracking passphrase-protected private keys
 
+> **Concept.** A private key on an attacker's disk is attacked offline — no server, no rate limit, no lockout and no log. OpenSSH's key-file format derives the encryption key with `bcrypt-pbkdf`, a deliberately slow key-derivation function, so the only variable left is the entropy of the passphrase the human chose. The technique is MITRE ATT&CK T1110.002 (Password Cracking) applied to T1552.004 (Unsecured Credentials: Private Keys).
+
 Disabling password authentication was the correct defensive move, and it removes the attack surface that section 4 exploited. But it does not make stolen keys safe, because a private key file on an attacker's disk can be attacked *offline*: no server, no rate limit, no log, no lockout, and no time pressure.
 
 Millions of candidate passphrases can be tested against the file at the attacker's leisure. The only thing standing between a stolen key and the account it protects is the strength of the passphrase that encrypts it.
@@ -1157,6 +1193,8 @@ Millions of candidate passphrases can be tested against the file at the attacker
 The demonstration runs the whole attack in four commands on the attacker machine, using the key stolen in section 7.4 and an ordinary wordlist.
 
 ### 8.1 Converting the key with `ssh2john`
+
+> **Concept.** `ssh2john` parses the OpenSSH proprietary key container (`openssh-key-v1`) and re-emits the fields John needs — KDF/cipher selector, salt, rounds and ciphertext — as a single hash line, because John cannot read the private-key format directly.
 
 John the Ripper cannot read an OpenSSH private key file directly; it works with its own hash formats. `ssh2john` reads a private key and emits the encrypted key material in a format John understands.
 
@@ -1188,6 +1226,8 @@ Two consequences follow. First, an unencrypted key produces no hash line at all 
 </details>
 
 ### 8.2 Cracking with John the Ripper
+
+> **Concept.** John the Ripper tests passphrase candidates against the extracted KDF parameters, and the `Cost` fields it prints are the bcrypt work factors. Because bcrypt is intentionally expensive, the defence scales with the *search space* the attacker can enumerate rather than with raw hash speed: a random twenty-character passphrase is beyond reach while a wordlist entry falls in minutes.
 
 The wordlist used here is `rockyou.txt`, a collection of roughly fourteen million real passwords that leaked from a breach in 2009 and has been the standard first wordlist in security testing ever since. On Debian-family systems it is installed as a compressed file and has to be decompressed once before use.
 
@@ -1264,6 +1304,8 @@ The passphrase is not a formality to be completed as quickly as possible; for a 
 ---
 ## 9. Data exfiltration — SCP and NetExec file operations
 
+> **Concept.** File transfer rides the same authenticated transport as interactive login, but on different channel types: SCP and NetExec's `--put-file`/`--get-file` use the SFTP subsystem, while the hand-rolled method simply prints bytes over a session channel (RFC 4254). ATT&CK groups the tunnelled movement of data under T1572 (Protocol Tunneling) and the collection under the file-transfer techniques; the defensive point is that all of them authenticate with the *same* stolen credential.
+
 An authenticated SSH account is not just a shell; it is also a file-transfer channel. Note also *which* credential is used from here on: password authentication was disabled in section 7.3, so every command in the remainder of this guide authenticates with the stolen private key from section 7.4 and the passphrase recovered in section 8.
 
 That is not a narrative convenience — it is the reality of an intrusion that keeps working after the victim responds. Three separate mechanisms ride on the same connection and the same credentials: the SCP protocol, the SFTP subsystem, and plain redirection through a command session.
@@ -1271,6 +1313,8 @@ That is not a narrative convenience — it is the reality of an intrusion that k
 The result is that a single set of stolen credentials covers reading data, writing data and moving tools onto a host. This section demonstrates the two most convenient paths.
 
 ### 9.1 Uploading with NetExec `--put-file`
+
+> **Concept.** `--put-file` opens the SFTP subsystem channel named in `sshd_config` and asks the server to create the remote file; when a key is supplied, NetExec reinterprets `-p` as the key's passphrase rather than an account password. The transferred object lands on disk, which is what makes the technique both useful to an operator and detectable to a defender.
 
 NetExec's `--put-file` takes a local path and a remote path, authenticates, and transfers the file over SFTP, printing a line for the transfer and another for the result.
 
@@ -1308,6 +1352,8 @@ Uploads of this kind are also a well-known detection opportunity, since the file
 
 ### 9.2 Downloading with NetExec `--get-file`
 
+> **Concept.** `--get-file` is the mirror image of the upload, over the same subsystem channel. `/etc/passwd` is world-readable by design, so recovering it is enumeration rather than exploitation: it yields the account, UID, GID and shell inventory that seeds a spray, while the hashes in `/etc/shadow` stay root-only.
+
 The reverse operation takes a remote path and a local destination filename, and the messages mirror the upload exactly.
 
 ```bash
@@ -1342,6 +1388,8 @@ ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
 The `x` in the password field shows that the real hashes live in `/etc/shadow`, which is readable only by root; exfiltrating *that* file would require the attacker to escalate first. The lesson for defenders is that even a "nothing to see here" file leaks account structure, and the lesson for testers is that an inventory of local users is a prerequisite for spraying.
 
 ### 9.3 Transferring with SCP
+
+> **Concept.** `scp(1)` uses SSH for transport; since OpenSSH 9.0 the client speaks the SFTP protocol internally rather than the legacy `scp` protocol, though the command syntax is unchanged. Direction is decided entirely by where the `user@host:` prefix sits, and the whole stream travels inside the encrypted channel.
 
 SCP is the oldest and most familiar of the transfer mechanisms, and it is invoked exactly like `cp` except that the remote side is written as `user@host:path`. It authenticates with whatever the SSH client can use — a password or a key — and the whole transfer is encrypted.
 
@@ -1381,6 +1429,8 @@ Two notes on the modern state of SCP are worth including for completeness. Since
 </details>
 
 ### 9.4 Doing the same thing by hand
+
+> **Concept.** The most basic transfer needs no subsystem at all: a session channel carries `stdout`, and the local shell captures it into a file. `base64` makes the byte stream safe for a text channel, and a here-document sends local stdin the other way — a reminder that "SSH access" already implies bidirectional data movement.
 
 The most basic transfer method needs no client features at all: redirection through a command session. Printing a file with `cat` sends its contents down the SSH channel, and the local shell can capture that into a file.
 
@@ -1447,6 +1497,8 @@ The common thread through all four subsections is that the ability to run as `pe
 
 ## 10. Post-exploitation — harvesting SSH credentials
 
+> **Concept.** Post-exploitation automation turns manual key theft into a sweep: `post/multi/gather/ssh_creds` enumerates home directories over an existing session and downloads each `.ssh` directory it can read. This is ATT&CK T1552.004 (Unsecured Credentials: Private Keys), and its efficiency is the point — the collection a human would perform slowly is done across every account at once.
+
 Everything we have done by hand so far — find the key, copy it out, crack the passphrase — can be reduced to a handful of commands once a Meterpreter session exists. The post-exploitation module `post/multi/gather/ssh_creds` walks every user's home directory on the compromised host, collects the contents of each `.ssh` directory it can read, and stores the results in the attacker's loot directory.
 
 Its value is not that it does anything a human could not; it is that it does it in seconds, across every account on the machine, before anyone notices.
@@ -1502,6 +1554,8 @@ The countermeasures are straightforward once seen: inventory the keys on every h
 
 ### 10.1 Using the harvested private key
 
+> **Concept.** The harvested private key is a standalone credential: it authenticates independently of the account password, so hardening the password path does not revoke it. Loot artefacts are staged with deterministic names for traceability, and the client's `0600` requirement from section 7.4 reapplies before the key can be used.
+
 Turning the loot back into an authenticated session is a two-command affair.
 
 ```bash
@@ -1543,6 +1597,8 @@ That is what makes key material worth hunting for, and it is why revoking a comp
 
 ## 11. Local port forwarding — reaching internal services
 
+> **Concept.** The connection layer supports three forwarding modes (RFC 4254 §7): local (`-L`), remote (`-R`) and dynamic (`-D`). Local forwarding opens a listener on the client and asks the server to open a `direct-tcpip` channel to a destination *from the server's own point of view*, which is why a service bound to `127.0.0.1` becomes reachable; ATT&CK records the technique as T1572 (Protocol Tunneling). The whole class is defeated at the daemon by `AllowTcpForwarding no` (`man 5 sshd_config`).
+
 Suppose the engagement has moved past the initial shell and the brief is to see what else the host is running. A quick look at the listening sockets on the target answers the question immediately, and the answer is usually more interesting than the port we came in through.
 
 ```bash
@@ -1568,7 +1624,7 @@ That is a deliberate and usually sensible hardening decision: neither service is
 
 The SSH daemon, by contrast, is bound to `0.0.0.0` — everything — which is how we got in. The mistake beginners make at this point is to assume the internal services are now unreachable and move on. In fact, the authenticated SSH session we already hold is exactly the tool for reaching them, because SSH can forward TCP connections.
 
-**Local port forwarding** opens a listening socket on the attacker's machine and, for every connection it accepts, asks the SSH server to open a connection to a specified address *from the server's own point of view*. Since the server can reach its own loopback interface, a service bound to `127.0.0.1` becomes reachable.
+**Local port forwarding** opens a listening socket on the attacker's machine and, for every connection it accepts, asks the SSH server to open a connection to a specified address *from the server's own point of view*. Since the server can reach its own loopback interface, a service bound to `127.0.0.1` becomes reachable. The mechanism is the `direct-tcpip` channel of RFC 4254 §7.2.
 
 The syntax is `ssh -L <local_bind_address>:<local_port>:<target_host>:<target_port> <user>@<ssh_server>`. In plain words: bind locally to port 8080, and forward to `127.0.0.1:8080` as resolved on the far side of the connection.
 
@@ -1641,6 +1697,8 @@ Beyond the daemon, the useful detective controls are network-side: egress filter
 
 ## 12. Reverse shell — pivoting out via bash TCP
 
+> **Concept.** A reverse shell inverts the direction of initiation so that the target connects out to the attacker — ATT&CK T1059.004 (Unix Shell) delivered over the network. Bash's `/dev/tcp/<host>/<port>` is not a device file but an internal redirection that performs a `connect(2)`, which allows a full-duplex shell with no binary dropped and no new listening port opened on the target.
+
 An SSH session is not always the ideal tool. It depends on the remote daemon's configuration, it is logged as an SSH session, it is terminated the moment the daemon is restarted, and it is not the same thing as a raw, uninstrumented shell on a TCP socket.
 
 For some tasks an operator wants a shell that starts *from* the target and connects *to* the attacker — a **reverse shell** — because outbound connections are frequently permitted while inbound ones are not, and because the connection then exists independently of the SSH service. This section builds one out of nothing but the target's own `bash`.
@@ -1712,6 +1770,8 @@ Second, the technique has an obvious and well-monitored signature. A connection 
 ---
 
 ## 13. Persistent access — key injection
+
+> **Concept.** Persistence through key injection adds an attacker-controlled public key to `authorized_keys` so that access survives a password change, a policy change and a daemon restart (MITRE ATT&CK T1098, Account Manipulation, and T1552.004 for the key material). Because the `authorized_keys` format has no owner or purpose field, the injected key is indistinguishable from a legitimate one by inspection alone, which is why only an inventory can separate them.
 
 Everything so far has been temporary in one sense: it depends on the password being unchanged, or on the SSH daemon being configured the way it was when the foothold was gained. An attacker who wants to keep access after the victim responds — changing the password, disabling passwords, restarting services — needs a credential of their own.
 
@@ -1891,6 +1951,8 @@ Because keys are silent and long-lived, the only reliable control is an inventor
 ---
 ## 14. Hardening summary
 
+> **Concept.** The controls gathered here are the concrete face of Saltzer & Schroeder's (1975) design principles — least privilege, fail-safe defaults and complete mediation — applied to an authentication service: remove the guessable authenticator, protect the remaining keys, restrict what a session may reach, and instrument the result. No single control is sufficient on its own; the value comes from overlapping them so that no single mistake is decisive.
+
 The lab has now been attacked end to end, and every step of the chain had a control that would have broken it. This section gathers those controls into one place, ordered roughly by how much each one buys.
 
 **Remove password authentication.** Everything in section 4 depends on the server accepting a password over the network.
@@ -1935,6 +1997,8 @@ The lab has now been attacked end to end, and every step of the chain had a cont
 ---
 
 ## 15. Quick reference cheat sheet
+
+> **Concept.** The cheat sheet is a compressed index of the commands demonstrated above, grouped by the PTES phase each belongs to; every row maps a one-line invocation to its purpose so that the walkthrough can be repeated from memory.
 
 | Phase | Command | What it does |
 | --- | --- | --- |
@@ -1987,6 +2051,8 @@ The lab has now been attacked end to end, and every step of the chain had a cont
 ---
 
 ## 16. Practice exercises
+
+> **Concept.** The exercises replay the whole chain as a lab, and several of them deliberately test the defender's perspective by measuring how a single configuration change alters the attacker's output. The point is transfer: the commands generalise, but the reasoning behind them is what carries to a different target, a different service and a different engagement.
 
 The following sequence is designed to be run in an isolated lab with two virtual machines and no route to the internet. Each exercise builds on the previous one, and the point of several of them is to observe how a defensive change alters the attacker's output.
 
