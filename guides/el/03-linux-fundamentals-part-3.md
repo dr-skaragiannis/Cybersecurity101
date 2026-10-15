@@ -73,10 +73,26 @@ echo "Hello World"
 Πριν εκτελεστεί το σενάριο, πρέπει να του αποδοθεί δικαίωμα εκτέλεσης, χρησιμοποιώντας την εντολή `chmod`:
 
 ```bash
-root@kali:~# chmod +x first_script
-root@kali:~# ls -l first_script
+chmod +x first_script
+```
+
+```bash
+ls -l first_script
+```
+
+**Έξοδος:**
+
+```text
 -rwxr-xr-x 1 root root 97 Oct  9 14:02 first_script
-root@kali:~# ./first_script
+```
+
+```bash
+./first_script
+```
+
+**Έξοδος:**
+
+```text
 Hello World
 ```
 
@@ -87,8 +103,16 @@ Hello World
 Υπάρχει επίσης η δυνατότητα εκτέλεσης ενός σεναρίου χωρίς τροποποίηση των δικαιωμάτων του, παρέχοντας το αρχείο απευθείας ως όρισμα στον διερμηνέα:
 
 ```bash
-root@kali:~# chmod -x first_script
-root@kali:~# bash first_script
+chmod -x first_script
+```
+
+```bash
+bash first_script
+```
+
+**Έξοδος:**
+
+```text
 Hello World
 ```
 
@@ -111,8 +135,16 @@ echo "Welcome, $name"
 Αποθηκεύστε το, καταστήστε το εκτελέσιμο και καλέστε το στο τερματικό:
 
 ```bash
-root@kali:~# chmod +x greeting
-root@kali:~# ./greeting
+chmod +x greeting
+```
+
+```bash
+./greeting
+```
+
+**Έξοδος:**
+
+```text
 What is your name?
 Analyst
 Welcome, Analyst
@@ -140,8 +172,16 @@ nmap -sn "$net.0/24" | grep "Nmap scan report" | cut -d " " -f 5
 Αποθηκεύστε το σενάριο με όνομα `sweep`, καταστήστε το εκτελέσιμο και εκτελέστε το στο εργαστηριακό δίκτυο:
 
 ```bash
-root@kali:~# chmod +x sweep
-root@kali:~# ./sweep
+chmod +x sweep
+```
+
+```bash
+./sweep
+```
+
+**Έξοδος:**
+
+```text
 Enter the network prefix (for example 192.168.1): 192.168.1
 192.168.1.1
 192.168.1.9
@@ -152,7 +192,12 @@ Enter the network prefix (for example 192.168.1): 192.168.1
 Επεστράφησαν τέσσερις διευθύνσεις: η πύλη του εργαστηρίου, ο διακομιστής-στόχος Ubuntu, το μηχάνημα δοκιμών και ένας επιπλέον κόμβος. Η αλυσίδα σωληνώσεων (pipeline) αξίζει αναλυτικής εξέτασης. Η εντολή `nmap -sn "192.168.1.0/24"` εκτελεί τη σάρωση σε όλες τις 256 διευθύνσεις του εύρους `/24`. Η ανεπεξέργαστη έξοδος του nmap παράγει πολλές πληροφορίες πέρα από τις απλές διευθύνσεις:
 
 ```bash
-root@kali:~# nmap -sn 192.168.1.0/24
+nmap -sn 192.168.1.0/24
+```
+
+**Έξοδος:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-09 14:11 UTC
 Nmap scan report for 192.168.1.1
 Host is up (0.0021s latency).
@@ -243,16 +288,40 @@ nmap -sn "$net.0/24" | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}'
 Πριν προγραμματιστεί οποιαδήποτε εργασία, είναι απαραίτητο να επιβεβαιωθεί ότι ο δαίμονας cron είναι ενεργός, καθώς σε ορισμένες μινιμαλιστικές εγκαταστάσεις μπορεί να μην εκτελείται. Ο παραδοσιακός έλεγχος γίνεται με την εντολή `service` και ο σύγχρονος με την `systemctl`:
 
 ```bash
-root@kali:~# service cron status
+service cron status
+```
+
+**Έξοδος:**
+
+```text
 ○ cron.service - Regular background program processing daemon
      Loaded: loaded (/lib/systemd/system/cron.service; enabled; vendor preset: enabled)
      Active: inactive (dead) since Thu 2026-10-09 14:20:11 UTC; 3min ago
        Docs: man:cron(8)
    Main PID: 918 (code=exited, status=0/SUCCESS)
-root@kali:~# systemctl is-active cron
+```
+
+```bash
+systemctl is-active cron
+```
+
+**Έξοδος:**
+
+```text
 inactive
-root@kali:~# service cron start
-root@kali:~# systemctl is-active cron
+```
+
+```bash
+service cron start
+```
+
+```bash
+systemctl is-active cron
+```
+
+**Έξοδος:**
+
+```text
 active
 ```
 
@@ -265,7 +334,12 @@ active
 Με τον δαίμονα ενεργό, οι εργασίες προστίθενται μέσω επεξεργασίας του πίνακα με την εντολή `crontab -e`, η οποία ανοίγει το αρχείο σε επεξεργαστή κειμένου, επικυρώνει τη σύνταξη κατά την αποθήκευση και εγκαθιστά τις νέες ρυθμίσεις:
 
 ```bash
-root@kali:~# crontab -e
+crontab -e
+```
+
+**Έξοδος:**
+
+```text
 no crontab for root - using an empty one
 
 Select an editor.  To change later, run 'select-editor'.
@@ -297,7 +371,12 @@ crontab: installing new crontab
 Η εκτέλεση των εργασιών καταγράφεται στα ημερολόγια του συστήματος, αποτελώντας το πρώτο σημείο ελέγχου όταν μια εργασία φαίνεται να μην εκτελείται:
 
 ```bash
-root@kali:~# grep CRON /var/log/syslog | tail -5
+grep CRON /var/log/syslog | tail -5
+```
+
+**Έξοδος:**
+
+```text
 Oct  9 23:55:01 kali CRON[7123]: (root) CMD (/root/sweep 192.168.1 >> /var/log/sweep.log 2>&1)
 Oct  9 23:55:03 kali CRON[7122]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
 ```
@@ -328,7 +407,12 @@ Oct  9 23:55:03 kali CRON[7122]: (root) CMD (cd / && run-parts --report /etc/cro
 Η διαχείριση αυτών των συνδέσμων γίνεται παραδοσιακά μέσω της εντολής `update-rc.d`:
 
 ```bash
-root@kali:~# update-rc.d mysql defaults
+update-rc.d mysql defaults
+```
+
+**Έξοδος:**
+
+```text
 update-rc.d: warning: start and stop actions are no longer supported; falling back to defaults
 Adding system startup for /etc/init.d/mysql ...
    /etc/rc0.d/K01mysql -> ../init.d/mysql
@@ -343,7 +427,12 @@ Adding system startup for /etc/init.d/mysql ...
 Η επιλογή `defaults` δημιουργεί τους προεπιλεγμένους συνδέσμους: συνδέσμους εκκίνησης `S` για τα επίπεδα πολλαπλών χρηστών 2 έως 5 ώστε η MySQL να ξεκινά αυτόματα, και συνδέσμους τερματισμού `K` για τα επίπεδα 0, 1 και 6 ώστε η βάση δεδομένων να κλείνει ομαλά. Μετά την επανεκκίνηση, η διεργασία εκτελείται αυτόματα στο παρασκήνιο:
 
 ```bash
-root@kali:~# ps aux | grep -v grep | grep mysql
+ps aux | grep -v grep | grep mysql
+```
+
+**Έξοδος:**
+
+```text
 mysql       1204  0.4  5.1 3310420 208144 ?      Ssl  14:31   0:02 /usr/sbin/mysqld
 ```
 
@@ -374,8 +463,16 @@ mysql       1204  0.4  5.1 3310420 208144 ?      Ssl  14:31   0:02 /usr/sbin/mys
 Η παραδοσιακή διαχείριση πραγματοποιείται με την εντολή `service <όνομα> <ενέργεια>`, όπου οι βασικές ενέργειες είναι `start`, `stop`, `restart` και `status`. Στο systemd, οι ίδιες ενέργειες συντάσσονται ως `systemctl <ενέργεια> <όνομα>`. Στις σύγχρονες διανομές, η εντολή `service` αποτελεί απλό wrapper γύρω από το `systemctl`, καθιστώντας τις δύο μορφές ισοδύναμες για αυτές τις τέσσερις λειτουργίες, αν και το systemd υποστηρίζει πρόσθετες ενέργειες όπως `enable`, `disable` και `mask`.
 
 ```bash
-root@kali:~# service apache2 start
-root@kali:~# service apache2 status
+service apache2 start
+```
+
+```bash
+service apache2 status
+```
+
+**Έξοδος:**
+
+```text
 ● apache2.service - The Apache HTTP Server
      Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor preset: enabled)
      Active: active (running) since Fri 2026-10-09 14:35:02 UTC; 2s ago
@@ -389,8 +486,19 @@ root@kali:~# service apache2 status
              ├─3312 /usr/sbin/apache2 -k start
              ├─3313 /usr/sbin/apache2 -k start
              └─3314 /usr/sbin/apache2 -k start
-root@kali:~# service apache2 stop
-root@kali:~# service apache2 status
+```
+
+```bash
+service apache2 stop
+```
+
+```bash
+service apache2 status
+```
+
+**Έξοδος:**
+
+```text
 ● apache2.service - The Apache HTTP Server
      Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor preset: enabled)
      Active: inactive (dead) since Fri 2026-10-09 14:35:41 UTC; 3s ago
@@ -403,9 +511,17 @@ root@kali:~# service apache2 status
 Όσον αφορά την ανανέωση των ρυθμίσεων, η ενέργεια **restart** διακόπτει και εκκινεί εκ νέου την υπηρεσία, διασφαλίζοντας την εφαρμογή των αλλαγών αλλά αποσυνδέοντας όλους τους ενεργούς πελάτες. Αντίθετα, η ενέργεια **reload** δίνει εντολή στη διεργασία να επαναδιαβάσει τα αρχεία ρυθμίσεων χωρίς να τερματίσει και χωρίς να διακόψει τις ενεργές συνδέσεις (αντίστοιχα με το σήμα `kill -1`). Πριν από οποιαδήποτε επανεκκίνηση ή επαναφόρτωση, συνιστάται ο έλεγχος ορθότητας των αρχείων ρυθμίσεων:
 
 ```bash
-root@kali:~# apache2ctl configtest
+apache2ctl configtest
+```
+
+**Έξοδος:**
+
+```text
 Syntax OK
-root@kali:~# service apache2 reload
+```
+
+```bash
+service apache2 reload
 ```
 
 Κάθε σημαντική υπηρεσία διαθέτει αντίστοιχη εντολή ελέγχου σύνταξης — όπως `sshd -t` για το OpenSSH, `nginx -t` για το Nginx και `named-checkconf` για το BIND — αποτρέποντας τη διακοπή της υπηρεσίας λόγω συντακτικών λαθών στις ρυθμίσεις.
@@ -415,7 +531,12 @@ root@kali:~# service apache2 reload
 Ο Apache αποτελεί έναν από τους πιο διαδεδομένους διακομιστές ιστού παγκοσμίως. Η εγκατάστασή του γίνεται μέσω ενός πακέτου, το οποίο ονομάζεται `apache2` σε διανομές Debian και `httpd` σε διανομές Red Hat:
 
 ```bash
-root@kali:~# apt-get install -y apache2
+apt-get install -y apache2
+```
+
+**Έξοδος:**
+
+```text
 ...
 Setting up apache2 (2.4.62-1~deb12u2) ...
 Enabling module mpm_event.
@@ -426,8 +547,19 @@ Enabling module alias.
 ...
 Created symlink /etc/systemd/system/multi-user.target.wants/apache2.service → /lib/systemd/system/apache2.service.
 Processing triggers for man-db (2.11.2-1) ...
-root@kali:~# service apache2 start
-root@kali:~# ss -tlnp | grep :80
+```
+
+```bash
+service apache2 start
+```
+
+```bash
+ss -tlnp | grep :80
+```
+
+**Έξοδος:**
+
+```text
 LISTEN 0      511          0.0.0.0:80        0.0.0.0:*    users:(("apache2",pid=3312,fd=4))
 LISTEN 0      511             [::]:80           [::]:*    users:(("apache2",pid=3312,fd=4))
 ```
@@ -437,7 +569,7 @@ LISTEN 0      511             [::]:80           [::]:*    users:(("apache2",pid=
 Η προεπιλεγμένη σελίδα που σερβίρει ο Apache βρίσκεται στη διαδρομή `/var/www/html/index.html`, η οποία αποτελεί τη ρίζα εγγράφων (**document root**):
 
 ```bash
-root@kali:~# nano /var/www/html/index.html
+nano /var/www/html/index.html
 ```
 
 Το αρχικό αρχείο περιέχει την προεπιλεγμένη δομή δοκιμής του Debian:
@@ -482,7 +614,12 @@ root@kali:~# nano /var/www/html/index.html
 Με την αποθήκευση του αρχείου, η αλλαγή είναι άμεσα διαθέσιμη χωρίς να απαιτείται επανεκκίνηση του Apache, καθώς ο διακομιστής διαβάζει το αρχείο από τον δίσκο σε κάθε νέο αίτημα. Η επαλήθευση μπορεί να γίνει απευθείας από τη γραμμή εντολών μέσω της `curl`:
 
 ```bash
-root@kali:~# curl -s http://localhost/
+curl -s http://localhost/
+```
+
+**Έξοδος:**
+
+```text
 <!DOCTYPE html>
 <html>
   <head><title>Lab Server</title></head>
@@ -491,7 +628,15 @@ root@kali:~# curl -s http://localhost/
     <p>Served by Apache on 192.168.1.9 at 14:40.</p>
   </body>
 </html>
-root@kali:~# curl -s -o /dev/null -w "%{http_code}\n" http://192.168.1.9/
+```
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://192.168.1.9/
+```
+
+**Έξοδος:**
+
+```text
 200
 ```
 
@@ -508,13 +653,12 @@ root@kali:~# curl -s -o /dev/null -w "%{http_code}\n" http://192.168.1.9/
 Η εκκίνηση της υπηρεσίας και η σύνδεση σε αυτήν πραγματοποιούνται ως εξής:
 
 ```bash
-pentest@ubuntu-lab:~$ sudo systemctl start ssh
-pentest@ubuntu-lab:~$ sudo systemctl enable ssh
-Synchronizing state of ssh.service with SysV service script with /lib/systemd/systemd-sysv-install.
-Executing: /lib/systemd/systemd-sysv-install enable ssh
-pentest@ubuntu-lab:~$ ss -tlnp | grep :22
-LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=812,fd=3))
-root@kali:~# ssh pentest@192.168.1.9
+ssh pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 pentest@192.168.1.9's password: 
 Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
 Last login: Fri Oct  9 14:44:10 2026 from 192.168.1.9
@@ -542,7 +686,12 @@ LISTEN 0      32           0.0.0.0:21        0.0.0.0:*    users:(("vsftpd",pid=4
 Ο διακομιστής ακούει πλέον στη θύρα 21. Η σύνδεση του πελάτη αναδεικνύει την παραδοσιακή δομή του πρωτοκόλλου, όπου κάθε ενέργεια ακολουθεί αυστηρή σειρά αριθμημένων αποκρίσεων:
 
 ```bash
-root@kali:~# ftp 192.168.1.9
+ftp 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Connected to 192.168.1.9.
 220 (vsFTPd 3.0.5)
 Name (192.168.1.9:root): anonymous
@@ -567,7 +716,15 @@ local: readme.txt remote: readme.txt
 226 Transfer complete.
 ftp> bye
 221 Goodbye.
-root@kali:~# ls -l readme.txt
+```
+
+```bash
+ls -l readme.txt
+```
+
+**Έξοδος:**
+
+```text
 -rw-r--r-- 1 root root 1024 Oct  9 14:02 readme.txt
 ```
 

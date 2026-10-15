@@ -75,10 +75,26 @@ Nothing about `echo` is surprising here: it prints the string it was given, in d
 Before the script can be run it needs permission to execute — the same executable bit from Part 1, section 6.4 — and the command that grants it is the same `chmod` you already know.
 
 ```bash
-root@kali:~# chmod +x first_script
-root@kali:~# ls -l first_script
+chmod +x first_script
+```
+
+```bash
+ls -l first_script
+```
+
+**Output:**
+
+```text
 -rwxr-xr-x 1 root root 97 Oct  9 14:02 first_script
-root@kali:~# ./first_script
+```
+
+```bash
+./first_script
+```
+
+**Output:**
+
+```text
 Hello World
 ```
 
@@ -89,8 +105,16 @@ The `./` in front of the name is the second thing beginners find confusing, and 
 There is a way to run a script without touching its permissions at all, and it is worth knowing for the times you want to test something quickly: hand the file to the interpreter as an argument.
 
 ```bash
-root@kali:~# chmod -x first_script
-root@kali:~# bash first_script
+chmod -x first_script
+```
+
+```bash
+bash first_script
+```
+
+**Output:**
+
+```text
 Hello World
 ```
 
@@ -113,8 +137,16 @@ echo "Welcome, $name"
 Save it, make it executable, and run it:
 
 ```bash
-root@kali:~# chmod +x greeting
-root@kali:~# ./greeting
+chmod +x greeting
+```
+
+```bash
+./greeting
+```
+
+**Output:**
+
+```text
 What is your name?
 Analyst
 Welcome, Analyst
@@ -142,8 +174,16 @@ nmap -sn "$net.0/24" | grep "Nmap scan report" | cut -d " " -f 5
 Save that as `sweep`, make it executable, and run it against the lab network:
 
 ```bash
-root@kali:~# chmod +x sweep
-root@kali:~# ./sweep
+chmod +x sweep
+```
+
+```bash
+./sweep
+```
+
+**Output:**
+
+```text
 Enter the network prefix (for example 192.168.1): 192.168.1
 192.168.1.1
 192.168.1.9
@@ -154,7 +194,12 @@ Enter the network prefix (for example 192.168.1): 192.168.1
 Four addresses came back, and they are the lab gateway, the Ubuntu target, the attacker machine and one other host. The interesting content is in the pipeline, so it is worth unpacking stage by stage, because this is the pattern that almost every useful script is built from. `nmap -sn "192.168.1.0/24"` performs the scan; writing `/24` after the network address tells nmap to sweep all 256 addresses in that range. The raw output of the command is a short paragraph per live host, most of which is not the address:
 
 ```bash
-root@kali:~# nmap -sn 192.168.1.0/24
+nmap -sn 192.168.1.0/24
+```
+
+**Output:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-09 14:11 UTC
 Nmap scan report for 192.168.1.1
 Host is up (0.0021s latency).
@@ -245,16 +290,40 @@ An asterisk means "every value", so the first job above runs at minute 17 of *ev
 Before scheduling anything it is worth confirming that the daemon is actually running, because cron is not enabled on every minimal installation and it is trivially easy to add a job to a table that nothing reads. The traditional way to ask is the `service` command, and the modern way is `systemctl`; both are shown because you will meet both.
 
 ```bash
-root@kali:~# service cron status
+service cron status
+```
+
+**Output:**
+
+```text
 ○ cron.service - Regular background program processing daemon
      Loaded: loaded (/lib/systemd/system/cron.service; enabled; vendor preset: enabled)
      Active: inactive (dead) since Thu 2026-10-09 14:20:11 UTC; 3min ago
        Docs: man:cron(8)
    Main PID: 918 (code=exited, status=0/SUCCESS)
-root@kali:~# systemctl is-active cron
+```
+
+```bash
+systemctl is-active cron
+```
+
+**Output:**
+
+```text
 inactive
-root@kali:~# service cron start
-root@kali:~# systemctl is-active cron
+```
+
+```bash
+service cron start
+```
+
+```bash
+systemctl is-active cron
+```
+
+**Output:**
+
+```text
 active
 ```
 
@@ -267,7 +336,12 @@ On a systemd machine the same operations are available directly, and the pairs a
 With the daemon running, jobs are added by editing your crontab. The `crontab` command is the tool, and the `-e` flag means *edit* — it opens the table in an editor, validates what you save, and installs it.
 
 ```bash
-root@kali:~# crontab -e
+crontab -e
+```
+
+**Output:**
+
+```text
 no crontab for root - using an empty one
 
 Select an editor.  To change later, run 'select-editor'.
@@ -299,7 +373,12 @@ That job line is worth studying for two details that catch almost everyone. The 
 Once jobs are running, their execution is recorded in the system log even when their output is not, which is the first place to look when a schedule seems not to fire:
 
 ```bash
-root@kali:~# grep CRON /var/log/syslog | tail -5
+grep CRON /var/log/syslog | tail -5
+```
+
+**Output:**
+
+```text
 Oct  9 23:55:01 kali CRON[7123]: (root) CMD (/root/sweep 192.168.1 >> /var/log/sweep.log 2>&1)
 Oct  9 23:55:03 kali CRON[7122]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
 ```
@@ -330,7 +409,12 @@ The runlevel a machine starts in is decided by a set of symbolic links, one dire
 Adding a service to that scheme is what `update-rc.d` is for: it creates and removes the appropriate links so that you do not have to manage them by hand.
 
 ```bash
-root@kali:~# update-rc.d mysql defaults
+update-rc.d mysql defaults
+```
+
+**Output:**
+
+```text
 update-rc.d: warning: start and stop actions are no longer supported; falling back to defaults
 Adding system startup for /etc/init.d/mysql ...
    /etc/rc0.d/K01mysql -> ../init.d/mysql
@@ -345,7 +429,12 @@ Adding system startup for /etc/init.d/mysql ...
 The word `defaults` is one of the four actions the command accepts — `defaults`, `remove`, `disable` and `enable` — and it means "use the standard sequence for this service". The output shows exactly what the sections above described: one link per runlevel, `S` links for the multiuser runlevels 2 to 5 so MySQL starts when they are entered, and `K` links for runlevels 0, 1 and 6 so it stops cleanly before the machine halts, drops to single-user mode or reboots. After a reboot the service is running, and the way to confirm that is a tool from Part 2:
 
 ```bash
-root@kali:~# ps aux | grep -v grep | grep mysql
+ps aux | grep -v grep | grep mysql
+```
+
+**Output:**
+
+```text
 mysql       1204  0.4  5.1 3310420 208144 ?      Ssl  14:31   0:02 /usr/sbin/mysqld
 ```
 
@@ -378,8 +467,16 @@ Learning to manage them — start, stop, restart, inspect, enable — is the las
 The traditional interface is the `service` command, and its grammar is small enough to memorise in one line: `service <name> <action>`, where the actions are `start`, `stop`, `restart` and `status`. The same actions exist in systemd as `systemctl <action> <name>`, and on a modern distribution `service` is a wrapper around `systemctl`, so the two are interchangeable for these four verbs. The differences appear for the operations that systemd added — `enable`, `disable`, `mask` — which have no equivalent in the older command.
 
 ```bash
-root@kali:~# service apache2 start
-root@kali:~# service apache2 status
+service apache2 start
+```
+
+```bash
+service apache2 status
+```
+
+**Output:**
+
+```text
 ● apache2.service - The Apache HTTP Server
      Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor preset: enabled)
      Active: active (running) since Fri 2026-10-09 14:35:02 UTC; 2s ago
@@ -393,8 +490,19 @@ root@kali:~# service apache2 status
              ├─3312 /usr/sbin/apache2 -k start
              ├─3313 /usr/sbin/apache2 -k start
              └─3314 /usr/sbin/apache2 -k start
-root@kali:~# service apache2 stop
-root@kali:~# service apache2 status
+```
+
+```bash
+service apache2 stop
+```
+
+```bash
+service apache2 status
+```
+
+**Output:**
+
+```text
 ● apache2.service - The Apache HTTP Server
      Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor preset: enabled)
      Active: inactive (dead) since Fri 2026-10-09 14:35:41 UTC; 3s ago
@@ -407,9 +515,17 @@ Some services take a moment to come up, and a status polled immediately after `s
 `restart` is the fourth verb and the one with the most subtlety, because there are two ways to apply a configuration change and they are not equivalent. A **restart** stops the service and starts it again, which guarantees the new configuration is in effect but drops every connection that was open — acceptable for a lab web server, unacceptable for a database or an SSH daemon somebody is logged into. A **reload** asks the running process to re-read its configuration without stopping: `service apache2 reload`, or `systemctl reload apache2`, or for a daemon that has no reload support at all, the `kill -1` signal from Part 2, section 2.7. The habit worth forming is to check the configuration before either one, because a service that fails to start is an outage while a service that was never restarted is not:
 
 ```bash
-root@kali:~# apache2ctl configtest
+apache2ctl configtest
+```
+
+**Output:**
+
+```text
 Syntax OK
-root@kali:~# service apache2 reload
+```
+
+```bash
+service apache2 reload
 ```
 
 Every service has an equivalent validation step — `sshd -t` for SSH, `nginx -t` for Nginx, `named-checkconf` for BIND — and running it costs a second while skipping it costs the outage.
@@ -419,7 +535,12 @@ Every service has an equivalent validation step — `sshd -t` for SSH, `nginx -t
 Apache is the most widely deployed web server in the world, and for anyone heading into security work it is worth running once by hand, because the vast majority of engagements involve a web application. Installing it is one package, and it is worth noting that the package is named `apache2` on Debian-family systems and `httpd` on Red Hat-family systems — a difference that breaks a surprising number of copied commands.
 
 ```bash
-root@kali:~# apt-get install -y apache2
+apt-get install -y apache2
+```
+
+**Output:**
+
+```text
 ...
 Setting up apache2 (2.4.62-1~deb12u2) ...
 Enabling module mpm_event.
@@ -430,8 +551,19 @@ Enabling module alias.
 ...
 Created symlink /etc/systemd/system/multi-user.target.wants/apache2.service → /lib/systemd/system/apache2.service.
 Processing triggers for man-db (2.11.2-1) ...
-root@kali:~# service apache2 start
-root@kali:~# ss -tlnp | grep :80
+```
+
+```bash
+service apache2 start
+```
+
+```bash
+ss -tlnp | grep :80
+```
+
+**Output:**
+
+```text
 LISTEN 0      511          0.0.0.0:80        0.0.0.0:*    users:(("apache2",pid=3312,fd=4))
 LISTEN 0      511             [::]:80           [::]:*    users:(("apache2",pid=3312,fd=4))
 ```
@@ -441,7 +573,7 @@ Two lines of that output deserve attention. The `Created symlink ... multi-user.
 The page that Apache serves by default lives at `/var/www/html/index.html` within the **document root**, the directory whose contents are published. Opening it in an editor shows a small forest of HTML comments and a placeholder page:
 
 ```bash
-root@kali:~# nano /var/www/html/index.html
+nano /var/www/html/index.html
 ```
 
 The file that is there out of the box begins like this, and the comments are worth reading rather than deleting blindly, because they document where the rest of the configuration lives:
@@ -486,7 +618,12 @@ Replacing the body with something of your own is the shortest possible demonstra
 With the file saved, the change is visible immediately — Apache reads the file from disk for each request, so no restart is needed for a content edit — and the simplest way to see it is to ask for it from the command line, which produces exactly what a browser would receive:
 
 ```bash
-root@kali:~# curl -s http://localhost/
+curl -s http://localhost/
+```
+
+**Output:**
+
+```text
 <!DOCTYPE html>
 <html>
   <head><title>Lab Server</title></head>
@@ -495,7 +632,15 @@ root@kali:~# curl -s http://localhost/
     <p>Served by Apache on 192.168.1.9 at 14:40.</p>
   </body>
 </html>
-root@kali:~# curl -s -o /dev/null -w "%{http_code}\n" http://192.168.1.9/
+```
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://192.168.1.9/
+```
+
+**Output:**
+
+```text
 200
 ```
 
@@ -514,13 +659,12 @@ SSH's ancestor was **telnet**, which performed the same job of giving you a remo
 Starting the service and connecting are two commands, and the prompt tells you when it worked:
 
 ```bash
-pentest@ubuntu-lab:~$ sudo systemctl start ssh
-pentest@ubuntu-lab:~$ sudo systemctl enable ssh
-Synchronizing state of ssh.service with SysV service script with /lib/systemd/systemd-sysv-install.
-Executing: /lib/systemd/systemd-sysv-install enable ssh
-pentest@ubuntu-lab:~$ ss -tlnp | grep :22
-LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=812,fd=3))
-root@kali:~# ssh pentest@192.168.1.9
+ssh pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 pentest@192.168.1.9's password: 
 Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
 Last login: Fri Oct  9 14:44:10 2026 from 192.168.1.9
@@ -548,7 +692,12 @@ LISTEN 0      32           0.0.0.0:21        0.0.0.0:*    users:(("vsftpd",pid=4
 The server is now listening on port 21, and the client side is a single command. Connecting is where the protocol's age shows most clearly, because everything happens in plain text and in a strict order: server greeting, then a name, then a password.
 
 ```bash
-root@kali:~# ftp 192.168.1.9
+ftp 192.168.1.9
+```
+
+**Output:**
+
+```text
 Connected to 192.168.1.9.
 220 (vsFTPd 3.0.5)
 Name (192.168.1.9:root): anonymous
@@ -573,7 +722,15 @@ local: readme.txt remote: readme.txt
 226 Transfer complete.
 ftp> bye
 221 Goodbye.
-root@kali:~# ls -l readme.txt
+```
+
+```bash
+ls -l readme.txt
+```
+
+**Output:**
+
+```text
 -rw-r--r-- 1 root root 1024 Oct  9 14:02 readme.txt
 ```
 

@@ -1,8 +1,6 @@
 # Linux for Beginners (Part 2): Networks, Processes and Environment Variables
 
-========
 *This is Part 2 of a three-part guide. It continues [Linux for Beginners (Part 1): The Shell, Files, Text, Packages and Permissions](01-linux-fundamentals-part-1.md), and it assumes you are comfortable with the material there — moving around the file system, reading a long listing, editing text from the command line, using the package manager and reading permission strings. Its continuation — scripting, scheduling and services — is in [Linux for Beginners (Part 3)](03-linux-fundamentals-part-3.md).*
->>>>>>>> origin/arena/52f71d52-attack-scripts:docs/02-linux-fundamentals-part-2.md
 
 ## Introduction
 
@@ -42,7 +40,12 @@ One note before we start, because it explains why some of the commands below loo
 The `ifconfig` command is the most basic tool for interacting with active network interfaces. Run with no arguments it prints every interface the kernel knows about, which on a typical lab machine means a physical or virtual Ethernet adapter plus the loopback interface.
 
 ```bash
-root@kali:~# ifconfig
+ifconfig
+```
+
+**Output:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.17  netmask 255.255.255.0  broadcast 192.168.1.255
         inet6 fe80::20c:29ff:fe1b:2c3d  prefixlen 64  scopeid 0x20<link>
@@ -73,10 +76,23 @@ The rest of the block is statistics. `RX` and `TX` count packets and bytes recei
 The modern equivalent of this command is `ip addr` (often typed `ip a`), which shows the same information in a different layout:
 
 ```bash
-root@kali:~# ip -br addr
+ip -br addr
+```
+
+**Output:**
+
+```text
 lo               UNKNOWN        127.0.0.1/8 ::1/128 
 eth0             UP             192.168.1.17/24 fe80::20c:29ff:fe1b:2c3d/64
-root@kali:~# ip route
+```
+
+```bash
+ip route
+```
+
+**Output:**
+
+```text
 default via 192.168.1.1 dev eth0 proto dhcp metric 100 
 192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.17 metric 100 
 ```
@@ -88,7 +104,12 @@ The `-br` flag asks for *brief* output, one line per interface, which is what yo
 If the machine has a wireless adapter, `iwconfig` is the traditional tool for reading its radio-specific settings: the network it is associated with, the access point it is talking to, the frequency, the transmission rate and the signal quality.
 
 ```bash
-root@kali:~# iwconfig
+iwconfig
+```
+
+**Output:**
+
+```text
 lo        no wireless extensions.
 
 eth0      no wireless extensions.
@@ -113,14 +134,30 @@ The security-relevant fields are `Encryption key:off`, which tells you whether t
 An interface's address can be set by hand, and doing so is a one-line command: `ifconfig`, then the interface to change, then the address you want it to have. Here the Ethernet interface is given the address 192.168.1.13.
 
 ```bash
-root@kali:~# ifconfig eth0 192.168.1.13
-root@kali:~# ifconfig eth0
+ifconfig eth0 192.168.1.13
+```
+
+```bash
+ifconfig eth0
+```
+
+**Output:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.13  netmask 255.255.255.0  broadcast 192.168.1.255
         ether 00:0c:29:1b:2c:3d  txqueuelen 1000  (Ethernet)
         RX packets 10430  bytes 9012611 (8.5 MiB)
         TX packets 5121  bytes 774311 (756.1 KiB)
-root@kali:~# ip -br addr show eth0
+```
+
+```bash
+ip -br addr show eth0
+```
+
+**Output:**
+
+```text
 eth0             UP             192.168.1.13/24 fe80::20c:29ff:fe1b:2c3d/64
 ```
 
@@ -137,10 +174,24 @@ The MAC address is not only an identifier; on many networks it *is* the access c
 Changing it takes three commands, because most drivers will not accept a new hardware address while the interface is carrying traffic: bring the interface **down**, set the address, and bring it back **up**.
 
 ```bash
-root@kali:~# ifconfig eth0 down
-root@kali:~# ifconfig eth0 hw ether 00:11:22:33:44:55
-root@kali:~# ifconfig eth0 up
-root@kali:~# ifconfig eth0
+ifconfig eth0 down
+```
+
+```bash
+ifconfig eth0 hw ether 00:11:22:33:44:55
+```
+
+```bash
+ifconfig eth0 up
+```
+
+```bash
+ifconfig eth0
+```
+
+**Output:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.17  netmask 255.255.255.0  broadcast 192.168.1.255
         ether 00:11:22:33:44:55  txqueuelen 1000  (Ethernet)
@@ -159,8 +210,16 @@ Changing your MAC is not invisibility. On a switched network the frame is delive
 Manual addressing is useful for a lab, but most machines do not stand still: they ask the local DHCP server for an address every time they connect. DHCP — the Dynamic Host Configuration Protocol — hands out addresses, and usually a subnet mask, a gateway and DNS servers along with them, from a pool that the administrator controls. On a client machine the request is made by the DHCP client daemon, which on many Linux systems is `dhclient`.
 
 ```bash
-root@kali:~# dhclient eth0
-root@kali:~# ifconfig eth0
+dhclient eth0
+```
+
+```bash
+ifconfig eth0
+```
+
+**Output:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.17  netmask 255.255.255.0  broadcast 192.168.1.255
         ether 00:11:22:33:44:55  txqueuelen 1000  (Ethernet)
@@ -173,7 +232,12 @@ Running `dhclient` with an interface name starts the client against that interfa
 Most of the useful detail is not printed on the console but written to the lease file, which records exactly what the server offered and when it expires:
 
 ```bash
-root@kali:~# grep -A3 "lease" /var/lib/dhcp/dhclient.eth0.leases | head -20
+grep -A3 "lease" /var/lib/dhcp/dhclient.eth0.leases | head -20
+```
+
+**Output:**
+
+```text
 lease {
   interface "eth0";
   fixed-address 192.168.1.17;
@@ -199,7 +263,12 @@ DNS is the service that translates a domain name such as `example.com` into the 
 Run with a single argument, `dig` performs a lookup for an A record (an IPv4 address) and prints the whole answer, including the parts that are normally hidden:
 
 ```bash
-root@kali:~# dig example.com
+dig example.com
+```
+
+**Output:**
+
+```text
 
 ; <<>> DiG 9.18.24-1-Debian <<>> example.com
 ;; global options: +cmd
@@ -228,14 +297,24 @@ The last four lines are the ones beginners overlook and experts read first. `Que
 Different record types answer different questions, and `dig` asks for them by adding the type to the command. The `mx` type lists the mail exchangers for the domain, which is step one in mapping an organisation's mail infrastructure:
 
 ```bash
-root@kali:~# dig example.com mx +noall +answer
+dig example.com mx +noall +answer
+```
+
+**Output:**
+
+```text
 example.com.		3600	IN	MX	0 .
 ```
 
 That answer is a **null MX**, and it is worth understanding rather than skipping past. The single record `0 .` — priority zero, target the root — is a deliberate, standards-defined way of saying "this domain does not accept mail at all". A resolver that finds it must stop looking, which is why the record exists: it tells the world not to bother trying. A domain that *does* accept mail returns one or more records with a hostname and a preference number. Since the reserved domain used above deliberately accepts no mail, here is the shape of a mail-accepting answer taken from a lab zone in the `.example` top-level domain, which is reserved for exactly this purpose and therefore cannot collide with anything real:
 
 ```bash
-root@kali:~# dig intranet.example mx +noall +answer
+dig intranet.example mx +noall +answer
+```
+
+**Output:**
+
+```text
 intranet.example.	300	IN	MX	10 mail1.intranet.example.
 intranet.example.	300	IN	MX	20 mail2.intranet.example.
 ```
@@ -245,7 +324,12 @@ Here two mail servers are published, `mail1` preferred over `mail2` because the 
 The `ns` type names the authoritative name servers for the zone, which are the machines that hold the definitive copies of every record in it:
 
 ```bash
-root@kali:~# dig example.com ns +noall +answer
+dig example.com ns +noall +answer
+```
+
+**Output:**
+
+```text
 example.com.		172800	IN	NS	a.iana-servers.net.
 example.com.		172800	IN	NS	b.iana-servers.net.
 ```
@@ -259,7 +343,12 @@ A few shortcuts make `dig` pleasant to use in scripts and in a hurry. `+short` p
 The resolver your machine uses by default is described in a plain text file, `/etc/resolv.conf`, and it is worth reading before you change it:
 
 ```bash
-root@kali:~# cat /etc/resolv.conf
+cat /etc/resolv.conf
+```
+
+**Output:**
+
+```text
 # Generated by NetworkManager
 search lab.local
 nameserver 192.168.1.1
@@ -270,12 +359,36 @@ Two directives appear in a typical file. The `nameserver` line names the resolve
 Changing the resolver is a matter of writing a new line into the file. The quickest way is with the shell's `echo` and the `>` redirect, which *overwrites* the file with whatever you supply:
 
 ```bash
-root@kali:~# echo "nameserver 1.1.1.1" > /etc/resolv.conf
-root@kali:~# cat /etc/resolv.conf
+echo "nameserver 1.1.1.1" > /etc/resolv.conf
+```
+
+```bash
+cat /etc/resolv.conf
+```
+
+**Output:**
+
+```text
 nameserver 1.1.1.1
-root@kali:~# dig example.com +short @1.1.1.1
+```
+
+```bash
+dig example.com +short @1.1.1.1
+```
+
+**Output:**
+
+```text
 93.184.216.34
-root@kali:~# dig example.com | grep "SERVER:"
+```
+
+```bash
+dig example.com | grep "SERVER:"
+```
+
+**Output:**
+
+```text
 ;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
 ```
 
@@ -290,7 +403,12 @@ For security work the resolver matters for two reasons. First, the DNS server se
 Before any DNS query is sent, the system consults a local file. `/etc/hosts` is a static table of name-to-address mappings, and every Unix-like system has one; it is consulted first because of the lookup order defined in `/etc/nsswitch.conf`, where the `hosts:` line reads `files dns`, meaning "check the files first, then ask DNS".
 
 ```bash
-root@kali:~# cat /etc/hosts
+cat /etc/hosts
+```
+
+**Output:**
+
+```text
 127.0.0.1	localhost
 127.0.1.1	kali
 ::1		localhost ip6-localhost ip6-loopback
@@ -298,8 +416,19 @@ root@kali:~# cat /etc/hosts
 # The following lines are desirable for IPv6 capable hosts
 ff02::1		ip6-allnodes
 ff02::2		ip6-allrouters
-root@kali:~# nano /etc/hosts
-root@kali:~# cat /etc/hosts
+```
+
+```bash
+nano /etc/hosts
+```
+
+```bash
+cat /etc/hosts
+```
+
+**Output:**
+
+```text
 127.0.0.1	localhost
 127.0.1.1	kali
 ::1		localhost ip6-localhost ip6-loopback
@@ -315,11 +444,32 @@ The file's format is deliberately primitive: an IP address in the first column, 
 Adding a line maps any name of your choosing to any address, and because the file wins over DNS, the effect is immediate and global to the machine:
 
 ```bash
-root@kali:~# getent hosts portal.example.com
+getent hosts portal.example.com
+```
+
+**Output:**
+
+```text
 192.168.1.9     portal.example.com
-root@kali:~# curl -s -o /dev/null -w "%{http_code} %{remote_ip}\n" http://portal.example.com/
+```
+
+```bash
+curl -s -o /dev/null -w "%{http_code} %{remote_ip}\n" http://portal.example.com/
+```
+
+**Output:**
+
+```text
 200 192.168.1.9
-root@kali:~# dig +short portal.example.com
+```
+
+```bash
+dig +short portal.example.com
+```
+
+**Output:**
+
+```text
 93.184.216.34
 ```
 
@@ -338,7 +488,12 @@ A process is simply a program that is running: the kernel has loaded it into mem
 The primary tool for looking at processes is `ps`, short for *process status*. Typed with no arguments it lists the processes attached to the current terminal and owned by the current user, which keeps the output short enough to be useful while you are learning.
 
 ```bash
-root@kali:~# ps
+ps
+```
+
+**Output:**
+
+```text
     PID TTY          TIME CMD
    4122 pts/0    00:00:00 bash
    4188 pts/0    00:00:00 ps
@@ -353,7 +508,12 @@ Two useful variations on the basic command are worth trying immediately. `ps -f`
 Running `ps` with the three BSD-style options `aux` displays all running processes for all users along with the resource figures for each one. This is the single most typed command in this section, and the header line it prints is worth memorising.
 
 ```bash
-root@kali:~# ps aux
+ps aux
+```
+
+**Output:**
+
+```text
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root           1  0.0  0.6 168412 12984 ?        Ss   09:41   0:04 /sbin/init splash
 root           2  0.0  0.0      0     0 ?        S    09:41   0:00 [kthreadd]
@@ -375,7 +535,12 @@ The `STAT` codes are worth learning because they tell you whether a process is h
 A busy machine produces hundreds of rows from `ps aux`, so in practice you filter. The technique is the pipe introduced in Part 1 (section 4.7), applied here to process output, and it works exactly as it does with any other command: pipe `ps aux` into `grep` and keep the lines that mention the program you are curious about. Here we look for metasploit's console, `msfconsole`.
 
 ```bash
-root@kali:~# ps aux | grep msfconsole
+ps aux | grep msfconsole
+```
+
+**Output:**
+
+```text
 root        5210  1.3  2.4 612344 198772 pts/1   Sl+  10:33   0:02 ruby /usr/bin/msfconsole -q
 root        5233  0.0  0.0  12440  4096 pts/1    S+   10:33   0:00 grep msfconsole
 ```
@@ -385,11 +550,32 @@ Two lines come back, and understanding why is a small but genuinely useful lesso
 There is a better tool for this job, and it is worth adopting as the default: `pgrep` was written to answer exactly the question "which processes match this name?", so it does not match itself and it prints only identifiers by default.
 
 ```bash
-root@kali:~# pgrep -a msfconsole
+pgrep -a msfconsole
+```
+
+**Output:**
+
+```text
 5210 ruby /usr/bin/msfconsole -q
-root@kali:~# pgrep -u student -l bash
+```
+
+```bash
+pgrep -u student -l bash
+```
+
+**Output:**
+
+```text
 3901 bash
-root@kali:~# pgrep -f "app.py"
+```
+
+```bash
+pgrep -f "app.py"
+```
+
+**Output:**
+
+```text
 1204
 ```
 
@@ -400,7 +586,12 @@ The `-a` flag prints the full command line alongside the PID, `-u` filters by us
 `ps` gives you a snapshot; `top` gives you a film. The `top` command displays processes ordered by resource consumption and refreshes the display every few seconds, which makes it the tool of choice when you want to watch what a machine is doing right now — which process is eating the CPU, whether the load is rising, and how much memory is left.
 
 ```bash
-root@kali:~# top
+top
+```
+
+**Output:**
+
+```text
 top - 10:36:22 up 55 min,  1 user,  load average: 0.42, 0.31, 0.24
 Tasks: 214 total,   1 running, 213 sleeping,   0 stopped,   0 zombie
 %Cpu(s):  3.9 us,  1.0 sy,  0.0 ni, 94.8 id,  0.3 wa,  0.0 hi,  0.0 si,  0.0 st
@@ -427,11 +618,24 @@ On a machine with more work than CPU, the kernel scheduler decides who runs, and
 The `-n` flag introduces the adjustment, and here the ssh-agent daemon is started with a nicer-than-default value of −10, meaning it should be given preference by the scheduler.
 
 ```bash
-root@kali:~# nice -n -10 /usr/bin/ssh-agent
+nice -n -10 /usr/bin/ssh-agent
+```
+
+**Output:**
+
+```text
 SSH_AUTH_SOCK=/tmp/ssh-XXXXXXuP3n9g/agent.4412; export SSH_AUTH_SOCK;
 SSH_AGENT_PID=4412; export SSH_AGENT_PID;
 echo Agent pid 4412;
-root@kali:~# ps -o pid,ni,cmd -C ssh-agent
+```
+
+```bash
+ps -o pid,ni,cmd -C ssh-agent
+```
+
+**Output:**
+
+```text
     PID  NI CMD
    4412 -10 /usr/bin/ssh-agent
 ```
@@ -443,9 +647,22 @@ One permission rule matters here: any user may make a process *nicer* (raise its
 The non-privileged and far more common use is the opposite direction — pushing a long, unimportant job out of the way so that it does not compete with the work you are actually doing:
 
 ```bash
-root@kali:~# nice -n 19 ./backup-script.sh &
+nice -n 19 ./backup-script.sh &
+```
+
+**Output:**
+
+```text
 [1] 5487
-root@kali:~# nice -n 19 /usr/bin/updatedb &
+```
+
+```bash
+nice -n 19 /usr/bin/updatedb &
+```
+
+**Output:**
+
+```text
 [2] 5490
 ```
 
@@ -456,12 +673,33 @@ Both jobs are running at the lowest possible priority, and the `[1]` and `[2]` j
 The priority of a process that is already running can be changed without restarting it, using `renice`. It takes a nice value or an adjustment and one or more PIDs, and it works on processes you did not start, provided you have the privileges to change them.
 
 ```bash
-root@kali:~# renice 20 6242
+renice 20 6242
+```
+
+**Output:**
+
+```text
 6242 (process ID) old priority 0, new priority 20
-root@kali:~# ps -o pid,ni,cmd -p 6242
+```
+
+```bash
+ps -o pid,ni,cmd -p 6242
+```
+
+**Output:**
+
+```text
     PID  NI CMD
    6242  20 /usr/bin/updatedb
-root@kali:~# renice -n -5 -p 6242
+```
+
+```bash
+renice -n -5 -p 6242
+```
+
+**Output:**
+
+```text
 renice: failed to set priority for 6242 (process ID): Permission denied
 ```
 
@@ -474,15 +712,34 @@ Three forms are worth keeping in your notes. `renice -n 10 -p 6242` sets an abso
 The `kill` command stops processes, and its name misleads in a useful way: what it actually sends is a *signal*, a numbered, asynchronous notification delivered to a process by the kernel, and the process may handle most signals however it likes — clean up, save state, close sockets, ignore them or exit. There are 64 signals in all, and the two that matter most are the polite one and the fatal one. Here the process with PID 6242 is sent signal number 1.
 
 ```bash
-root@kali:~# kill -1 6242
-root@kali:~# ps -p 6242
+kill -1 6242
+```
+
+```bash
+ps -p 6242
+```
+
+**Output:**
+
+```text
     PID TTY          TIME CMD
-root@kali:~# kill -l
+```
+
+```bash
+kill -l
+```
+
+**Output:**
+
+```text
  1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
  6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
 11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
 ...
-root@kali:~# kill -9 4378
+```
+
+```bash
+kill -9 4378
 ```
 
 `SIGHUP`, signal 1, originally meant "the terminal you were connected to has hung up", and daemons such as `sshd`, `nginx` and `rsyslog` reinterpret it as "re-read your configuration files and reopen your log files" — which is why `kill -1` is the traditional way to make a service reload without dropping its connections, and why the same signal can terminate a simple foreground program that has no handler for it. Because `updatedb` is a short-lived program with no handler, sending it `SIGHUP` ended it, and the following `ps` shows an empty table.
@@ -498,22 +755,54 @@ Two related commands make targeted killing easier. `pkill` sends a signal to eve
 A command typed at a prompt owns the terminal until it finishes, which is inconvenient the moment you start something long-running. The shell provides **job control** for exactly this problem: appending a single ampersand to a command runs it in the background, immediately returning your prompt while the process keeps working.
 
 ```bash
-root@kali:~# nano lab-notes.txt &
+nano lab-notes.txt &
+```
+
+**Output:**
+
+```text
 [1] 4312
-root@kali:~# jobs
+```
+
+```bash
+jobs
+```
+
+**Output:**
+
+```text
 [1]+  Stopped                 nano lab-notes.txt
-root@kali:~# fg %1
+```
+
+```bash
+fg %1
 ```
 
 The shell replied with the job number `[1]` and the process identifier `4312`, and in a terminal application this is where an important detail appears. `nano` is an interactive full-screen program, and a program in that category will normally *stop itself* when it finds it has been put in the background without a terminal — which is what the `jobs` output shows: the job is listed as `Stopped` rather than `Running`, because the editor tried to read from a terminal it no longer controls. This is the general rule and it is worth internalising: backgrounding is for programs that do not need your keyboard, such as a compiler, a download, a scan or a long copy — not for interactive editors.
 
 ```bash
-root@kali:~# ./backup-script.sh &
+./backup-script.sh &
+```
+
+**Output:**
+
+```text
 [2] 4701
-root@kali:~# jobs -l
+```
+
+```bash
+jobs -l
+```
+
+**Output:**
+
+```text
 [1]+  4312 Stopped                 nano lab-notes.txt
 [2]-  4701 Running                 ./backup-script.sh &
-root@kali:~# bg %1
+```
+
+```bash
+bg %1
 ```
 
 With a genuinely non-interactive program the behaviour is what you would hope: job `[2]` is `Running`, and `jobs -l` shows both jobs with their PIDs and — importantly — the marker in the second column. The `+` marks the *current* job, the one `fg` and `bg` act on when you do not name one, while `-` marks the previous job; that is why `fg` with no argument resumes whatever was most recently backgrounded, and why it is safer to name the job explicitly until the idea is second nature.
@@ -523,12 +812,33 @@ The full vocabulary of job control is small. `Ctrl+Z` *stops* the foreground pro
 That last point explains the most common way people lose work. When a terminal closes, the shell sends `SIGHUP` to its jobs, and any process that does not handle it dies — so a download started with a plain `&` in a terminal window that you then close simply disappears. The traditional defence is `nohup`, which detaches the process from the hangup signal and redirects its output, because there is no longer a terminal to print it to:
 
 ```bash
-root@kali:~# nohup ./scan.sh > scan.log 2>&1 &
+nohup ./scan.sh > scan.log 2>&1 &
+```
+
+**Output:**
+
+```text
 [3] 4820
-root@kali:~# ps -o pid,stat,cmd -p 4820
+```
+
+```bash
+ps -o pid,stat,cmd -p 4820
+```
+
+**Output:**
+
+```text
     PID STAT CMD
    4820 S    /bin/bash ./scan.sh
-root@kali:~# nohup ./scan.sh &
+```
+
+```bash
+nohup ./scan.sh &
+```
+
+**Output:**
+
+```text
 [4] 4833
 nohup: ignoring input and appending output to 'nohup.out'
 ```
@@ -540,7 +850,12 @@ The redirection `> scan.log 2>&1` sends both standard output and standard error 
 Sometimes the right moment to run a job is in the future. The `at` command schedules a command to run **once**, at a specified time, and it is the tool to reach for when you want a task performed after you have gone home or after some other event has happened. It reads the commands to run from standard input, which is why the invocation looks interactive.
 
 ```bash
-root@kali:~# at 9:00pm
+at 9:00pm
+```
+
+**Output:**
+
+```text
 warning: commands will be executed using /bin/sh
 at> /root/simple_bash.sh
 at> <EOT>
@@ -554,7 +869,12 @@ The queue of pending jobs is managed with three short commands. `atq` lists them
 For jobs that should run **repeatedly** — every night, every hour, every Monday — the tool is `cron` rather than `at`, and the difference is worth stating plainly: `at` is for one-offs, `cron` is for recurrence. A user's scheduled jobs live in a crontab, edited with `crontab -e`, and each line contains five time fields followed by the command to run:
 
 ```bash
-root@kali:~# crontab -l
+crontab -l
+```
+
+**Output:**
+
+```text
 # m h  dom mon dow   command
   0 3  *   *   *     /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1
  30 1  *   *   0     /usr/local/bin/weekly-report.sh
@@ -577,7 +897,12 @@ The convention for names is upper case — `HOME`, `PATH`, `USER` — which is a
 Two commands list variables, and the difference between them is the distinction above made concrete. `set`, typed with no arguments, prints every shell variable and function the current shell knows about, including all the environment variables it inherited. `env` prints only the exported environment, which is the list that child processes will actually receive.
 
 ```bash
-root@kali:~# set | more
+set | more
+```
+
+**Output:**
+
+```text
 BASH=/usr/bin/bash
 BASHOPTS=checkwinsize:cmdhist:complete_fullquote:expand_aliases:extquote:force_fignore:globasciiranges
 BASH_ALIASES=()
@@ -607,14 +932,37 @@ The pipe into `more` is not optional in practice: on a normal desktop `set` prin
 Piping `set` into `grep` is the way to find one variable among hundreds, and the technique is identical to the process filtering of section 2.3. Here we look for `HISTSIZE`.
 
 ```bash
-root@kali:~# set | grep HISTSIZE
+set | grep HISTSIZE
+```
+
+**Output:**
+
+```text
 HISTFILESIZE=2000
 HISTSIZE=1000
-root@kali:~# echo "my history holds $HISTSIZE commands"
-my history holds 1000 commands
-root@kali:~# printenv HISTSIZE
+```
 
-root@kali:~# printenv HOME
+```bash
+echo "my history holds $HISTSIZE commands"
+```
+
+**Output:**
+
+```text
+my history holds 1000 commands
+```
+
+```bash
+printenv HISTSIZE
+```
+
+```bash
+printenv HOME
+```
+
+**Output:**
+
+```text
 /root
 ```
 
@@ -629,11 +977,30 @@ So the answer to the original question is that this shell remembers one thousand
 Changing a variable is a matter of assigning it a new value, and the assignment is written with no spaces around the equals sign.
 
 ```bash
-root@kali:~# HISTSIZE=0
-root@kali:~# echo $HISTSIZE
+HISTSIZE=0
+```
+
+```bash
+echo $HISTSIZE
+```
+
+**Output:**
+
+```text
 0
-root@kali:~# echo $HISTSIZE > ~/valueofHISTSIZE.txt
-root@kali:~# cat ~/valueofHISTSIZE.txt
+```
+
+```bash
+echo $HISTSIZE > ~/valueofHISTSIZE.txt
+```
+
+```bash
+cat ~/valueofHISTSIZE.txt
+```
+
+**Output:**
+
+```text
 0
 ```
 
@@ -646,13 +1013,35 @@ Two details in this transcript are worth pausing on, because they are where begi
 The assignment above lasts as long as the session does. Opening a new terminal gives you a fresh shell with a fresh environment, and `HISTSIZE` is back to 1000 because the value was never written down anywhere. To make a variable persistent you must first place it into the environment with `export`, and then arrange for the assignment to happen in every new shell — which is done by adding the line to a startup file such as `~/.bashrc`.
 
 ```bash
-root@kali:~# HISTSIZE=0
-root@kali:~# export HISTSIZE
-root@kali:~# bash -c 'echo "child shell sees HISTSIZE=$HISTSIZE"'
+HISTSIZE=0
+```
+
+```bash
+export HISTSIZE
+```
+
+```bash
+bash -c 'echo "child shell sees HISTSIZE=$HISTSIZE"'
+```
+
+**Output:**
+
+```text
 child shell sees HISTSIZE=0
-root@kali:~# bash -c 'echo "child shell sees HISTFILE=$HISTFILE"'
+```
+
+```bash
+bash -c 'echo "child shell sees HISTFILE=$HISTFILE"'
+```
+
+**Output:**
+
+```text
 child shell sees HISTFILE=
-root@kali:~# echo 'export HISTSIZE=0' >> ~/.bashrc
+```
+
+```bash
+echo 'export HISTSIZE=0' >> ~/.bashrc
 ```
 
 The first two commands are the two-step ritual: assign the value, then mark the variable for export. Order matters — exporting a name that has no value yet exports nothing — and `export HISTSIZE=0` in a single command is the compact form that does both at once. The third command proves the point, and it is the demonstration that makes the shell-versus-environment distinction concrete: `bash -c` starts a *new* shell, and because `HISTSIZE` was exported, that child process inherited the value 0 and printed it. The fourth command is the control experiment, asking the same child about `HISTFILE`, which was never exported — the child reports an empty value even though the parent shell has it set. Nothing about that is a bug; it is the inheritance rule doing exactly what it says.
@@ -664,18 +1053,49 @@ The final line makes the change survive future sessions by appending to `~/.bash
 Variables do not have to be pre-defined by the system; you can create them, name them whatever you like and use them as shorthand for values you type often. Here a variable is created to hold a domain name.
 
 ```bash
-root@kali:~# url_variable="example.com"
-root@kali:~# echo $url_variable
-example.com
-root@kali:~# echo "the target is $url_variable"
-the target is example.com
-root@kali:~# url_variable=example.org
-root@kali:~# echo $url_variable
-example.org
-root@kali:~# unset url_variable
-root@kali:~# echo $url_variable
+url_variable="example.com"
+```
 
-root@kali:~#
+```bash
+echo $url_variable
+```
+
+**Output:**
+
+```text
+example.com
+```
+
+```bash
+echo "the target is $url_variable"
+```
+
+**Output:**
+
+```text
+the target is example.com
+```
+
+```bash
+url_variable=example.org
+```
+
+```bash
+echo $url_variable
+```
+
+**Output:**
+
+```text
+example.org
+```
+
+```bash
+unset url_variable
+```
+
+```bash
+echo $url_variable
 ```
 
 The assignment creates the variable and `echo $url_variable` reads it back; the second form shows the substitution working inside a longer string, which is how variables earn their keep in scripts. The re-assignment demonstrates that a variable can be changed at any time simply by assigning it again, and the last two commands do the opposite: `unset` removes the variable from the shell entirely, and the following `echo` prints an empty line, because an undefined variable expands to nothing rather than producing an error.
@@ -768,11 +1188,7 @@ The commands in this part only become yours when you have typed them yourself, s
 2. **Processes.** Find the process that is using the most memory, and the one that is using the most CPU. Run a long job at the lowest priority in the background, list it with `jobs -l`, then stop it, background it again and foreground it. Schedule a harmless command with `at` to run two minutes from now and confirm it ran. Send `SIGTERM` to a process of your choosing, and only if that fails escalate to `SIGKILL`, explaining in writing why the order matters.
 3. **Environment.** Print the value of `HISTSIZE`, save it to a file in your home directory, change it for the current shell only, and prove that a child shell does not see the change. Then export it, prove that a child shell does see it, and finally make it permanent in `~/.bashrc`. Create a variable of your own, use it in a command, and delete it with `unset` — noting what an unset variable expands to.
 
-<<<<<<<< HEAD:docs/02 - Linux for Beginners - Part 2.md
 If you can complete these three exercises without looking anything up, you are comfortable with the layer of Linux that sits between using the command line and administering a system — and you have covered everything in the first two parts of this guide.
-========
-If you can complete these three exercises without looking anything up, you are comfortable with the layer of Linux that sits between using the command line and administering a system — and you are ready for Part 3.
->>>>>>>> origin/arena/52f71d52-attack-scripts:docs/02-linux-fundamentals-part-2.md
 
 ---
 
@@ -782,8 +1198,4 @@ The three topics in this part share a theme that is easy to miss while you are m
 
 Two habits from Part 1 are worth carrying forward, because they cover most of the risk. The first is to *look before you change anything*: read a configuration file before you overwrite it, run `pgrep` before you run `pkill`, print an address table before you alter an interface, and save a value before you unset or reassign it. The second is to *have a way back*: a snapshot, a second console, or a rollback scheduled with `at` before you touch the network.
 
-<<<<<<<< HEAD:docs/02 - Linux for Beginners - Part 2.md
 **Part 3** is where those threads come together. [Linux for Beginners (Part 3): Bash Scripting, Automation and Services](03-linux-fundamentals-part-3.md) takes the variables, the pipelines and the processes you have just met and turns them into programs — a Bash script that takes input and does something useful, a `cron` job that runs it on a schedule without anyone remembering to launch it, and the services (Apache, OpenSSH, FTP) that let a machine answer requests by itself. Beyond that, natural next steps are **service management** with `systemctl` and the systemd journal, **package and configuration management** across more than one machine, and a deeper study of the **permission and privilege model**. Each of them builds directly on the material above, and each of them is far less intimidating once moving around the file system, reading a long listing and inspecting a running process all feel like second nature.
-========
-**Part 3** is the continuation and it picks up exactly where this guide leaves off. [Linux for Beginners (Part 3): Scripting, Scheduling and Services](03-linux-fundamentals-part-3.md) covers shell **scripting and automation** — conditions, loops, functions and the variables you have just met, assembled into programs that do a day's work in a second — along with **scheduling** with `cron` and **service management** with `service`/`systemctl`, including the Apache web server, OpenSSH and FTP. Beyond the three parts, natural next steps are writing your own systemd units and timers, **package and configuration management** across more than one machine, and a deeper study of the **permission and privilege model**. Each of them builds directly on the material above, and each of them is far less intimidating once moving around the file system, reading a long listing and inspecting a running process all feel like second nature.
->>>>>>>> origin/arena/52f71d52-attack-scripts:docs/02-linux-fundamentals-part-2.md

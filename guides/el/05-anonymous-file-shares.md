@@ -73,7 +73,12 @@ All packages are up to date.
 Ο επιτιθέμενος χρειάζεται τους αντίστοιχους clients και τα εργαλεία enumeration. On a Debian-family security distribution these are commonly installed already; on a minimal system, install Nmap, a command-line FTP client, Samba client utilities, NetExec, and NFS client tools. Επαληθεύστε πρώτα τη βασική συνδεσιμότητα, επειδή κάθε μεταγενέστερη αποτυχία διαγιγνώσκεται ευκολότερα όταν είναι γνωστό ότι η διαδρομή δικτύου λειτουργεί:
 
 ```bash
-root@kali:~# ping -c 2 192.168.1.9
+ping -c 2 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 PING 192.168.1.9 (192.168.1.9) 56(84) bytes of data.
 64 bytes from 192.168.1.9: icmp_seq=1 ttl=64 time=0.52 ms
 64 bytes from 192.168.1.9: icmp_seq=2 ttl=64 time=0.48 ms
@@ -223,7 +228,12 @@ root@ubuntu-lab:~# systemctl status vsftpd --no-pager
 Η επιλογή `-A` του Nmap ενεργοποιεί version detection, script scanning, OS detection και traceroute σε μία εκτέλεση. Against a single lab port, it is a compact way to confirm both the daemon and the misconfiguration:
 
 ```bash
-root@kali:~# nmap -A -p 21 192.168.1.9
+nmap -A -p 21 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2026-10-10 12:06 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00052s latency).
@@ -252,7 +262,12 @@ Nmap done: 1 IP address (1 host up) scanned in 8.42 seconds
 Συνδεθείτε ως `anonymous`, ελέγξτε το share, μπείτε στο `pub` και κατεβάστε το `note.txt`:
 
 ```bash
-root@kali:~# ftp 192.168.1.9
+ftp 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Connected to 192.168.1.9.
 220 (vsFTPd 3.0.5)
 Name (192.168.1.9:root): anonymous
@@ -280,7 +295,15 @@ local: note.txt remote: note.txt
 25 bytes received in 0.00 secs (12.4 kB/s)
 ftp> bye
 221 Goodbye.
-root@kali:~# cat note.txt
+```
+
+```bash
+cat note.txt
+```
+
+**Έξοδος:**
+
+```text
 Lab FTP retrieval marker
 ```
 
@@ -416,7 +439,12 @@ root@ubuntu-lab:/var/www# cd ~
 Αυθεντικοποιηθείτε ως `guest` με κενό password και κάντε enumeration των shares:
 
 ```bash
-root@kali:~# nxc smb 192.168.1.9 --shares -u 'guest' -p ''
+nxc smb 192.168.1.9 --shares -u 'guest' -p ''
+```
+
+**Έξοδος:**
+
+```text
 [*] SMB         192.168.1.9    445    UBUNTU-LAB     [*] Unix - Samba 4.17.7-Ubuntu
 [+] SMB         192.168.1.9    445    UBUNTU-LAB     UBUNTU-LAB\guest: (Guest)
 [*] SMB         192.168.1.9    445    UBUNTU-LAB     Enumerated shares
@@ -436,7 +464,12 @@ NetExec’s marker convention is consistent across protocols. Informational line
 The same inventory can be obtained directly with `smbclient`. The `-N` option suppresses the password prompt for guest access, while `-L` lists shares:
 
 ```bash
-root@kali:~# smbclient -N -L //192.168.1.9
+smbclient -N -L //192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Anonymous login successful
 
 	Sharename       Type      Comment
@@ -456,7 +489,12 @@ Unable to connect with SMB1 -- no workgroup available
 Ανοίξτε το `shares` export χωρίς password, κάντε listing και ανακτήστε το marker:
 
 ```bash
-root@kali:~# smbclient //192.168.1.9/shares -N
+smbclient //192.168.1.9/shares -N
+```
+
+**Έξοδος:**
+
+```text
 Try "help" to get a list of possible commands.
 smb: \> ls
   .                                   D        0  Sat Oct 10 12:14:22 2026
@@ -468,7 +506,15 @@ smb: \> ls
 smb: \> get file.txt
 getting file \file.txt of size 25 as file.txt (1.2 KiloBytes/sec) (average 1.2 KiloBytes/sec)
 smb: \> exit
-root@kali:~# cat file.txt
+```
+
+```bash
+cat file.txt
+```
+
+**Έξοδος:**
+
+```text
 Lab SMB retrieval marker
 ```
 
@@ -567,10 +613,23 @@ LISTEN 0      64                 *:2049            *:*    users:(("nfsd",pid=243
 Πριν χρησιμοποιήσετε NetExec, επιβεβαιώστε την κλασική διαδρομή discovery από την πλευρά του επιτιθέμενου. `showmount -e` asks the target which directories it exports, and `rpcinfo -p` lists registered RPC services:
 
 ```bash
-root@kali:~# showmount -e 192.168.1.9
+showmount -e 192.168.1.9
+```
+
+**Έξοδος:**
+
+```text
 Export list for 192.168.1.9:
 /srv/nfs/public *
-root@kali:~# rpcinfo -p 192.168.1.9 | head -12
+```
+
+```bash
+rpcinfo -p 192.168.1.9 | head -12
+```
+
+**Έξοδος:**
+
+```text
    program vers proto   port  service
     100000    4   tcp    111  portmapper
     100000    3   tcp    111  portmapper
@@ -591,10 +650,23 @@ root@kali:~# rpcinfo -p 192.168.1.9 | head -12
 Το NFS module του NetExec παρέχει το ίδιο discovery workflow στο interface που χρησιμοποιήθηκε ήδη για SMB:
 
 ```bash
-root@kali:~# nxc nfs 192.168.1.9 --enum-shares
+nxc nfs 192.168.1.9 --enum-shares
+```
+
+**Έξοδος:**
+
+```text
 [*] NFS         192.168.1.9    2049   UBUNTU-LAB     [*] Enumerating NFS exports
 [+] NFS         192.168.1.9    2049   UBUNTU-LAB     /srv/nfs/public (rw, no_root_squash, root escape: True)
-root@kali:~# nxc nfs 192.168.1.9 --share '/srv/nfs/public' --ls '/'
+```
+
+```bash
+nxc nfs 192.168.1.9 --share '/srv/nfs/public' --ls '/'
+```
+
+**Έξοδος:**
+
+```text
 [*] NFS         192.168.1.9    2049   UBUNTU-LAB     [*] Listing / on /srv/nfs/public
 [*] NFS         192.168.1.9    2049   UBUNTU-LAB     drwxrwxrwx root root 4096 .
 [*] NFS         192.168.1.9    2049   UBUNTU-LAB     -rw-r--r-- root root   25 data.txt
@@ -607,10 +679,23 @@ root@kali:~# nxc nfs 192.168.1.9 --share '/srv/nfs/public' --ls '/'
 Το NetExec μπορεί να κατεβάσει ένα αρχείο απευθείας από το export. The command takes the remote path relative to the share root and a local destination:
 
 ```bash
-root@kali:~# nxc nfs 192.168.1.9 --share /srv/nfs/public/ --get-file data.txt data.txt
+nxc nfs 192.168.1.9 --share /srv/nfs/public/ --get-file data.txt data.txt
+```
+
+**Έξοδος:**
+
+```text
 [*] NFS         192.168.1.9    2049   UBUNTU-LAB     [*] Downloading data.txt from /srv/nfs/public/
 [+] NFS         192.168.1.9    2049   UBUNTU-LAB     File successfully downloaded to data.txt
-root@kali:~# cat data.txt
+```
+
+```bash
+cat data.txt
+```
+
+**Έξοδος:**
+
+```text
 Lab NFS retrieval marker
 ```
 
@@ -621,14 +706,33 @@ Lab NFS retrieval marker
 Ένα mount παρέχει πλήρη filesystem semantics: `ls`, `find`, `grep`, `cp`, permission inspection, and execution against the remote export as if it were a local directory. Create a mount point and mount the export:
 
 ```bash
-root@kali:~# mkdir -p /tmp/nfs
-root@kali:~# mount -t nfs 192.168.1.9:/srv/nfs/public /tmp/nfs
-root@kali:~# ls -la /tmp/nfs
+mkdir -p /tmp/nfs
+```
+
+```bash
+mount -t nfs 192.168.1.9:/srv/nfs/public /tmp/nfs
+```
+
+```bash
+ls -la /tmp/nfs
+```
+
+**Έξοδος:**
+
+```text
 total 12
 drwxrwxrwx  2 root root 4096 Feb 10 12:20 .
 drwxrwxrwt 14 root root 4096 Feb 10 12:24 ..
 -rw-r--r--  1 root root   25 Feb 10 12:20 data.txt
-root@kali:~# cat /tmp/nfs/data.txt
+```
+
+```bash
+cat /tmp/nfs/data.txt
+```
+
+**Έξοδος:**
+
+```text
 Lab NFS retrieval marker
 ```
 
@@ -637,9 +741,11 @@ Lab NFS retrieval marker
 Unmount the export when finished:
 
 ```bash
-root@kali:~# umount /tmp/nfs
-root@kali:~# ls /tmp/nfs
-root@kali:~#
+umount /tmp/nfs
+```
+
+```bash
+ls /tmp/nfs
 ```
 
 Ο καθαρισμός έχει σημασία σε ένα κοινόχρηστο εργαστήριο. A forgotten mount can confuse later tests, retain stale file handles after the export changes, and leave misleading directory contents in `/tmp`. Verify that the mount point is empty after unmounting.

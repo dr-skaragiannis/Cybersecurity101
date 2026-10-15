@@ -35,7 +35,12 @@
 Η εντολή `ifconfig` αποτελεί το κλασικό εργαλείο αλληλεπίδρασης με τις ενεργές διεπαφές δικτύου. Όταν εκτελείται χωρίς ορίσματα, εκτυπώνει κάθε διεπαφή που αναγνωρίζει ο πυρήνας, η οποία σε ένα τυπικό εργαστηριακό μηχάνημα περιλαμβάνει έναν φυσικό ή εικονικό προσαρμογέα Ethernet καθώς και τη διεπαφή τοπικής αναδρομής (loopback).
 
 ```bash
-root@kali:~# ifconfig
+ifconfig
+```
+
+**Έξοδος:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.17  netmask 255.255.255.0  broadcast 192.168.1.255
         inet6 fe80::20c:29ff:fe1b:2c3d  prefixlen 64  scopeid 0x20<link>
@@ -66,10 +71,23 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 Το σύγχρονο αντίστοιχο αυτής της εντολής είναι η `ip addr` (συχνά συντομευμένη ως `ip a`), η οποία παρουσιάζει τις ίδιες πληροφορίες με διαφορετική διάταξη:
 
 ```bash
-root@kali:~# ip -br addr
+ip -br addr
+```
+
+**Έξοδος:**
+
+```text
 lo               UNKNOWN        127.0.0.1/8 ::1/128 
 eth0             UP             192.168.1.17/24 fe80::20c:29ff:fe1b:2c3d/64
-root@kali:~# ip route
+```
+
+```bash
+ip route
+```
+
+**Έξοδος:**
+
+```text
 default via 192.168.1.1 dev eth0 proto dhcp metric 100 
 192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.17 metric 100 
 ```
@@ -81,7 +99,12 @@ default via 192.168.1.1 dev eth0 proto dhcp metric 100
 Εάν το σύστημα διαθέτει ασύρματο προσαρμογέα, η `iwconfig` αποτελεί το παραδοσιακό εργαλείο ανάγνωσης των ραδιοφωνικών ρυθμίσεών του: του δικτύου στο οποίο είναι συνδεδεμένο, του σημείου πρόσβασης (AP), της συχνότητας, του ρυθμού μετάδοσης και της ποιότητας σήματος.
 
 ```bash
-root@kali:~# iwconfig
+iwconfig
+```
+
+**Έξοδος:**
+
+```text
 lo        no wireless extensions.
 
 eth0      no wireless extensions.
@@ -106,14 +129,30 @@ wlan0     IEEE 802.11  ESSID:"LAB-AP"
 Η διεύθυνση IP μιας διεπαφής μπορεί να οριστεί χειροκίνητα με μία εντολή: αναγράφοντας `ifconfig`, τη διεπαφή και την επιθυμητή διεύθυνση. Στο παρακάτω παράδειγμα, η διεπαφή Ethernet λαμβάνει τη διεύθυνση 192.168.1.13.
 
 ```bash
-root@kali:~# ifconfig eth0 192.168.1.13
-root@kali:~# ifconfig eth0
+ifconfig eth0 192.168.1.13
+```
+
+```bash
+ifconfig eth0
+```
+
+**Έξοδος:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.13  netmask 255.255.255.0  broadcast 192.168.1.255
         ether 00:0c:29:1b:2c:3d  txqueuelen 1000  (Ethernet)
         RX packets 10430  bytes 9012611 (8.5 MiB)
         TX packets 5121  bytes 774311 (756.1 KiB)
-root@kali:~# ip -br addr show eth0
+```
+
+```bash
+ip -br addr show eth0
+```
+
+**Έξοδος:**
+
+```text
 eth0             UP             192.168.1.13/24 fe80::20c:29ff:fe1b:2c3d/64
 ```
 
@@ -130,10 +169,24 @@ eth0             UP             192.168.1.13/24 fe80::20c:29ff:fe1b:2c3d/64
 Η διαδικασία απαιτεί τρία βήματα, καθώς οι περισσότεροι οδηγοί δεν δέχονται νέα διεύθυνση υλικού όσο η διεπαφή μεταφέρει δεδομένα: απενεργοποίηση της διεπαφής (`down`), ορισμός της νέας διεύθυνσης και εκ νέου ενεργοποίηση (`up`).
 
 ```bash
-root@kali:~# ifconfig eth0 down
-root@kali:~# ifconfig eth0 hw ether 00:11:22:33:44:55
-root@kali:~# ifconfig eth0 up
-root@kali:~# ifconfig eth0
+ifconfig eth0 down
+```
+
+```bash
+ifconfig eth0 hw ether 00:11:22:33:44:55
+```
+
+```bash
+ifconfig eth0 up
+```
+
+```bash
+ifconfig eth0
+```
+
+**Έξοδος:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.17  netmask 255.255.255.0  broadcast 192.168.1.255
         ether 00:11:22:33:44:55  txqueuelen 1000  (Ethernet)
@@ -152,8 +205,16 @@ eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 Η χειροκίνητη διευθυνσιοδότηση εξυπηρετεί σε απομονωμένα εργαστήρια, αλλά τα περισσότερα συστήματα ζητούν αυτόματα διεύθυνση από τον τοπικό διακομιστή DHCP κάθε φορά που συνδέονται. Το πρωτόκολλο DHCP παρέχει διευθύνσεις, μάσκες υποδικτύου, πύλες και διακομιστές DNS από μια ελεγχόμενη δεξαμενή. Στο Linux, η διαδικασία εκτελείται συνήθως από τον δαίμονα `dhclient`.
 
 ```bash
-root@kali:~# dhclient eth0
-root@kali:~# ifconfig eth0
+dhclient eth0
+```
+
+```bash
+ifconfig eth0
+```
+
+**Έξοδος:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.17  netmask 255.255.255.0  broadcast 192.168.1.255
         ether 00:11:22:33:44:55  txqueuelen 1000  (Ethernet)
@@ -166,7 +227,12 @@ eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 Οι πλήρεις λεπτομέρειες της επικοινωνίας καταγράφονται στο αρχείο εκμίσθωσης (lease file), το οποίο αποτυπώνει όσα προσέφερε ο διακομιστής και τον χρόνο λήξης τους:
 
 ```bash
-root@kali:~# grep -A3 "lease" /var/lib/dhcp/dhclient.eth0.leases | head -20
+grep -A3 "lease" /var/lib/dhcp/dhclient.eth0.leases | head -20
+```
+
+**Έξοδος:**
+
+```text
 lease {
   interface "eth0";
   fixed-address 192.168.1.17;
@@ -192,7 +258,12 @@ lease {
 Εκτελούμενη με ένα απλό όρισμα, η `dig` αναζητά εγγραφές τύπου A (διεύθυνση IPv4) και εμφανίζει την πλήρη απάντηση, συμπεριλαμβανομένων των τεχνικών μεταδεδομένων:
 
 ```bash
-root@kali:~# dig example.com
+dig example.com
+```
+
+**Έξοδος:**
+
+```text
 
 ; <<>> DiG 9.18.24-1-Debian <<>> example.com
 ;; global options: +cmd
@@ -221,14 +292,24 @@ example.com.		3600	IN	A	93.184.216.34
 Διαφορετικοί τύποι εγγραφών απαντούν σε διαφορετικά ερωτήματα. Ο τύπος `mx` καταγράφει τους διακομιστές ανταλλαγής αλληλογραφίας (mail exchangers), προσδιορίζοντας την υποδομή ηλεκτρονικού ταχυδρομείου ενός οργανισμού:
 
 ```bash
-root@kali:~# dig example.com mx +noall +answer
+dig example.com mx +noall +answer
+```
+
+**Έξοδος:**
+
+```text
 example.com.		3600	IN	MX	0 .
 ```
 
 Αυτή η απάντηση αποτελεί εγγραφή **null MX**: η τιμή `0 .` (προτεραιότητα μηδέν με προορισμό τη ρίζα) αποτελεί επίσημο τρόπο δήλωσης ότι ο συγκεκριμένος τομέας δεν δέχεται καθόλου αλληλογραφία. Ένας τομέας που υποστηρίζει ενεργά ηλεκτρονικό ταχυδρομείο επιστρέφει ονόματα συστημάτων συνοδευόμενα από αριθμούς προτίμησης, όπως φαίνεται στο παρακάτω παράδειγμα από δοκιμαστική ζώνη `.example`:
 
 ```bash
-root@kali:~# dig intranet.example mx +noall +answer
+dig intranet.example mx +noall +answer
+```
+
+**Έξοδος:**
+
+```text
 intranet.example.	300	IN	MX	10 mail1.intranet.example.
 intranet.example.	300	IN	MX	20 mail2.intranet.example.
 ```
@@ -238,7 +319,12 @@ intranet.example.	300	IN	MX	20 mail2.intranet.example.
 Ο τύπος `ns` εμφανίζει τους έγκυρους διακομιστές ονομάτων (authoritative name servers) που κατέχουν τα αυθεντικά αντίγραφα της ζώνης:
 
 ```bash
-root@kali:~# dig example.com ns +noall +answer
+dig example.com ns +noall +answer
+```
+
+**Έξοδος:**
+
+```text
 example.com.		172800	IN	NS	a.iana-servers.net.
 example.com.		172800	IN	NS	b.iana-servers.net.
 ```
@@ -252,7 +338,12 @@ example.com.		172800	IN	NS	b.iana-servers.net.
 Ο προεπιλεγμένος επιλυτής που χρησιμοποιεί το σύστημά σας καθορίζεται στο αρχείο απλού κειμένου `/etc/resolv.conf`:
 
 ```bash
-root@kali:~# cat /etc/resolv.conf
+cat /etc/resolv.conf
+```
+
+**Έξοδος:**
+
+```text
 # Generated by NetworkManager
 search lab.local
 nameserver 192.168.1.1
@@ -263,12 +354,36 @@ nameserver 192.168.1.1
 Η αλλαγή του επιλυτή πραγματοποιείται με εγγραφή νέας γραμμής στο αρχείο, με τον ταχύτερο τρόπο να είναι η χρήση της `echo` και του τελεστή ανακατεύθυνσης `>`, ο οποίος αντικαθιστά πλήρως τα περιεχόμενα:
 
 ```bash
-root@kali:~# echo "nameserver 1.1.1.1" > /etc/resolv.conf
-root@kali:~# cat /etc/resolv.conf
+echo "nameserver 1.1.1.1" > /etc/resolv.conf
+```
+
+```bash
+cat /etc/resolv.conf
+```
+
+**Έξοδος:**
+
+```text
 nameserver 1.1.1.1
-root@kali:~# dig example.com +short @1.1.1.1
+```
+
+```bash
+dig example.com +short @1.1.1.1
+```
+
+**Έξοδος:**
+
+```text
 93.184.216.34
-root@kali:~# dig example.com | grep "SERVER:"
+```
+
+```bash
+dig example.com | grep "SERVER:"
+```
+
+**Έξοδος:**
+
+```text
 ;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
 ```
 
@@ -283,7 +398,12 @@ root@kali:~# dig example.com | grep "SERVER:"
 Πριν αποσταλεί οποιοδήποτε ερώτημα DNS, το λειτουργικό σύστημα συμβουλεύεται ένα τοπικό αρχείο. Το `/etc/hosts` αποτελεί έναν στατικό πίνακα αντιστοίχισης ονομάτων σε διευθύνσεις IP. Εξετάζεται πάντα πρώτο βάσει της σειράς που ορίζεται στο αρχείο `/etc/nsswitch.conf`, όπου η καταχώριση `hosts: files dns` υποδεικνύει ρητά έλεγχο των τοπικών αρχείων πριν από την αποστολή ερωτήματος στο DNS.
 
 ```bash
-root@kali:~# cat /etc/hosts
+cat /etc/hosts
+```
+
+**Έξοδος:**
+
+```text
 127.0.0.1	localhost
 127.0.1.1	kali
 ::1		localhost ip6-localhost ip6-loopback
@@ -291,8 +411,19 @@ root@kali:~# cat /etc/hosts
 # The following lines are desirable for IPv6 capable hosts
 ff02::1		ip6-allnodes
 ff02::2		ip6-allrouters
-root@kali:~# nano /etc/hosts
-root@kali:~# cat /etc/hosts
+```
+
+```bash
+nano /etc/hosts
+```
+
+```bash
+cat /etc/hosts
+```
+
+**Έξοδος:**
+
+```text
 127.0.0.1	localhost
 127.0.1.1	kali
 ::1		localhost ip6-localhost ip6-loopback
@@ -308,11 +439,32 @@ ff02::2		ip6-allrouters
 Προσθέτοντας μια νέα γραμμή, αντιστοιχίζετε οποιοδήποτε όνομα σε οποιαδήποτε διεύθυνση, και επειδή το αρχείο υπερισχύει του DNS, η επίδραση είναι άμεση και καθολική για το σύστημα:
 
 ```bash
-root@kali:~# getent hosts portal.example.com
+getent hosts portal.example.com
+```
+
+**Έξοδος:**
+
+```text
 192.168.1.9     portal.example.com
-root@kali:~# curl -s -o /dev/null -w "%{http_code} %{remote_ip}\n" http://portal.example.com/
+```
+
+```bash
+curl -s -o /dev/null -w "%{http_code} %{remote_ip}\n" http://portal.example.com/
+```
+
+**Έξοδος:**
+
+```text
 200 192.168.1.9
-root@kali:~# dig +short portal.example.com
+```
+
+```bash
+dig +short portal.example.com
+```
+
+**Έξοδος:**
+
+```text
 93.184.216.34
 ```
 
@@ -331,7 +483,12 @@ root@kali:~# dig +short portal.example.com
 Το βασικό εργαλείο επισκόπησης διεργασιών είναι η εντολή `ps` (process status). Χωρίς ορίσματα, καταγράφει μόνο τις διεργασίες που ανήκουν στον τρέχοντα χρήστη και είναι συνδεδεμένες με το συγκεκριμένο τερματικό.
 
 ```bash
-root@kali:~# ps
+ps
+```
+
+**Έξοδος:**
+
+```text
     PID TTY          TIME CMD
    4122 pts/0    00:00:00 bash
    4188 pts/0    00:00:00 ps
@@ -346,7 +503,12 @@ root@kali:~# ps
 Η εκτέλεση της `ps` με τις επιλογές τύπου BSD `aux` προβάλλει όλες τις διεργασίες όλων των χρηστών στο σύστημα μαζί με αναλυτικά στοιχεία κατανάλωσης πόρων.
 
 ```bash
-root@kali:~# ps aux
+ps aux
+```
+
+**Έξοδος:**
+
+```text
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root           1  0.0  0.6 168412 12984 ?        Ss   09:41   0:04 /sbin/init splash
 root           2  0.0  0.0      0     0 ?        S    09:41   0:00 [kthreadd]
@@ -368,7 +530,12 @@ student     4122  0.0  0.0  12440  4096 pts/0    R+   10:31   0:00 ps aux
 Σε συστήματα με εκατοντάδες διεργασίες, η έξοδος της `ps aux` φιλτράρεται μέσω διοχέτευσης στην `grep`, απομονώνοντας τις γραμμές που αναφέρονται στο επιθυμητό πρόγραμμα, όπως για παράδειγμα στην κονσόλα `msfconsole`:
 
 ```bash
-root@kali:~# ps aux | grep msfconsole
+ps aux | grep msfconsole
+```
+
+**Έξοδος:**
+
+```text
 root        5210  1.3  2.4 612344 198772 pts/1   Sl+  10:33   0:02 ruby /usr/bin/msfconsole -q
 root        5233  0.0  0.0  12440  4096 pts/1    S+   10:33   0:00 grep msfconsole
 ```
@@ -378,11 +545,32 @@ root        5233  0.0  0.0  12440  4096 pts/1    S+   10:33   0:00 grep msfconso
 Το ενδεδειγμένο εργαλείο για αυτή τη λειτουργία είναι η `pgrep`, η οποία σχεδιάστηκε ειδικά για αναζήτηση διεργασιών, δεν εμφανίζει τον εαυτό της και επιστρέφει απευθείας τα αναγνωριστικά PID:
 
 ```bash
-root@kali:~# pgrep -a msfconsole
+pgrep -a msfconsole
+```
+
+**Έξοδος:**
+
+```text
 5210 ruby /usr/bin/msfconsole -q
-root@kali:~# pgrep -u student -l bash
+```
+
+```bash
+pgrep -u student -l bash
+```
+
+**Έξοδος:**
+
+```text
 3901 bash
-root@kali:~# pgrep -f "app.py"
+```
+
+```bash
+pgrep -f "app.py"
+```
+
+**Έξοδος:**
+
+```text
 1204
 ```
 
@@ -393,7 +581,12 @@ root@kali:~# pgrep -f "app.py"
 Εκεί όπου η `ps` προσφέρει ένα στιγμιότυπο, η εντολή `top` παρέχει δυναμική παρακολούθηση. Προβάλλει τις διεργασίες ταξινομημένες κατά κατανάλωση πόρων και ανανεώνει την οθόνη ανά τακτά δευτερόλεπτα, επιτρέποντας την άμεση παρατήρηση του φόρτου του συστήματος, της χρήσης του επεξεργαστή και της διαθέσιμης μνήμης.
 
 ```bash
-root@kali:~# top
+top
+```
+
+**Έξοδος:**
+
+```text
 top - 10:36:22 up 55 min,  1 user,  load average: 0.42, 0.31, 0.24
 Tasks: 214 total,   1 running, 213 sleeping,   0 stopped,   0 zombie
 %Cpu(s):  3.9 us,  1.0 sy,  0.0 ni, 94.8 id,  0.3 wa,  0.0 hi,  0.0 si,  0.0 st
@@ -420,11 +613,24 @@ MiB Swap:   2048.0 total,   2047.7 free,      0.3 used.   2893.0 avail Mem
 Η παράμετρος `-n` ορίζει την τιμή προτεραιότητας. Στο παρακάτω παράδειγμα, ο δαίμονας ssh-agent εκκινείται με τιμή −10, αποκτώντας προτεραιότητα έναντι των υπολοίπων.
 
 ```bash
-root@kali:~# nice -n -10 /usr/bin/ssh-agent
+nice -n -10 /usr/bin/ssh-agent
+```
+
+**Έξοδος:**
+
+```text
 SSH_AUTH_SOCK=/tmp/ssh-XXXXXXuP3n9g/agent.4412; export SSH_AUTH_SOCK;
 SSH_AGENT_PID=4412; export SSH_AGENT_PID;
 echo Agent pid 4412;
-root@kali:~# ps -o pid,ni,cmd -C ssh-agent
+```
+
+```bash
+ps -o pid,ni,cmd -C ssh-agent
+```
+
+**Έξοδος:**
+
+```text
     PID  NI CMD
    4412 -10 /usr/bin/ssh-agent
 ```
@@ -436,9 +642,22 @@ root@kali:~# ps -o pid,ni,cmd -C ssh-agent
 Η πιο κοινή χρήση από απλούς χρήστες είναι η ανάθεση της ελάχιστης δυνατής προτεραιότητας σε βαριές εργασίες συντήρησης, ώστε να μην επιβαρύνουν το σύστημα:
 
 ```bash
-root@kali:~# nice -n 19 ./backup-script.sh &
+nice -n 19 ./backup-script.sh &
+```
+
+**Έξοδος:**
+
+```text
 [1] 5487
-root@kali:~# nice -n 19 /usr/bin/updatedb &
+```
+
+```bash
+nice -n 19 /usr/bin/updatedb &
+```
+
+**Έξοδος:**
+
+```text
 [2] 5490
 ```
 
@@ -449,12 +668,33 @@ root@kali:~# nice -n 19 /usr/bin/updatedb &
 Η προτεραιότητα μιας διεργασίας που εκτελείται ήδη μπορεί να μεταβληθεί δυναμικά χωρίς να απαιτείται επανεκκίνησή της, μέσω της εντολής `renice`. Δέχεται μια νέα τιμή nice και ένα ή περισσότερα PIDs, λειτουργώντας σε οποιαδήποτε διεργασία εφόσον διαθέτετε τα κατάλληλα δικαιώματα.
 
 ```bash
-root@kali:~# renice 20 6242
+renice 20 6242
+```
+
+**Έξοδος:**
+
+```text
 6242 (process ID) old priority 0, new priority 20
-root@kali:~# ps -o pid,ni,cmd -p 6242
+```
+
+```bash
+ps -o pid,ni,cmd -p 6242
+```
+
+**Έξοδος:**
+
+```text
     PID  NI CMD
    6242  20 /usr/bin/updatedb
-root@kali:~# renice -n -5 -p 6242
+```
+
+```bash
+renice -n -5 -p 6242
+```
+
+**Έξοδος:**
+
+```text
 renice: failed to set priority for 6242 (process ID): Permission denied
 ```
 
@@ -467,15 +707,34 @@ renice: failed to set priority for 6242 (process ID): Permission denied
 Η εντολή `kill` τερματίζει διεργασίες, αν και ο ρόλος της είναι ευρύτερος: στην πραγματικότητα αποστέλλει ένα **σήμα (signal)**, μια ασύγχρονη ειδοποίηση που παραδίδει ο πυρήνας στη διεργασία, την οποία η διεργασία μπορεί να διαχειριστεί όπως επιθυμεί — να εκτελέσει εκκαθάριση, να αποθηκεύσει δεδομένα, να αγνοήσει το σήμα ή να τερματίσει. Υπάρχουν συνολικά 64 σήματα, με τα δύο σημαντικότερα να είναι το ευγενικό αίτημα τερματισμού και ο αναγκαστικός τερματισμός. Παρακάτω αποστέλλεται το σήμα 1 στη διεργασία 6242:
 
 ```bash
-root@kali:~# kill -1 6242
-root@kali:~# ps -p 6242
+kill -1 6242
+```
+
+```bash
+ps -p 6242
+```
+
+**Έξοδος:**
+
+```text
     PID TTY          TIME CMD
-root@kali:~# kill -l
+```
+
+```bash
+kill -l
+```
+
+**Έξοδος:**
+
+```text
  1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
  6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
 11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
 ...
-root@kali:~# kill -9 4378
+```
+
+```bash
+kill -9 4378
 ```
 
 Το σήμα 1 (`SIGHUP` - Hangup) σήμαινε αρχικά αποσύνδεση του τερματικού. Σύγχρονοι δαίμονες όπως οι `sshd`, `nginx` και `rsyslog` το ερμηνεύουν ως εντολή επαναφόρτωσης των αρχείων ρυθμίσεων και των αρχείων καταγραφής χωρίς διακοπή των ενεργών συνδέσεων. Ωστόσο, σε απλά προγράμματα που δεν διαθέτουν ειδικό χειριστή για το σήμα αυτό, η αποστολή του προκαλεί τερματισμό, όπως συνέβη με την `updatedb`.
@@ -491,22 +750,54 @@ root@kali:~# kill -9 4378
 Μια εντολή που εκτελείται στην προτροπή δεσμεύει το τερματικό μέχρι να ολοκληρωθεί. Το κέλυφος παρέχει μηχανισμούς **ελέγχου εργασιών (job control)**: προσθέτοντας ένα εμπορικό και (`&`) στο τέλος μιας εντολής, αυτή εκτελείται στο παρασκήνιο (background), επιστρέφοντας άμεσα την προτροπή στον χρήστη.
 
 ```bash
-root@kali:~# nano lab-notes.txt &
+nano lab-notes.txt &
+```
+
+**Έξοδος:**
+
+```text
 [1] 4312
-root@kali:~# jobs
+```
+
+```bash
+jobs
+```
+
+**Έξοδος:**
+
+```text
 [1]+  Stopped                 nano lab-notes.txt
-root@kali:~# fg %1
+```
+
+```bash
+fg %1
 ```
 
 Το κέλυφος επιστρέφει τον αριθμό εργασίας `[1]` και το PID `4312`. Στην περίπτωση του `nano`, όντας διαδραστικό πρόγραμμα πλήρους οθόνης, τίθεται αυτόματα σε κατάσταση παύσης (`Stopped`), επειδή επιχειρεί να διαβάσει είσοδο από ένα πληκτρολόγιο που δεν ελέγχει πλέον. Η εκτέλεση στο παρασκήνιο προορίζεται για μη διαδραστικά προγράμματα (όπως μεταγλωττίσεις, σαρώσεις, λήψεις αρχείων ή αντίγραφα ασφαλείας) και όχι για επεξεργαστές κειμένου.
 
 ```bash
-root@kali:~# ./backup-script.sh &
+./backup-script.sh &
+```
+
+**Έξοδος:**
+
+```text
 [2] 4701
-root@kali:~# jobs -l
+```
+
+```bash
+jobs -l
+```
+
+**Έξοδος:**
+
+```text
 [1]+  4312 Stopped                 nano lab-notes.txt
 [2]-  4701 Running                 ./backup-script.sh &
-root@kali:~# bg %1
+```
+
+```bash
+bg %1
 ```
 
 Σε ένα μη διαδραστικό σενάριο, η εργασία παραμένει ενεργή (`Running`). Η εντολή `jobs -l` καταγράφει όλες τις εργασίες με τα PIDs τους. Το σύμβολο `+` επισημαίνει την τρέχουσα εργασία στην οποία επιδρούν οι `fg` και `bg` εάν δεν δηλωθεί αριθμός, ενώ το σύμβολο `-` επισημαίνει την αμέσως προηγούμενη.
@@ -516,12 +807,33 @@ root@kali:~# bg %1
 Όταν κλείνει ένα παράθυρο τερματικού, το κέλυφος αποστέλλει αυτόματα το σήμα `SIGHUP` σε όλες τις εργασίες του, διακόπτοντας όσες δεν το διαχειρίζονται. Το κλασικό εργαλείο προστασίας είναι η `nohup`, η οποία απομονώνει τη διεργασία από το σήμα αποσύνδεσης και ανακατευθύνει αυτόματα την έξοδό της:
 
 ```bash
-root@kali:~# nohup ./scan.sh > scan.log 2>&1 &
+nohup ./scan.sh > scan.log 2>&1 &
+```
+
+**Έξοδος:**
+
+```text
 [3] 4820
-root@kali:~# ps -o pid,stat,cmd -p 4820
+```
+
+```bash
+ps -o pid,stat,cmd -p 4820
+```
+
+**Έξοδος:**
+
+```text
     PID STAT CMD
    4820 S    /bin/bash ./scan.sh
-root@kali:~# nohup ./scan.sh &
+```
+
+```bash
+nohup ./scan.sh &
+```
+
+**Έξοδος:**
+
+```text
 [4] 4833
 nohup: ignoring input and appending output to 'nohup.out'
 ```
@@ -533,7 +845,12 @@ nohup: ignoring input and appending output to 'nohup.out'
 Ορισμένες εργασίες απαιτείται να εκτελεστούν σε συγκεκριμένη μελλοντική χρονική στιγμή. Η εντολή `at` προγραμματίζει την **εφάπαξ** εκτέλεση μιας εντολής σε καθορισμένο χρόνο. Διαβάζει τις εντολές προς εκτέλεση από την τυπική είσοδο:
 
 ```bash
-root@kali:~# at 9:00pm
+at 9:00pm
+```
+
+**Έξοδος:**
+
+```text
 warning: commands will be executed using /bin/sh
 at> /root/simple_bash.sh
 at> <EOT>
@@ -547,7 +864,12 @@ job 3 at Sat Oct 10 21:00:00 2026
 Για εργασίες που απαιτείται να εκτελούνται **επαναλαμβανόμενα** (καθημερινά, κάθε ώρα ή σε εβδομαδιαία βάση), το κατάλληλο εργαλείο είναι το `cron`. Οι προγραμματισμένες εργασίες ενός χρήστη καταγράφονται στο αρχείο crontab, το οποίο επεξεργάζεται με την εντολή `crontab -e`:
 
 ```bash
-root@kali:~# crontab -l
+crontab -l
+```
+
+**Έξοδος:**
+
+```text
 # m h  dom mon dow   command
   0 3  *   *   *     /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1
  30 1  *   *   0     /usr/local/bin/weekly-report.sh
@@ -570,7 +892,12 @@ root@kali:~# crontab -l
 Δύο εντολές καταγράφουν τις μεταβλητές, αντικατοπτρίζοντας τον διαχωρισμό μεταξύ των δύο κατηγοριών. Η εντολή `set`, χωρίς ορίσματα, εκτυπώνει όλες τις μεταβλητές και συναρτήσεις του τρέχοντος κελύφους, συμπεριλαμβανομένων των μεταβλητών περιβάλλοντος. Η εντολή `env` εκτυπώνει αποκλειστικά το εξαγόμενο περιβάλλον, δηλαδή τη λίστα των μεταβλητών που παραδίδονται στις θυγατρικές διεργασίες.
 
 ```bash
-root@kali:~# set | more
+set | more
+```
+
+**Έξοδος:**
+
+```text
 BASH=/usr/bin/bash
 BASHOPTS=checkwinsize:cmdhist:complete_fullquote:expand_aliases:extquote:force_fignore:globasciiranges
 BASH_ALIASES=()
@@ -600,14 +927,37 @@ HOSTNAME=kali
 Η διοχέτευση της `set` στην `grep` επιτρέπει τον άμεσο εντοπισμό μιας μεταβλητής ανάμεσα σε εκατοντάδες εγγραφές. Εδώ αναζητούμε τη μεταβλητή `HISTSIZE`:
 
 ```bash
-root@kali:~# set | grep HISTSIZE
+set | grep HISTSIZE
+```
+
+**Έξοδος:**
+
+```text
 HISTFILESIZE=2000
 HISTSIZE=1000
-root@kali:~# echo "my history holds $HISTSIZE commands"
-my history holds 1000 commands
-root@kali:~# printenv HISTSIZE
+```
 
-root@kali:~# printenv HOME
+```bash
+echo "my history holds $HISTSIZE commands"
+```
+
+**Έξοδος:**
+
+```text
+my history holds 1000 commands
+```
+
+```bash
+printenv HISTSIZE
+```
+
+```bash
+printenv HOME
+```
+
+**Έξοδος:**
+
+```text
 /root
 ```
 
@@ -622,11 +972,30 @@ root@kali:~# printenv HOME
 Η αλλαγή μιας μεταβλητής πραγματοποιείται με ανάθεση νέας τιμής, χωρίς κενά διαστήματα γύρω από το σύμβολο της ισότητας:
 
 ```bash
-root@kali:~# HISTSIZE=0
-root@kali:~# echo $HISTSIZE
+HISTSIZE=0
+```
+
+```bash
+echo $HISTSIZE
+```
+
+**Έξοδος:**
+
+```text
 0
-root@kali:~# echo $HISTSIZE > ~/valueofHISTSIZE.txt
-root@kali:~# cat ~/valueofHISTSIZE.txt
+```
+
+```bash
+echo $HISTSIZE > ~/valueofHISTSIZE.txt
+```
+
+```bash
+cat ~/valueofHISTSIZE.txt
+```
+
+**Έξοδος:**
+
+```text
 0
 ```
 
@@ -639,13 +1008,35 @@ root@kali:~# cat ~/valueofHISTSIZE.txt
 Η απλή ανάθεση ισχύει μόνο για τη διάρκεια της τρέχουσας συνεδρίας. Εάν ανοίξετε νέο τερματικό, η `HISTSIZE` θα επανέλθει στην τιμή 1000. Για να καταστεί μια αλλαγή καθολική και μόνιμη, πρέπει πρώτα να ενταχθεί στο περιβάλλον μέσω της `export` και στη συνέχεια να καταγραφεί σε αρχείο αρχικοποίησης όπως το `~/.bashrc`.
 
 ```bash
-root@kali:~# HISTSIZE=0
-root@kali:~# export HISTSIZE
-root@kali:~# bash -c 'echo "child shell sees HISTSIZE=$HISTSIZE"'
+HISTSIZE=0
+```
+
+```bash
+export HISTSIZE
+```
+
+```bash
+bash -c 'echo "child shell sees HISTSIZE=$HISTSIZE"'
+```
+
+**Έξοδος:**
+
+```text
 child shell sees HISTSIZE=0
-root@kali:~# bash -c 'echo "child shell sees HISTFILE=$HISTFILE"'
+```
+
+```bash
+bash -c 'echo "child shell sees HISTFILE=$HISTFILE"'
+```
+
+**Έξοδος:**
+
+```text
 child shell sees HISTFILE=
-root@kali:~# echo 'export HISTSIZE=0' >> ~/.bashrc
+```
+
+```bash
+echo 'export HISTSIZE=0' >> ~/.bashrc
 ```
 
 Οι δύο πρώτες εντολές αποτελούν την τυπική διαδικασία: ανάθεση τιμής και στη συνέχεια εξαγωγή της μεταβλητής (ή συνεπτυγμένα `export HISTSIZE=0`). Η τρίτη εντολή επιβεβαιώνει την κληρονομικότητα: η `bash -c` εκκινεί ένα νέο θυγατρικό κέλυφος, το οποίο διαβάζει κανονικά την εξαχθείσα τιμή 0. Η τέταρτη εντολή λειτουργεί ως αντιπαραβολή: η μεταβλητή `HISTFILE`, μη έχοντας εξαχθεί, εμφανίζεται κενή στο θυγατρικό κέλυφος, επιβεβαιώνοντας τον κανόνα της κληρονομικότητας.
@@ -657,18 +1048,49 @@ root@kali:~# echo 'export HISTSIZE=0' >> ~/.bashrc
 Οι μεταβλητές δεν περιορίζονται σε όσες ορίζει το σύστημα. Μπορείτε να δημιουργήσετε δικές σας μεταβλητές με οποιοδήποτε όνομα για να αποθηκεύσετε τιμές που πληκτρολογείτε συχνά:
 
 ```bash
-root@kali:~# url_variable="example.com"
-root@kali:~# echo $url_variable
-example.com
-root@kali:~# echo "the target is $url_variable"
-the target is example.com
-root@kali:~# url_variable=example.org
-root@kali:~# echo $url_variable
-example.org
-root@kali:~# unset url_variable
-root@kali:~# echo $url_variable
+url_variable="example.com"
+```
 
-root@kali:~#
+```bash
+echo $url_variable
+```
+
+**Έξοδος:**
+
+```text
+example.com
+```
+
+```bash
+echo "the target is $url_variable"
+```
+
+**Έξοδος:**
+
+```text
+the target is example.com
+```
+
+```bash
+url_variable=example.org
+```
+
+```bash
+echo $url_variable
+```
+
+**Έξοδος:**
+
+```text
+example.org
+```
+
+```bash
+unset url_variable
+```
+
+```bash
+echo $url_variable
 ```
 
 Η ανάθεση δημιουργεί τη μεταβλητή και η `echo $url_variable` διαβάζει την τιμή της, ενώ υποστηρίζεται άμεσα η ενσωμάτωσή της μέσα σε μεγαλύτερες συμβολοσειρές. Η επαναληπτική ανάθεση μεταβάλλει την τιμή της οποιαδήποτε στιγμή. Αντίστροφα, η εντολή `unset` διαγράφει πλήρως τη μεταβλητή από το κέλυφος, με αποτέλεσμα η επόμενη κλήση της `echo` να εκτυπώνει κενή γραμμή, καθώς μια μη ορισμένη μεταβλητή αναπτύσσεται σε κενό χωρίς να παράγει σφάλμα.

