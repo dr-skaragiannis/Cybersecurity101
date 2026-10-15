@@ -111,6 +111,8 @@ Before the script can be run it needs permission to execute — the same executa
 chmod +x first_script
 ```
 
+As always the command is silent, so we inspect the file to confirm it is now executable:
+
 ```bash
 ls -l first_script
 ```
@@ -120,6 +122,8 @@ ls -l first_script
 ```text
 -rwxr-xr-x 1 root root 97 Oct  9 14:02 first_script
 ```
+
+The permission string is now `-rwxr-xr-x`, so the file has an execute bit and we can run it from the current directory with `./`:
 
 ```bash
 ./first_script
@@ -144,6 +148,8 @@ There is a way to run a script without touching its permissions at all, and it i
 ```bash
 chmod -x first_script
 ```
+
+With the execute bit removed, the file can no longer be launched directly, so we hand it to `bash` as an argument instead:
 
 ```bash
 bash first_script
@@ -185,6 +191,8 @@ Save it, make it executable, and run it:
 ```bash
 chmod +x greeting
 ```
+
+The execute bit is set silently; we now run the script, which will pause and wait for our input:
 
 ```bash
 ./greeting
@@ -241,6 +249,8 @@ Save that as `sweep`, make it executable, and run it against the lab network:
 ```bash
 chmod +x sweep
 ```
+
+The execute bit is added silently, so we run the script and answer its prompt with our network prefix:
 
 ```bash
 ./sweep
@@ -415,6 +425,8 @@ service cron status
    Main PID: 918 (code=exited, status=0/SUCCESS)
 ```
 
+The report says the unit is `enabled` (it will start at boot) but `Active: inactive (dead)` — it is not running right now. We confirm that single fact with the machine-readable form, which prints one word:
+
 ```bash
 systemctl is-active cron
 ```
@@ -425,9 +437,13 @@ systemctl is-active cron
 inactive
 ```
 
+Since the daemon is not running, we start it with the legacy `service` wrapper:
+
 ```bash
 service cron start
 ```
+
+Starting is silent, so we ask again whether it is now active:
 
 ```bash
 systemctl is-active cron
@@ -498,13 +514,15 @@ The `crontab -l` command lists the installed table without opening an editor, an
 
 That job line is worth studying for two details. The first is the **absolute path**. `cron` does not run your shell, does not read your startup files, and does not have your `PATH`; it runs the command in a minimal environment where `PATH` is often just `/usr/bin:/bin`. Writing `/root/sweep` rather than `sweep` removes the ambiguity, and any tool the script itself calls should be referenced the same way or added to a `PATH=` line at the top of the crontab.
 
-The second detail is the **missing output**: whatever the job prints goes nowhere you will see it. The daemon captures stdout and stderr and mails them to the local user, which on a machine with no mail configured means the text is discarded — so a job that fails on the first night fails silently every night. The defence is to redirect the job's output to a file yourself, with the time and a separator so the log stays readable:
+The second detail is the **missing output**: whatever the job prints goes nowhere you will see it. The daemon captures stdout and stderr and mails them to the local user, which on a machine with no mail configured means the text is discarded — so a job that fails on the first night fails silently every night.
+
+</details>
+
+The defence is to redirect the job's own output to a file, appending with `>>` so the log survives across runs and merging the error stream into it with `2>&1`:
 
 ```
 55 23 * * * /root/sweep 192.168.1 >> /var/log/sweep.log 2>&1
 ```
-
-</details>
 
 Once jobs are running, their execution is recorded in the system log even when their output is not, which is the first place to look when a schedule seems not to fire:
 
@@ -645,6 +663,8 @@ The same actions exist in systemd as `systemctl <action> <name>`, and on a moder
 service apache2 start
 ```
 
+Starting is silent, so we ask the service manager for its current state:
+
 ```bash
 service apache2 status
 ```
@@ -667,9 +687,13 @@ service apache2 status
              └─3314 /usr/sbin/apache2 -k start
 ```
 
+The service is now `active (running)`. To see the opposite state we stop it:
+
 ```bash
 service apache2 stop
 ```
+
+Stopping is silent too, so we poll the status a second time to see the service report itself as inactive:
 
 ```bash
 service apache2 status
@@ -710,6 +734,8 @@ apache2ctl configtest
 Syntax OK
 ```
 
+The configuration parsed with no errors, so it is safe to apply it without a full restart. We ask the running process to re-read its files:
+
 ```bash
 service apache2 reload
 ```
@@ -741,9 +767,13 @@ Created symlink /etc/systemd/system/multi-user.target.wants/apache2.service → 
 Processing triggers for man-db (2.11.2-1) ...
 ```
 
+Installing the package also enables the service, so systemd creates a symlink that will start Apache at boot. For now it is installed but not necessarily running, so we start it by hand:
+
 ```bash
 service apache2 start
 ```
+
+Starting the daemon binds its port. We confirm that with `ss -tlnp`, listing listening TCP sockets with their owning process:
 
 ```bash
 ss -tlnp | grep :80
@@ -828,6 +858,8 @@ curl -s http://localhost/
 </html>
 ```
 
+We asked for the page and got our own HTML back, which proves the server is serving our file. A second, script-friendlier request discards the body and prints only the HTTP status code:
+
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://192.168.1.9/
 ```
@@ -911,9 +943,13 @@ Setting up vsftpd (3.0.5-0ubuntu1) ...
 Created symlink /etc/systemd/system/multi-user.target.wants/vsftpd.service → /lib/systemd/system/vsftpd.service.
 ```
 
+Installed, we start the FTP daemon:
+
 ```bash
 sudo systemctl start vsftpd
 ```
+
+Starting is silent, so we confirm the daemon is up by checking that it listens on its port, 21:
 
 ```bash
 ss -tlnp | grep :21
@@ -942,23 +978,71 @@ Password:
 230 Login successful.
 Remote system type is UNIX.
 Using binary mode to transfer files.
-ftp> ls
+```
+
+The three-digit numbers are FTP reply codes: `220` is the server's welcome, `331` asks for the password, and `230` is a successful login. We typed `anonymous` as the user name, which many servers accept without a real account. The client then drops us into its own interactive prompt, `ftp>`.
+
+At that prompt we list the current directory:
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 229 Entering Extended Passive Mode (|||43795|)
 150 Here comes the directory listing.
 -rw-r--r--    1 0        0            1024 Oct 09 14:02 readme.txt
 drwxr-xr-x    2 0        0            4096 Oct 09 14:02 pub
 226 Directory send OK.
-ftp> cd pub
+```
+
+`229` switches the data connection into passive mode, `150` announces that the listing is coming, and `226` confirms the transfer finished. The listing shows a file `readme.txt` and a `pub` directory, both owned by uid/gid `0` on the server.
+
+To look inside that directory we change to it:
+
+```bash
+cd pub
+```
+
+**Output:**
+
+```text
 250 Directory successfully changed.
-ftp> get readme.txt
+```
+
+`250` means the directory change succeeded. Now we download the file with `get`:
+
+```bash
+get readme.txt
+```
+
+**Output:**
+
+```text
 local: readme.txt remote: readme.txt
 229 Entering Extended Passive Mode (|||51423|)
 150 Opening BINARY mode data connection for readme.txt (1024 bytes).
 1024 bytes received in 0.0012 secs (853.3 Kbytes/sec)
 226 Transfer complete.
-ftp> bye
+```
+
+The `local:`/`remote:` line shows the two names the transfer is using, `150` opens the data connection, and `226` marks the completed download of 1024 bytes. Because FTP carries credentials and data in cleartext, anyone on the path could have read this exchange.
+
+Finally we close the session politely:
+
+```bash
+bye
+```
+
+**Output:**
+
+```text
 221 Goodbye.
 ```
+
+`221` is the server confirming the logout, and the client returns us to the local shell. We can now verify the downloaded file on our own machine:
 
 ```bash
 ls -l readme.txt

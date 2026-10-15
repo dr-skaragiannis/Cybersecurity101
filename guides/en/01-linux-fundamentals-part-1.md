@@ -655,6 +655,8 @@ A related utility, `tac`, prints a file *backwards*, last line first — surpris
 touch lab-notes.txt
 ```
 
+Because `touch` prints nothing when it succeeds, we list the directory with `ls -l` to confirm the new file really exists:
+
 ```bash
 ls -l
 ```
@@ -688,6 +690,8 @@ Finally, note the permissions on the new file: `-rw-r--r--`. We did not ask for 
 mkdir tools
 ```
 
+As with every silent command, success is only visible in the directory listing, so we run `ls -l` to see the new entry and read its permission string:
+
 ```bash
 ls -l
 ```
@@ -714,10 +718,12 @@ mkdir: created directory 'tools/nmap'
 mkdir: created directory 'tools/nmap/scans'
 ```
 
-<details>
-<summary><strong>Read more</strong> — why <code>-p</code> is the default in scripts</summary>
+With `-v` (verbose) `mkdir` reports each directory it created, so we can see that both `tools/nmap` and `tools/nmap/scans` were built in one step. If we had run the same command *without* `-p`, it would have failed with `No such file or directory`, because `tools/nmap` did not exist yet.
 
-`mkdir tools/nmap/scans` on its own would fail, because `tools/nmap` does not exist yet. With `-p` the whole chain is built in one command — and, importantly, `-p` also silently succeeds when the target already exists. That combination is exactly what you want inside a script that must be safe to run twice.
+<details>
+<summary><strong>Read more</strong> — design habits that make <code>mkdir -p</code> safe in scripts</summary>
+
+`-p` also silently succeeds when the target already exists, which is exactly the behaviour you want inside a script that must be safe to run twice. That is why `mkdir -p` is the standard way to make a directory "if it is not there yet".
 
 The `4096` next to the directory is not the space its contents occupy but the size of its own bookkeeping record, and it stays at that value no matter how many files you put inside. The `2` in the third column is the hard-link count, which for a directory equals two (its own entry plus its `.` entry) plus the number of subdirectories it contains; you can safely ignore it until you study file systems in detail.
 
@@ -730,6 +736,8 @@ The `4096` next to the directory is not the space its contents occupy but the si
 ```bash
 cp lab-notes.txt tools/
 ```
+
+`cp` also prints nothing on success, so we list the destination directory to prove the copy landed there:
 
 ```bash
 ls -l tools/
@@ -764,6 +772,8 @@ Combined, `cp -ri source-dir/ destination-dir/` copies a whole tree while prompt
 mv tools/lab-notes.txt .
 ```
 
+To confirm the file left `tools/` and now sits in the current directory, we list everything with `ls -l`:
+
 ```bash
 ls -l
 ```
@@ -796,6 +806,8 @@ The command cannot tell whether you meant to rename or to overwrite, so `mv` ove
 rm lab-notes.txt
 ```
 
+Deleting is also silent on success, so the only proof is the directory listing — we run `ls` and look for the file that is now missing:
+
 ```bash
 ls
 ```
@@ -817,9 +829,15 @@ A decade of catastrophes has been caused by `rm -rf /` and by its subtler cousin
 
 The flags that matter: `-i` asks for confirmation for each file (excellent training wheels — set it as an alias while you are learning), `-f` forces deletion without prompting and suppresses the "no such file" error, `-v` gives a running commentary, and `-r` is required to delete a directory and everything inside it.
 
+</details>
+
+The recursive flag `-r` is what lets `rm` descend into a directory and delete everything inside it. Here we remove the whole `tools/` tree:
+
 ```bash
 rm -r tools/
 ```
+
+Once again the command is silent, so we run `ls` to confirm that `tools/` has disappeared:
 
 ```bash
 ls
@@ -831,9 +849,7 @@ ls
 practice-notes.txt
 ```
 
-That last command removed `tools/` and all of its contents with no confirmation whatsoever — which is exactly the behaviour auditors want out of your muscle memory.
-
-</details>
+`tools/` and all of its contents were removed with no confirmation whatsoever — which is exactly the behaviour auditors want out of your muscle memory.
 
 ### 3.7 `rmdir` — removing a directory
 
@@ -843,9 +859,13 @@ That last command removed `tools/` and all of its contents with no confirmation 
 mkdir old-backups
 ```
 
+We then ask `rmdir` to remove it. Unlike `rm -r`, `rmdir` refuses to touch a directory that still contains anything, so it can only succeed on an empty one:
+
 ```bash
 rmdir old-backups/
 ```
+
+Because `rmdir` is silent when it works, we list the directory one last time to confirm the folder is gone:
 
 ```bash
 ls
@@ -894,6 +914,8 @@ lab.example.com     192.168.1.30    # test environment
 # end of file
 EOF
 ```
+
+To verify the file was written correctly, we count its lines with `wc -l`:
 
 ```bash
 wc -l dns-mappings.txt
@@ -966,9 +988,11 @@ lab.example.com     192.168.1.30    # test environment
 Because the file has twelve lines, the last ten overlap with the output of `head` and the header comments are no longer visible.
 
 <details>
-<summary><strong>Read more</strong> — <code>tail -f</code>: watching a log live</summary>
+<summary><strong>Read more</strong> — the <code>-n</code> forms of <code>tail</code></summary>
 
 `tail -n 3` gives you just the final three lines, and `tail -n +3` gives you everything *from* line three onwards, which is a handy way to skip a two-line header when feeding a file to another program.
+
+</details>
 
 The genuinely magical flag is `-f`, for *follow*. It does not exit after printing; it keeps the file open and prints new lines as they are appended, turning it into a live monitor:
 
@@ -985,8 +1009,6 @@ Oct  8 11:52:44 kali kernel: [ 4312.117834] usb 1-1: new high-speed USB device n
 ```
 
 The terminal sits there printing as the system logs events — in a second window you can plug in a USB stick and watch the kernel announce it here. Press `Ctrl+C` to get your prompt back; the `^C` in the transcript is the shell showing the interrupt you sent. This is exactly how you watch an authentication log while testing whether a login attempt succeeds, and `journalctl -f` does the same for the system journal on a systemd machine.
-
-</details>
 
 ### 4.3 `nl` — numbering the lines
 
@@ -1050,6 +1072,8 @@ To make the change permanent you add `-i`, for *in place*, and the careful way t
 sed -i.bak 's/example.com/example.net/g' dns-mappings.txt
 ```
 
+This time the edit is written to disk, so we list the directory to see both the modified file and its new backup:
+
 ```bash
 ls
 ```
@@ -1059,6 +1083,8 @@ ls
 ```text
 dns-mappings.txt  dns-mappings.txt.bak
 ```
+
+The `.bak` suffix proves the safety copy was kept. Now we print the first three lines of the edited file to confirm the replacement really happened on disk:
 
 ```bash
 head -3 dns-mappings.txt
@@ -1507,9 +1533,13 @@ ls -l practice-notes.txt
 -rw-r--r-- 1 root root 82 Oct  8 11:45 practice-notes.txt
 ```
 
+The third field shows `root` as the owner. We now hand the file to the ordinary user `student`:
+
 ```bash
 chown student practice-notes.txt
 ```
+
+`chown` is silent on success, so we inspect the same file again to see the owner field change:
 
 ```bash
 ls -l practice-notes.txt
@@ -1539,6 +1569,8 @@ Adding a colon sets the group in the same operation, so `chown student:developer
 ```bash
 chgrp developers practice-notes.txt
 ```
+
+Again the command succeeds silently, so we verify the group column with a long listing:
 
 ```bash
 ls -l practice-notes.txt
@@ -1590,6 +1622,8 @@ Another way of arriving at the same result is the symbolic `chmod +x`, with no c
 cp backup.sh script-demo.sh
 ```
 
+We start by copying an existing script so we have something to experiment on, then check its permissions before touching them:
+
 ```bash
 ls -l script-demo.sh
 ```
@@ -1600,9 +1634,13 @@ ls -l script-demo.sh
 -rw-r--r-- 1 root root 4096 Oct  8 12:04 script-demo.sh
 ```
 
+The copy inherited `-rw-r--r--`, so it can be read but not run. We add the execute bit for every class with the symbolic form `chmod +x`:
+
 ```bash
 chmod +x script-demo.sh
 ```
+
+The command is silent, so we list the file again to read the new permission string:
 
 ```bash
 ls -l script-demo.sh
@@ -1643,9 +1681,13 @@ ls -l script-demo.sh
 -rwxr-xr-x 1 root root 4096 Oct  8 12:05 script-demo.sh
 ```
 
+The file is currently executable for everyone. We now add the SUID bit by prefixing the permissions with `4`:
+
 ```bash
 chmod 4644 script-demo.sh
 ```
+
+Silent as always, so we re-read the permission string to see what SUID did:
 
 ```bash
 ls -l script-demo.sh
@@ -1666,6 +1708,8 @@ When the owner's execute bit *is* also set, you see a lowercase `s`, as in `-rws
 
 One caveat many older tutorials skip: the kernel honours SUID only on *compiled* binaries, and deliberately ignores the bit on shell scripts and other interpreted programs. A script with SUID set will run with the privileges of whoever started it, not of its owner — a safety feature, since a script's behaviour depends on an interpreter an attacker might influence through `PATH`. So setting the bit on a script is a useful exercise in reading permission strings, while real SUID privilege-escalation targets are always binaries and shared objects.
 
+</details>
+
 The reason the bit matters so much in security work is that a root-owned SUID binary is a legitimate, administrator-created way for unprivileged users to perform privileged actions — and therefore a piece of code worth auditing. If it can be tricked into running a program of the attacker's choosing, that program inherits its root authority. That is the classic *SUID privilege escalation* path, and finding candidates is one command away:
 
 ```bash
@@ -1685,8 +1729,6 @@ find / -perm -4000 -type f 2>/dev/null
 
 `-perm -4000` means "has the SUID bit set" — the same `4` prefix you used with `chmod`. The listing above is what a healthy Debian-family system looks like; any *unexpected* entry is worth investigating immediately, because it is either a package you did not know you had or something that got there without your knowledge.
 
-</details>
-
 ### 6.6 Setting the SGID bit
 
 **SGID** — *set group ID* — is the group's version of the same idea. On an executable it means the process runs with the privileges of the file's owning **group**; on a directory it means something different and very useful: new files created inside inherit the directory's group instead of the creator's primary group.
@@ -1703,9 +1745,13 @@ ls -l script-demo.sh
 -rwxr-xr-x 1 root root 4096 Oct  8 12:06 script-demo.sh
 ```
 
+This is the same file we left executable in the previous step. We now add the SGID bit by prefixing the permissions with `2`:
+
 ```bash
 chmod 2466 script-demo.sh
 ```
+
+The command is silent, so we read the permission string again to see the effect on the group triad:
 
 ```bash
 ls -l script-demo.sh
@@ -1724,6 +1770,8 @@ The practically useful case is SGID on a directory, symbolically `chmod g+s dire
 ```bash
 chmod g+s /srv/share
 ```
+
+Because the change is invisible until we look at the directory, we use `ls -ld` (with `-d` so we see the directory itself rather than its contents):
 
 ```bash
 ls -ld /srv/share
@@ -1773,17 +1821,25 @@ You can hunt for them with `find / -type d -perm -0002 ! -perm -1000 2>/dev/null
 
 Imagine a small shared workspace. We want a directory the team can all write into, files created there to inherit the team group, a script anyone may run, and a private note only its owner may read:
 
+We start by creating the directory itself:
+
 ```bash
 mkdir /srv/share
 ```
+
+`chgrp` sets the directory's group to `developers`, so every member of the team shares the same group identity on it:
 
 ```bash
 chgrp developers /srv/share
 ```
 
+`chmod 2775` grants read, write and traverse to the owner and the group, read and traverse to everyone else, and adds the SGID bit (`2`) so that new files inherit the `developers` group instead of the creator's personal group:
+
 ```bash
 chmod 2775 /srv/share
 ```
+
+The `2` prefix is the SGID bit, and the `s` in the group triad confirms it took effect:
 
 ```bash
 ls -ld /srv/share
@@ -1795,21 +1851,37 @@ ls -ld /srv/share
 drwxrwsr-x 2 root developers 4096 Oct  8 12:12 /srv/share
 ```
 
+Now we place the script inside the share:
+
 ```bash
 cp backup.sh /srv/share/backup.sh
 ```
+
+The copy starts with default permissions from the umask, so we set the exact mode we want — `755`, meaning anyone may run it but only the owner may rewrite it:
 
 ```bash
 chmod 755 /srv/share/backup.sh
 ```
 
+We also want the script to belong to the `developers` group, and `chown` can set owner and group together when you separate them with a colon:
+
 ```bash
 chown root:developers /srv/share/backup.sh
 ```
 
+Finally, a private file. First we create it empty with `touch`:
+
 ```bash
-touch /srv/share/private.key && chmod 600 /srv/share/private.key
+touch /srv/share/private.key
 ```
+
+Because the directory carries SGID, the new file automatically inherits the `developers` group. We now restrict it so only its owner can read or write it:
+
+```bash
+chmod 600 /srv/share/private.key
+```
+
+With every piece in place, we list the share to read the final result:
 
 ```bash
 ls -l /srv/share
@@ -1828,7 +1900,7 @@ Reading the result: the directory is `drwxrwsr-x` — group-writable, and carryi
 <details>
 <summary><strong>Read more</strong> — why this is the shape of real system administration</summary>
 
-Four commands — `mkdir`, `chgrp`, `chmod` and `cp` — and a share is configured correctly. That is how much of Linux system administration actually works: a handful of small, composable commands, each doing one thing well, verified with `ls -l` after every step.
+A handful of small commands — `mkdir`, `chgrp`, `chmod`, `cp`, `chown` and `touch` — and a share is configured correctly. That is how much of Linux system administration actually works: composable commands, each doing one thing well, verified with `ls -l` after every step.
 
 The pattern to take away is the verification step itself. In security work you will rarely be trusted on your word that a permission change took effect; you will be asked to show the `ls -l` line that proves it.
 
