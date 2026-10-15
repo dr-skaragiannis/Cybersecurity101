@@ -6,30 +6,35 @@ More often than not, certain operating systems tend to get tied to certain tasks
 
 The material follows a friendly difficulty curve. We begin with the two questions every beginner asks out loud ("where am I?" and "who am I?") and with the commands that move you around the file system and list what is inside it. From there we look at the built-in help systems, because no one memorises every flag of every utility, and learning to read a manual page is a skill that pays for itself immediately. Next comes file and directory manipulation, the everyday business of creating, copying, moving and deleting things; then text manipulation, which matters far more on Linux than on other systems because almost everything you administer here is a plain text file. The last two sections cover installing and removing software through the package manager and understanding the Unix permission model, the part of Linux that trips up beginners most often and the part that matters most when you later study privilege escalation.
 
-========
 This is **Part 1** of three. Everything here is the layer you need before anything else makes sense: the shell, the file system, text, packages and permissions. **Part 2** carries on with the topics that sit just beneath everyday use — networks and interfaces, process management, and the environment variables that quietly decide which program runs, which resolver answers and which editor opens — and **Part 3** finishes with scripting, scheduling and services, the automation layer that multiplies everything before it. Both assume only that you are comfortable with the material below.
->>>>>>>> origin/arena/52f71d52-attack-scripts:docs/01-linux-fundamentals-part-1.md
 
-Every step is presented as a console transcript: the command that was typed, followed by the output it produced on screen, followed by an explanation in plain English of what just happened. The terminal contents are always written out as text rather than shown as a picture, so that you can copy and paste, scroll, search and compare them against your own results. If you follow along on your own machine, by the end of the guide you will have created, inspected, edited, mangled, re-permissioned and deleted a small set of files, changed an interface's address and hardware identifier, watched and re-prioritised the processes running on the machine, and reshaped the environment your shell hands to every program it starts — using nothing but the command line.
+Every step is presented the same way: the **command** you type, the **output** it produced, and then an explanation in plain English of what just happened and how to read the result. The terminal contents are always written out as text rather than shown as a picture, so that you can copy and paste, scroll, search and compare them against your own results. If you follow along on your own machine, by the end of the guide you will have created, inspected, edited, mangled, re-permissioned and deleted a small set of files, changed an interface's address and hardware identifier, watched and re-prioritised the processes running on the machine, and reshaped the environment your shell hands to every program it starts — using nothing but the command line.
 
 > **A word of caution before you start.** The examples below use `apt-get`, `chown`, `chmod`, `ifconfig` and `nano` on system paths, and several of them require root privileges. Practise inside a throwaway virtual machine (a Debian or Kali image is ideal) and take a snapshot before you begin, so that a typo can never damage real data. Deleting files as root is permanent: Linux has no recycle bin on the command line, and reconfiguring the network or killing the wrong process can lock you out of the machine you are working on.
 
-### How to read the transcripts
+### How to read this guide
 
-Throughout this guide, commands appear inside a transcript that looks like this:
+Every command is shown in its own box, exactly as you would type it (with no shell prompt), and the result it produces is shown in a separate **Output** box immediately after it. For example:
 
 ```bash
-root@kali:~# pwd
+pwd
+```
+
+**Output:**
+
+```text
 /root
 ```
 
-A few conventions are worth learning straight away, because they are part of the grammar of the shell itself:
+A few conventions run through the whole guide and are worth learning straight away:
 
-* `root@kali:~#` is the **prompt**. It tells you that the current user is `root`, that the machine is named `kali`, and that you are currently sitting in the directory `~` (the home directory of the user). The trailing `#` is a strong visual warning: it means you are running as the all-powerful root account. A normal, unprivileged user gets a `$` at the end of the prompt instead — if you ever see `#` and did not expect it, stop and check what you are about to type.
-* Everything on the prompt line *after* the prompt is what you typed. Every line underneath it, up to the next prompt, is what the program printed back to you. Nothing you type is displayed unless you type it, and nothing is executed until you press Enter.
-* Inside configuration files, a line starting with `#` is a **comment**, not a command. The same character therefore means two completely different things depending on whether it appears before or after a prompt — a distinction that confuses nearly every beginner at least once.
-* Text inside angle brackets, for example `cp <source> <destination>`, is a placeholder you replace with a real path.
-* Output shown here was captured on a Debian-based system and is representative rather than identical: package versions, file sizes, timestamps, interface names and the number of matching lines will differ on your own installation. What matters is the shape of the output, not the exact digits.
+* **A command box is what you type; an output box is what the machine prints back.** Nothing is executed until you press Enter, and a command that succeeds often prints nothing at all — on Linux, silence usually means success. When you follow along, compare the *shape* of your own output with the box here rather than expecting it to match character for character.
+* **A command box may contain more than one line.** When several commands belong to a single idea they are grouped together; run them in order, one at a time, and read the output after each.
+* **A `#` at the start of a line inside a configuration file is a comment, not a command.** Comments are documentation for humans and are ignored by the program that reads the file. (On many systems a `#` at the end of a *shell prompt* means something quite different — you are running as the administrator — so always look at the context.)
+* **Text inside angle brackets, for example `cp <source> <destination>`, is a placeholder** that you replace with a real path or value. Do not type the angle brackets themselves.
+* **Output is representative, not identical.** It was captured on a Debian-based system; package versions, file sizes, timestamps, interface names and the number of matching lines will differ on your own machine. What matters is the shape of the output — which fields appear, how an error is phrased, whether a value changed — not the exact digits.
+
+> **About the root account.** Many examples run as `root`, the Linux administrator (user id `0`), which is why they are allowed to change system files. Where a prompt or an output line would end in `#` rather than `$`, the command ran with full privileges. That is powerful and dangerous in equal measure: a mistyped command as `root` can destroy a system, while the same command run as an ordinary user is simply refused.
 
 ### Table of contents
 
@@ -67,7 +72,12 @@ When you open a terminal window you are dropped into a shell session that starts
 The `pwd` command answers the first question. It takes no arguments, prints a single absolute path, and exits; whatever directory that path names is the directory in which the commands you type next will operate, and it is also the directory in which any file you create without giving an explicit path will be created.
 
 ```bash
-root@kali:~# pwd
+pwd
+```
+
+**Output:**
+
+```text
 /root
 ```
 
@@ -78,14 +88,24 @@ Reading the transcript: the shell prompt says we are in `~`, and `pwd` confirms 
 The second question, *who am I*, is answered by the `whoami` command. This matters enormously on Linux because the operating system decides what you are allowed to read, write and execute based on the identity of the process making the request, not on where you are sitting or which desktop you logged in to.
 
 ```bash
-root@kali:~# whoami
+whoami
+```
+
+**Output:**
+
+```text
 root
 ```
 
 Here we are logged in as `root`, which translates to the local administrator account in Windows terminology. The root account is not subject to the ordinary permission checks, which is precisely why it is so useful and so dangerous: a wrong command executed as root can delete an entire system, while the same command run as a normal user would simply be refused. A closely related command, `id`, prints the numeric user id, the primary group id and every supplementary group the account belongs to, which is the information the kernel actually uses when it evaluates permissions:
 
 ```bash
-root@kali:~# id
+id
+```
+
+**Output:**
+
+```text
 uid=0(root) gid=0(root) groups=0(root)
 ```
 
@@ -96,20 +116,41 @@ Three numbers to remember: user id `0` is always root, and on Debian-based syste
 To move around the file system from the terminal we use `cd`, short for *change directory*. You give it the directory you want to move to, and if the operation succeeds the shell prints nothing at all — on Linux, silence is success. The only feedback is the change in your prompt, which now shows the new location.
 
 ```bash
-root@kali:~# cd Desktop/
-root@kali:~/Desktop# pwd
+cd Desktop/
+```
+
+```bash
+pwd
+```
+
+**Output:**
+
+```text
 /root/Desktop
 ```
 
 The prompt changed from `~` to `~/Desktop`, and `pwd` confirms the move to `/root/Desktop`. Notice the trailing slash on `Desktop/` — it is optional and purely cosmetic; it tells a human reader that the name refers to a directory, and the shell treats `Desktop` and `Desktop/` identically. `cd` also understands a handful of special destinations that every Linux user memorises within a day:
 
 ```bash
-root@kali:~/Desktop# cd ..
-root@kali:~# cd /
-root@kali:/# cd ~
-root@kali:~# cd -
+cd ..
+```
+
+```bash
+cd /
+```
+
+```bash
+cd ~
+```
+
+```bash
+cd -
+```
+
+**Output:**
+
+```text
 /root/Desktop
-root@kali:~/Desktop#
 ```
 
 * `cd ..` moves one level **up** the tree, from `/root/Desktop` to `/root`. The `..` entry exists in every directory and always points at its parent.
@@ -124,8 +165,16 @@ One last note for beginners: if you try to `cd` into something that does not exi
 Where `pwd` tells you where you stand, `ls` tells you what is standing around you. It lists the contents of a directory — the current one by default, or any directory you name as an argument. It is very similar in spirit to the `dir` command on Windows, but considerably more flexible.
 
 ```bash
-root@kali:~# cd Desktop/
-root@kali:~/Desktop# ls
+cd Desktop/
+```
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 practice-notes.txt  simple_bash.sh  tools
 ```
 
@@ -134,7 +183,12 @@ Three entries were returned: two regular files and one directory, separated by w
 The plain `ls` output is nicely readable for humans but it hides an enormous amount of useful information, so in practice you will almost always reach for one of the flags. The most important of these is `-l`, the *long* format, which prints one entry per line with permissions, ownership, size and timestamp attached:
 
 ```bash
-root@kali:~/Desktop# ls -l
+ls -l
+```
+
+**Output:**
+
+```text
 total 12
 -rw-r--r-- 1 root root   96 Oct  8 11:42 practice-notes.txt
 -rwxr-xr-x 1 root root  118 Oct  8 11:40 simple_bash.sh
@@ -146,7 +200,12 @@ Each line has the same seven fields, and learning to read them now will save you
 A few more flags are worth memorising because they come up constantly: `-a` also shows *hidden* entries (files and directories whose names begin with a dot, such as `.bashrc` and `.ssh`, which `ls` hides by default); `-h` prints sizes in human-readable units such as `4.0K` and `2.3M` instead of raw bytes; `-t` sorts by modification time with the newest first; `-S` sorts by size with the largest first; and `-R` recurses into every subdirectory. Combining flags is normal and the order rarely matters — `ls -lah` is a perfectly ordinary thing to type.
 
 ```bash
-root@kali:~/Desktop# ls -lah
+ls -lah
+```
+
+**Output:**
+
+```text
 total 12K
 drwxr-xr-x 3 root root 4.0K Oct  8 11:44 .
 drwx------ 1 root root 4.0K Oct  8 11:38 ..
@@ -162,7 +221,12 @@ With `-a` the two familiar shortcuts appear at the top: `.` is the current direc
 Nearly every command, application or utility on Linux ships with a dedicated help file that describes its usage, and reaching for it should become a reflex rather than an admission of defeat. When you are stuck on the syntax of a tool, or you simply want to know which flags it accepts without leaving the terminal, almost every program will answer to `-h` or `--help`.
 
 ```bash
-root@kali:~# volatility --help
+volatility --help
+```
+
+**Output:**
+
+```text
 Volatility Foundation Volatility Framework 2.6
 Usage: Volatility - A memory forensics analysis platform.
 
@@ -186,7 +250,12 @@ Two practical notes. First, `--help` is not universal: some older or minimalist 
 In addition to the quick help summary, most commands and applications also have a full manual page, which you access by typing `man` followed by the name of the command. A manual page is the authoritative reference written by the people who maintain the software, and it is structured in a consistent way: `NAME`, `SYNOPSIS` (the grammar of the command), `DESCRIPTION` (every option explained at length), and usually `EXAMPLES`, `FILES`, `SEE ALSO` and `AUTHOR` sections at the end.
 
 ```bash
-root@kali:~# man ls
+man ls
+```
+
+**Output:**
+
+```text
 LS(1)                            User Commands                           LS(1)
 
 NAME
@@ -221,7 +290,12 @@ The `(1)` next to the name is the manual *section* number, and it tells you what
 When you are looking for a specific file and you only remember part of its name, one of the easiest ways to find it is `locate`. You give it a keyword and it prints every path in its database that contains that string anywhere in the name, which makes it dramatically faster than walking the file system by hand — it answers in milliseconds even on a machine with millions of files.
 
 ```bash
-root@kali:~# locate wordlists | more
+locate wordlists | more
+```
+
+**Output:**
+
+```text
 /usr/share/wordlists
 /usr/share/wordlists/dirb
 /usr/share/wordlists/dirb/big.txt
@@ -241,30 +315,58 @@ Let us begin this section with a definition. Files that can be *executed* — th
 When you want to know where a particular program actually lives, `whereis` answers the question generously: it prints the path of the binary together with the paths of any manual pages and source files it can find for the same name.
 
 ```bash
-root@kali:~# whereis git
+whereis git
+```
+
+**Output:**
+
+```text
 git: /usr/bin/git /usr/share/man/man1/git.1.gz
 ```
 
 The `which` command is stricter and more precise. It looks only at the directories listed in your `PATH` environment variable and returns the single binary that the shell would actually run if you typed the bare command name.
 
 ```bash
-root@kali:~# which git
+which git
+```
+
+**Output:**
+
+```text
 /usr/bin/git
 ```
 
 That difference is exactly why both commands exist, and the reason `which` is the more useful of the two in day-to-day work: when several copies of a program are installed in different places, `which` tells you which one wins, while `whereis` lists all of them and leaves you to guess. The `PATH` variable it consults is simply a colon-separated list of directories that the shell searches, in order, from left to right, until it finds a match:
 
 ```bash
-root@kali:~# echo $PATH
+echo $PATH
+```
+
+**Output:**
+
+```text
 /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ```
 
 That ordering explains a behaviour that surprises many beginners — if you place your own copy of a program in `/usr/local/bin` and another exists in `/usr/bin`, yours will be run, because `/usr/local/bin` is searched first. `$PATH` is also the reason a fresh shell says `command not found` for a script sitting in your current directory: the current directory is deliberately *not* on the search path (a safety measure, so that a malicious `ls` dropped into a shared folder cannot be run by accident). To run something from the current directory you must name it explicitly, for example `./simple_bash.sh`. A third command, `type`, is the shell's own answer to the same question and additionally reveals whether a name is a built-in, an alias or a function rather than a real binary:
 
 ```bash
-root@kali:~# type git
+type git
+```
+
+**Output:**
+
+```text
 git is /usr/bin/git
-root@kali:~# type cd
+```
+
+```bash
+type cd
+```
+
+**Output:**
+
+```text
 cd is a shell builtin
 ```
 
@@ -273,7 +375,12 @@ cd is a shell builtin
 Very often when working on the command line you do not want *more* output, you want *less* of it — one particular line out of a hundred. This is where `grep` comes in: it reads text, either from a file you name or from its standard input, and prints only the lines that match the pattern you give it. The name comes from the editor command `g/re/p`, *globally search a regular expression and print*, and it is arguably the single most used utility in the arsenal.
 
 ```bash
-root@kali:~/Desktop# grep -i "echo" simple_bash.sh
+grep -i "echo" simple_bash.sh
+```
+
+**Output:**
+
+```text
 echo "Starting the backup job..."
 echo "Backup finished at $(date)"
 ```
@@ -283,7 +390,12 @@ Here the `-i` flag makes the search case-insensitive, so a line containing `Echo
 By far the most common use of `grep`, however, is not to search files at all but to *pipe* the output of another command into it and filter that output down to the lines you care about. As an illustration, the `ifconfig` utility prints a great deal of information about every network interface on the machine, and if all you want is the IP addresses, throwing the rest away is as simple as this:
 
 ```bash
-root@kali:~# ifconfig | grep inet
+ifconfig | grep inet
+```
+
+**Output:**
+
+```text
         inet 10.0.2.15  netmask 255.255.255.0  broadcast 10.0.2.255
         inet6 fe80::a00:27ff:fed1:3c4a  prefixlen 64  scopeid 0x20<link>
         inet 127.0.0.1  netmask 255.0.0.0
@@ -299,7 +411,12 @@ The `find` command is the most powerful and flexible of the searching utilities,
 Its grammar is slightly unusual at first sight — `find <where to look> <what to look for>` — because each search criterion is written as a flag, and you can stack as many as you like. Here we use the `-type` flag to say that we only want regular files (`f`) and the `-name` flag to fix the filename. The leading forward slash tells `find` where to begin its walk: the root of the file system, meaning "search the whole machine".
 
 ```bash
-student@kali:~$ find / -type f -name practice-notes.txt
+find / -type f -name practice-notes.txt
+```
+
+**Output:**
+
+```text
 find: '/etc/ssl/private': Permission denied
 find: '/proc/tty/driver': Permission denied
 /home/student/notes/practice-notes.txt
@@ -310,7 +427,12 @@ find: '/var/lib/private': Permission denied
 Note that the prompt has changed to `student@kali:~$`: for the rest of this section we have dropped out of the root account and are working as an ordinary user, because that is the situation a beginner normally faces and it is what makes the next paragraph meaningful. The search found the file, exactly as intended, in our own notes directory — but look at the other lines. Because we asked `find` to search the entire file system as an unprivileged account, it also walked into directories our account is not allowed to read, and every such entry produced a `Permission denied` message. On a real system these warnings can number in the hundreds and bury the one line you actually wanted. The important thing to realise is that the two kinds of lines are travelling on *different channels*: the found path is written to **standard output** (file descriptor 1), while the errors are written to **standard error** (file descriptor 2). Because they are separate, you can silence one without touching the other, which is what the `2>/dev/null` redirection in the next transcript does.
 
 ```bash
-student@kali:~$ find / -type f -name practice-notes.txt 2>/dev/null
+find / -type f -name practice-notes.txt 2>/dev/null
+```
+
+**Output:**
+
+```text
 /home/student/notes/practice-notes.txt
 ```
 
@@ -319,7 +441,12 @@ Read that as "send file descriptor 2 to the null device", where `/dev/null` is a
 With that plumbing understood, the real power of `find` becomes usable, because you can now filter on almost any attribute of a file:
 
 ```bash
-student@kali:~$ find /home -type f -user student -mtime -7 2>/dev/null
+find /home -type f -user student -mtime -7 2>/dev/null
+```
+
+**Output:**
+
+```text
 /home/student/notes/week-1.txt
 /home/student/notes/week-2.txt
 ```
@@ -335,9 +462,20 @@ Now that we can find our way around, help ourselves and search the file system, 
 If you are following along, let us first create a small working area so that the examples have somewhere to live, using the directory tools we are about to learn:
 
 ```bash
-root@kali:~# mkdir Documents/linux-lab
-root@kali:~# cd Documents/linux-lab
-root@kali:~/Documents/linux-lab# pwd
+mkdir Documents/linux-lab
+```
+
+```bash
+cd Documents/linux-lab
+```
+
+```bash
+pwd
+```
+
+**Output:**
+
+```text
 /root/Documents/linux-lab
 ```
 
@@ -346,7 +484,12 @@ root@kali:~/Documents/linux-lab# pwd
 We use the `cat` command to output the contents of a file to the terminal. Its name is short for *concatenate*, because given several files it will print them one after another, glued together — but the single-file use case, "just show me what is in here", is by far the most common.
 
 ```bash
-root@kali:~/Documents/linux-lab# cat practice-notes.txt
+cat practice-notes.txt
+```
+
+**Output:**
+
+```text
 Week 1: permissions - chmod 644 vs 755, SUID bit explained
 Week 2: pipelines - grep, cut, sort, uniq, tee
 Week 3: processes - ps aux, top, kill -9
@@ -359,8 +502,16 @@ The file's contents are printed exactly as stored, with lines appearing in the o
 The `touch` command creates a new file. Simply specifying a filename after the command results in the creation of that file, and here we create a small document to practise on:
 
 ```bash
-root@kali:~/Documents/linux-lab# touch lab-notes.txt
-root@kali:~/Documents/linux-lab# ls -l
+touch lab-notes.txt
+```
+
+```bash
+ls -l
+```
+
+**Output:**
+
+```text
 total 4
 -rw-r--r-- 1 root root 0 Oct  8 11:47 lab-notes.txt
 -rw-r--r-- 1 root root 82 Oct  8 11:45 practice-notes.txt
@@ -375,8 +526,16 @@ The file appears in the listing immediately, with a size of `0` bytes and the cu
 To make a directory, or `mkdir` for short, you specify the name of the directory you want after the command. If the parent directory exists and the name is not already taken, `mkdir` creates it and says nothing, which as usual means success.
 
 ```bash
-root@kali:~/Documents/linux-lab# mkdir tools
-root@kali:~/Documents/linux-lab# ls -l
+mkdir tools
+```
+
+```bash
+ls -l
+```
+
+**Output:**
+
+```text
 total 8
 -rw-r--r-- 1 root root   0 Oct  8 11:47 lab-notes.txt
 -rw-r--r-- 1 root root  82 Oct  8 11:45 practice-notes.txt
@@ -387,7 +546,12 @@ The new directory is visible with a leading `d` in its permission string, confir
 
 Two flags are worth knowing from day one. `-p` creates intermediate directories as needed, so `mkdir -p tools/nmap/scans` builds the whole chain in a single command instead of failing because `tools/nmap` does not exist yet — and it also silently succeeds when the target already exists, which makes it the standard way to make a directory "if it is not there yet" inside a script. `-v` prints a line for each directory it creates, which is helpful when you want confirmation that a long chain really was built.
 ```bash
-root@kali:~/Documents/linux-lab# mkdir -pv tools/nmap/scans
+mkdir -pv tools/nmap/scans
+```
+
+**Output:**
+
+```text
 mkdir: created directory 'tools/nmap'
 mkdir: created directory 'tools/nmap/scans'
 ```
@@ -397,8 +561,16 @@ mkdir: created directory 'tools/nmap/scans'
 To copy a file we use `cp`, which creates a duplicate of the file in the location you specify. The general form is `cp <file you want to copy> <destination of the copy>` — source first, destination second, always in that order.
 
 ```bash
-root@kali:~/Documents/linux-lab# cp lab-notes.txt tools/
-root@kali:~/Documents/linux-lab# ls -l tools/
+cp lab-notes.txt tools/
+```
+
+```bash
+ls -l tools/
+```
+
+**Output:**
+
+```text
 total 0
 -rw-r--r-- 1 root root 0 Oct  8 11:51 lab-notes.txt
 ```
@@ -412,8 +584,16 @@ That quiet overwriting is the main hazard of `cp`, and it is why beginners are t
 The move command, `mv`, can be used not only to move a file to a different directory but also to rename it, because on Linux those two things are the same operation: you are changing the name by which an inode is reached, and moving a file between directories on the same file system does not copy any data at all, it merely relinks it. Here we move the file out of the `tools` directory back to its parent:
 
 ```bash
-root@kali:~/Documents/linux-lab# mv tools/lab-notes.txt .
-root@kali:~/Documents/linux-lab# ls -l
+mv tools/lab-notes.txt .
+```
+
+```bash
+ls -l
+```
+
+**Output:**
+
+```text
 total 0
 -rw-r--r-- 1 root root 0 Oct  8 11:47 lab-notes.txt
 -rw-r--r-- 1 root root 82 Oct  8 11:45 practice-notes.txt
@@ -427,8 +607,16 @@ The single dot at the end is the shortcut for "the current directory", so the co
 To remove a file, you simply use the `rm` command with the name of the file. Here we delete the note we created a moment ago, and the following `ls` proves that it is gone:
 
 ```bash
-root@kali:~/Documents/linux-lab# rm lab-notes.txt
-root@kali:~/Documents/linux-lab# ls
+rm lab-notes.txt
+```
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 practice-notes.txt  tools
 ```
 
@@ -437,8 +625,16 @@ There is no output on success and, more importantly, **there is no recycle bin**
 The flags that matter are `-i`, which asks for confirmation for each file (excellent training wheels; set it as an alias for `rm` while you are learning), `-f`, which forces deletion without prompting and, in the same breath, suppresses the error you would otherwise get for a file that does not exist, `-v` for a running commentary, and `-r`, which is required to delete a directory and everything inside it.
 
 ```bash
-root@kali:~/Documents/linux-lab# rm -r tools/
-root@kali:~/Documents/linux-lab# ls
+rm -r tools/
+```
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 practice-notes.txt
 ```
 
@@ -449,9 +645,20 @@ That last command removed `tools/` and all of its contents with no confirmation 
 In order to remove a directory we use `rmdir`, which stands for *remove directory*. It is deliberately cautious: it will only delete a directory that is **empty**, and it will refuse with a clear error if anything at all is inside, which makes it the safe choice for tidying up.
 
 ```bash
-root@kali:~/Documents/linux-lab# mkdir old-backups
-root@kali:~/Documents/linux-lab# rmdir old-backups/
-root@kali:~/Documents/linux-lab# ls
+mkdir old-backups
+```
+
+```bash
+rmdir old-backups/
+```
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 practice-notes.txt
 ```
 
@@ -468,7 +675,7 @@ On Linux almost everything you deal with is going to be a **file**, and more oft
 To have something realistic to work with, let us create a small mapping file and a couple of lines of content. The first command below uses a *here-document*, a technique for feeding several lines of text to a command's standard input directly from the shell — the `<<'EOF'` says "everything until the line `EOF` is input", and the quotes around `EOF` prevent the shell from expanding anything inside, which is what you almost always want for file contents:
 
 ```bash
-root@kali:~/Documents/linux-lab# cat > dns-mappings.txt <<'EOF'
+cat > dns-mappings.txt <<'EOF'
 # DNS mapping file used by local network analysis tools
 # Format: <name> <address> <comment>
 www.example.com     192.168.1.10    # primary web server
@@ -482,7 +689,15 @@ cloud.example.com   192.168.1.22    # storage endpoint
 lab.example.com     192.168.1.30    # test environment
 # end of file
 EOF
-root@kali:~/Documents/linux-lab# wc -l dns-mappings.txt
+```
+
+```bash
+wc -l dns-mappings.txt
+```
+
+**Output:**
+
+```text
 12 dns-mappings.txt
 ```
 
@@ -493,7 +708,12 @@ The `wc -l` at the end confirms the file has twelve lines, which we will need to
 When dealing with large files, we use `head`, which by default displays the first **ten** lines of whatever you point it at. That default is one of the most useful inventions in the Unix toolbox, because configuration files and logs frequently begin with a comment block that explains the format of everything below it.
 
 ```bash
-root@kali:~/Documents/linux-lab# head dns-mappings.txt
+head dns-mappings.txt
+```
+
+**Output:**
+
+```text
 # DNS mapping file used by local network analysis tools
 # Format: <name> <address> <comment>
 www.example.com     192.168.1.10    # primary web server
@@ -513,7 +733,12 @@ Ten lines came back and the last two lines of the file were silently dropped, wh
 Similar to `head`, the `tail` command views the **last** lines of a file, ten by default. For log files this is the more useful of the pair, because whatever is happening now is written at the bottom.
 
 ```bash
-root@kali:~/Documents/linux-lab# tail dns-mappings.txt
+tail dns-mappings.txt
+```
+
+**Output:**
+
+```text
 ftp.example.com     192.168.1.11    # file server
 mail.example.com    192.168.1.12    # smtp relay
 ns1.example.com     192.168.1.13    # primary nameserver
@@ -530,7 +755,12 @@ Because the file has twelve lines, the last ten overlap with the output of `head
 `tail` has one genuinely magical flag that you will use constantly: `-f`, for *follow*. It does not exit after printing the last lines; it keeps the file open and prints new lines as they are appended, which turns it into a live monitor.
 
 ```bash
-root@kali:~# tail -f /var/log/syslog
+tail -f /var/log/syslog
+```
+
+**Output:**
+
+```text
 Oct  8 11:52:31 kali systemd[1]: Started Session 4 of user root.
 Oct  8 11:52:44 kali kernel: [ 4312.117834] usb 1-1: new high-speed USB device number 3
 ^C
@@ -543,7 +773,12 @@ The terminal sits there printing as the system logs events — in a second windo
 We can use `nl` to number the lines while it outputs them to the terminal window. Again using our mapping file, this time numbering every non-empty line:
 
 ```bash
-root@kali:~/Documents/linux-lab# nl dns-mappings.txt
+nl dns-mappings.txt
+```
+
+**Output:**
+
+```text
      1  # DNS mapping file used by local network analysis tools
      2  # Format: <name> <address> <comment>
      3  www.example.com     192.168.1.10    # primary web server
@@ -565,7 +800,12 @@ Every line now carries a right-aligned number in a seven-character field, which 
 The `sed` command — the *stream editor* — lets you search for the occurrence of a word or a text pattern and then perform an action on it, without opening an editor and without you having to sit there pressing keys. It reads its input line by line and applies your instructions to each line as it flows past, which is why it is called a stream editor and why it works perfectly inside pipelines. The most common instruction by far is **substitution**, written `s/<what to find>/<what to put there>/`, with an optional trailing `g` that means *every* occurrence on the line rather than only the first.
 
 ```bash
-root@kali:~/Documents/linux-lab# sed 's/example.com/example.net/g' dns-mappings.txt | head -5
+sed 's/example.com/example.net/g' dns-mappings.txt | head -5
+```
+
+**Output:**
+
+```text
 # DNS mapping file used by local network analysis tools
 # Format: <name> <address> <comment>
 www.example.net     192.168.1.10    # primary web server
@@ -578,10 +818,26 @@ The `s` stands for *substitute* and the `g` for *global*. Working through the pi
 To make the change permanent you add the `-i` flag, for *in place*, and the correct and careful way to use it is with a backup suffix so that the original survives:
 
 ```bash
-root@kali:~/Documents/linux-lab# sed -i.bak 's/example.com/example.net/g' dns-mappings.txt
-root@kali:~/Documents/linux-lab# ls
+sed -i.bak 's/example.com/example.net/g' dns-mappings.txt
+```
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 dns-mappings.txt  dns-mappings.txt.bak
-root@kali:~/Documents/linux-lab# head -3 dns-mappings.txt
+```
+
+```bash
+head -3 dns-mappings.txt
+```
+
+**Output:**
+
+```text
 # DNS mapping file used by local network analysis tools
 # Format: <name> <address> <comment>
 www.example.net     192.168.1.10    # primary web server
@@ -594,7 +850,12 @@ With `-i.bak`, `sed` renames the original to `dns-mappings.txt.bak` and writes t
 The `more` command displays one page of a file at a time and lets you scroll down with the `Enter` key or the space bar. It exists because a terminal only shows a fixed number of rows, and dumping four thousand lines of configuration at it is not reading, it is scrolling in reverse.
 
 ```bash
-root@kali:~/Documents/linux-lab# more dns-mappings.txt
+more dns-mappings.txt
+```
+
+**Output:**
+
+```text
 # DNS mapping file used by local network analysis tools
 # Format: <name> <address> <comment>
 www.example.com     192.168.1.10    # primary web server
@@ -615,7 +876,12 @@ The prompt at the bottom left is the pager's control: pressing `Enter` advances 
 `less` is very similar to `more` — the name is a deliberate joke — but it comes with the crucial added ability to move *backwards* as well as forwards, and to filter and search a file interactively. In practice `less` is what you should be using whenever you would have reached for `more`.
 
 ```bash
-root@kali:~# less /etc/ssh/sshd_config
+less /etc/ssh/sshd_config
+```
+
+**Output:**
+
+```text
 #	$OpenBSD: sshd_config,v 1.100 2016/08/15 12:32:04 naddy Exp $
 # This is the sshd server system-wide configuration file.  See
 # sshd_config(5) for more information.
@@ -632,7 +898,12 @@ Once inside, press the forward slash `/` and type the keyword you want to find, 
 Three more commands round out the set. `wc` counts lines, words and characters (`wc -l file` answers "how many entries does this list have?"). `sort` arranges lines alphabetically or numerically and `uniq` collapses adjacent duplicates, and together they turn a messy stream into a summarised one:
 
 ```bash
-root@kali:~/Documents/linux-lab# cut -d' ' -f1 dns-mappings.txt | grep -v '^#' | sort
+cut -d' ' -f1 dns-mappings.txt | grep -v '^#' | sort
+```
+
+**Output:**
+
+```text
 cloud.example.com
 ftp.example.com
 git.example.com
@@ -657,7 +928,12 @@ Sooner or later you will need software that did not come with your distribution,
 Before downloading any software package, it is worth checking whether it is available in the repository at all, and under which name. The catalogue of every package your machine knows about is stored locally, and `apt-cache` queries it. The form is `apt-cache search` followed by the keyword you are looking for; here we search for a well-known login-cracking tool:
 
 ```bash
-root@kali:~# apt-cache search hydra
+apt-cache search hydra
+```
+
+**Output:**
+
+```text
 hydra - very fast network logon cracker
 hydra-gtk - GTK+ based tool to do fast network logon cracking
 libhydra0 - Hydra toolkit library
@@ -671,7 +947,12 @@ Several packages matched, which is typical: the first line is the actual program
 Now let us install the packages we want. This time we use the `apt-get` command followed by the word `install` and the package name. Here we install `git`, which will later allow us to pull repositories down to install further tools:
 
 ```bash
-root@kali:~# apt-get install git
+apt-get install git
+```
+
+**Output:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -694,7 +975,6 @@ Selecting previously unselected package liberror-perl.
 Preparing to unpack .../liberror-perl_0.17029-1_all.deb ...
 Unpacking liberror-perl (0.17029-1) ...
 Setting up git (1:2.39.2-1.1) ...
-root@kali:~#
 ```
 
 This transcript is worth reading line by line, because `apt` is unusually honest about what it intends to do before it does it. It begins by building its picture of the installed system, then announces the **additional packages** it must install alongside your request — these are the *dependencies*, and pulling them down automatically is the single biggest reason package managers exist. It reports how much data must be downloaded and how much disk space the installation will occupy, and only then does it ask `Do you want to continue? [Y/n]`. Any answer other than `y` (or `Y`, or just Enter, since the capital letter shows the default) aborts the whole thing harmlessly. After the fetch, the unpacking and configuration steps run in sequence and give you Git, ready to use.
@@ -706,7 +986,12 @@ Three flags make `install` safer and quieter in day-to-day use. `-y` pre-answers
 To remove any package from your machine, simply type `remove` after `apt-get`, followed by the package name. Let us remove the package we just installed:
 
 ```bash
-root@kali:~# apt-get remove git
+apt-get remove git
+```
+
+**Output:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -725,7 +1010,12 @@ Note what the plan says and, more importantly, what it does not say. Only `git` 
 Sometimes the package we just removed leaves residual files behind, configuration files being the classic example. In order to wipe everything out cleanly, we use `purge` with `apt-get`. As before, the operation is previewed before it happens and can be aborted:
 
 ```bash
-root@kali:~# apt-get purge git
+apt-get purge git
+```
+
+**Output:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -743,7 +1033,12 @@ The star after the package name in the plan is `apt`'s way of signalling that co
 It is good practice to update the repository information regularly, since the repositories are usually updated with new software and newer versions of existing software. These updates have to be requested, and that is done by typing `update` after `apt-get`:
 
 ```bash
-root@kali:~# apt-get update
+apt-get update
+```
+
+**Output:**
+
+```text
 Hit:1 http://kali.download/kali kali-rolling InRelease
 Get:2 http://kali.download/kali kali-rolling/main amd64 Packages [19.6 MB]
 Get:3 http://kali.download/kali kali-rolling/main amd64 Contents (deb) [45.1 MB]
@@ -760,7 +1055,12 @@ The key sentence to understand is that **`update` does not install anything at a
 In order to actually apply the changes described by the catalogue you just refreshed, you run `apt-get` with `upgrade`. This installs the newer versions of everything that is already on the system:
 
 ```bash
-root@kali:~# apt-get upgrade
+apt-get upgrade
+```
+
+**Output:**
+
+```text
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -786,7 +1086,7 @@ A related command is `apt-get dist-upgrade` (or the modern `apt full-upgrade`), 
 The servers that hold the software catalogue for a particular distribution are known as *repositories*, and the list of repositories your machine is allowed to use lives in a plain text file at `/etc/apt/sources.list` (with additional entries, on modern systems, in the directory `/etc/apt/sources.list.d/`). To change that list you open it in a text editor — `nano` is the beginner-friendly one — and add, remove or comment out the lines you want:
 
 ```bash
-root@kali:~# nano /etc/apt/sources.list
+nano /etc/apt/sources.list
 ```
 
 Inside the editor you would see something like the following, with one repository per line, each line consisting of the archive type (`deb` for binary packages, `deb-src` for source code), the URL of the mirror, the distribution name and the components:
@@ -815,7 +1115,12 @@ The **root** user is, as we have seen, all-powerful; the kernel skips the ordina
 As we saw earlier, the long listing `ls -l` is how you inspect these settings, so let us look at one again now that we know what we are looking for:
 
 ```bash
-root@kali:~/Documents/linux-lab# ls -l
+ls -l
+```
+
+**Output:**
+
+```text
 total 12
 -rw-r--r-- 1 root root   82 Oct  8 11:45 practice-notes.txt
 -rwxr-xr-x 1 root root 4096 Oct  8 12:02 backup.sh
@@ -846,10 +1151,26 @@ So `backup.sh` is readable, writable and executable by its owner (`rwx`), readab
 We change the ownership of a file so that the new user who owns it gains control over its permissions, and `chown` is the command that does it: `chown <new owner> <file>`. Here we transfer ownership of our notes file from the root account to a normal user called `student`:
 
 ```bash
-root@kali:~/Documents/linux-lab# ls -l practice-notes.txt
+ls -l practice-notes.txt
+```
+
+**Output:**
+
+```text
 -rw-r--r-- 1 root root 82 Oct  8 11:45 practice-notes.txt
-root@kali:~/Documents/linux-lab# chown student practice-notes.txt
-root@kali:~/Documents/linux-lab# ls -l practice-notes.txt
+```
+
+```bash
+chown student practice-notes.txt
+```
+
+```bash
+ls -l practice-notes.txt
+```
+
+**Output:**
+
+```text
 -rw-r--r-- 1 student root 82 Oct  8 11:45 practice-notes.txt
 ```
 
@@ -860,8 +1181,16 @@ The third column of the listing changed from `root` to `student`, and with that 
 To transfer ownership of a file to a group we use `chgrp`, which has exactly the same shape as `chown` but takes a group name. To ensure that only members of a particular team can claim the owning group of the file, here we change the group to `developers`:
 
 ```bash
-root@kali:~/Documents/linux-lab# chgrp developers practice-notes.txt
-root@kali:~/Documents/linux-lab# ls -l practice-notes.txt
+chgrp developers practice-notes.txt
+```
+
+```bash
+ls -l practice-notes.txt
+```
+
+**Output:**
+
+```text
 -rw-r--r-- 1 student developers 82 Oct  8 11:45 practice-notes.txt
 ```
 
@@ -891,11 +1220,30 @@ You then give three digits, one per class, in the order **owner, group, others**
 Another way of arriving at the same result, as seen below, is the symbolic `chmod +x`, with no class letter in front of it, which means "the same change for every class":
 
 ```bash
-root@kali:~/Documents/linux-lab# cp backup.sh script-demo.sh
-root@kali:~/Documents/linux-lab# ls -l script-demo.sh
+cp backup.sh script-demo.sh
+```
+
+```bash
+ls -l script-demo.sh
+```
+
+**Output:**
+
+```text
 -rw-r--r-- 1 root root 4096 Oct  8 12:04 script-demo.sh
-root@kali:~/Documents/linux-lab# chmod +x script-demo.sh
-root@kali:~/Documents/linux-lab# ls -l script-demo.sh
+```
+
+```bash
+chmod +x script-demo.sh
+```
+
+```bash
+ls -l script-demo.sh
+```
+
+**Output:**
+
+```text
 -rwxr-xr-x 1 root root 4096 Oct  8 12:05 script-demo.sh
 ```
 
@@ -910,10 +1258,26 @@ The SUID bit — the *set user ID* bit — is a special permission that says som
 To set the SUID bit with the numeric notation, we enter **4 before the regular three permission digits**. So a file whose permissions were `644` — write and read for the owner, read for everyone else — becomes `4644` once SUID is added:
 
 ```bash
-root@kali:~/Documents/linux-lab# ls -l script-demo.sh
+ls -l script-demo.sh
+```
+
+**Output:**
+
+```text
 -rwxr-xr-x 1 root root 4096 Oct  8 12:05 script-demo.sh
-root@kali:~/Documents/linux-lab# chmod 4644 script-demo.sh
-root@kali:~/Documents/linux-lab# ls -l script-demo.sh
+```
+
+```bash
+chmod 4644 script-demo.sh
+```
+
+```bash
+ls -l script-demo.sh
+```
+
+**Output:**
+
+```text
 -rwSr--r-- 1 root root 4096 Oct  8 12:06 script-demo.sh
 ```
 
@@ -924,7 +1288,12 @@ One caveat specific to Linux deserves to be stated plainly, because many older t
 The reason this bit matters so much in security work is that a root-owned SUID binary is a legitimate, administrator-created way for unprivileged users to perform privileged actions, and every such program is therefore a piece of code worth auditing: if it can be tricked into running a program of the attacker's choosing — a shell, for instance — that program inherits its root authority. That is the classic *SUID privilege escalation* path, and finding candidates is one command away:
 
 ```bash
-root@kali:~# find / -perm -4000 -type f 2>/dev/null
+find / -perm -4000 -type f 2>/dev/null
+```
+
+**Output:**
+
+```text
 /usr/bin/passwd
 /usr/bin/su
 /usr/bin/sudo
@@ -942,18 +1311,42 @@ Similarly to SUID, the **SGID** bit — *set group ID* — grants temporarily el
 To set SGID with the numeric notation, we enter **2 before the regular permissions**, so our example file with base permissions 644 becomes `2644`:
 
 ```bash
-root@kali:~/Documents/linux-lab# ls -l script-demo.sh
+ls -l script-demo.sh
+```
+
+**Output:**
+
+```text
 -rwxr-xr-x 1 root root 4096 Oct  8 12:06 script-demo.sh
-root@kali:~/Documents/linux-lab# chmod 2466 script-demo.sh
-root@kali:~/Documents/linux-lab# ls -l script-demo.sh
+```
+
+```bash
+chmod 2466 script-demo.sh
+```
+
+```bash
+ls -l script-demo.sh
+```
+
+**Output:**
+
+```text
 -rw-rwSrw- 1 root root 4096 Oct  8 12:07 script-demo.sh
 ```
 
 The same overwriting trick is at work here as with SUID, but in the middle triad: SGID occupies the *group's* execute slot and shows as a lowercase `s` when execute is also granted (`rwxr-sr-x`) and as an uppercase `S` when it is not (`rw-rwSrw-`, as above, where the file is not executable for its group). Symbolically the notation is `chmod g+s directory`, and the practical demonstration in a shared workspace is:
 
 ```bash
-root@kali:~# chmod g+s /srv/share
-root@kali:~# ls -ld /srv/share
+chmod g+s /srv/share
+```
+
+```bash
+ls -ld /srv/share
+```
+
+**Output:**
+
+```text
 drwxr-sr-x 4 root developers 4096 Oct  8 12:09 /srv/share
 ```
 
@@ -964,7 +1357,12 @@ Any file that any member of `developers` now creates in `/srv/share` will belong
 There is one more special bit and it is worth naming for completeness, because it is the one you meet without noticing. The **sticky bit**, written as **1** before the regular permissions (`chmod 1777`), is irrelevant on files on modern Linux but very meaningful on directories: inside a sticky directory, users may create files and may delete only *their own* files, even if the directory itself is world-writable. The canonical example is the system's temporary directory:
 
 ```bash
-root@kali:~# ls -ld /tmp
+ls -ld /tmp
+```
+
+**Output:**
+
+```text
 drwxrwxrwt 21 root root 4096 Oct  8 12:10 /tmp
 ```
 
@@ -975,16 +1373,50 @@ The final `t` in `drwxrwxrwt` is the sticky bit in its open, executable form (it
 To see how the pieces combine, imagine a small shared workspace. We want a directory that members of a team can all write into, files created there to inherit the team group, a script that anyone may run, and a private note that only its owner may read:
 
 ```bash
-root@kali:~# mkdir /srv/share
-root@kali:~# chgrp developers /srv/share
-root@kali:~# chmod 2775 /srv/share
-root@kali:~# ls -ld /srv/share
+mkdir /srv/share
+```
+
+```bash
+chgrp developers /srv/share
+```
+
+```bash
+chmod 2775 /srv/share
+```
+
+```bash
+ls -ld /srv/share
+```
+
+**Output:**
+
+```text
 drwxrwsr-x 2 root developers 4096 Oct  8 12:12 /srv/share
-root@kali:~# cp backup.sh /srv/share/backup.sh
-root@kali:~# chmod 755 /srv/share/backup.sh
-root@kali:~# chown root:developers /srv/share/backup.sh
-root@kali:~# touch /srv/share/private.key && chmod 600 /srv/share/private.key
-root@kali:~# ls -l /srv/share
+```
+
+```bash
+cp backup.sh /srv/share/backup.sh
+```
+
+```bash
+chmod 755 /srv/share/backup.sh
+```
+
+```bash
+chown root:developers /srv/share/backup.sh
+```
+
+```bash
+touch /srv/share/private.key && chmod 600 /srv/share/private.key
+```
+
+```bash
+ls -l /srv/share
+```
+
+**Output:**
+
+```text
 total 8
 -rwxr-xr-x 1 root developers 4096 Oct  8 12:13 backup.sh
 -rw------- 1 root developers    0 Oct  8 12:13 private.key
@@ -1104,8 +1536,4 @@ The command line rewards patience and punishes haste, and almost every mistake a
 
 Two habits are worth building from the first week. The first is to *read the plan* before you approve it — `apt-get` tells you exactly what it will remove, `find -exec` can be tested with `-print`, and destructive commands can be previewed by prefixing them with `echo` so the shell shows you what it intends to run. The second is to *write things down*: keep a plain text file of the commands you had to look up, and after a few weeks you will find that you have written your own cheat sheet, in your own words, which is worth more than any guide you can download.
 
-<<<<<<<< HEAD:docs/01 - Linux for Beginners - Part 1.md
 **Part 2** is the continuation and it picks up exactly where this guide leaves off. [Linux for Beginners (Part 2): Networks, Processes and Environment Variables](02-linux-fundamentals-part-2.md) covers reading and reconfiguring the interfaces a machine uses to talk to the network, watching and controlling the processes it runs, and managing the environment variables that every program you launch inherits. **[Part 3: Bash Scripting, Automation and Services](03-linux-fundamentals-part-3.md)** then turns all of it into automation: a Bash script that does a day's work in a second, a `cron` job that runs it at 23:55 without being asked, and the services — Apache, OpenSSH, FTP — that let a machine answer requests on its own. Beyond the three parts, natural next steps are **service management** with `systemctl` and the systemd journal, and a deeper study of the **permission and privilege model** that this guide has only introduced.
-========
-**Part 2** is the immediate continuation and it picks up exactly where this guide leaves off. [Linux for Beginners (Part 2): Networks, Processes and Environment Variables](02-linux-fundamentals-part-2.md) covers reading and reconfiguring the interfaces a machine uses to talk to the network, watching and controlling the processes it runs, and managing the environment variables that every program you launch inherits. After that, [Linux for Beginners (Part 3): Scripting, Scheduling and Services](03-linux-fundamentals-part-3.md) covers shell **scripting and automation** — conditions, loops, functions and variables, assembled into programs that do a day's work in a second — along with **scheduling** with `cron` and **service management** with `service`/`systemctl`, including the Apache web server, OpenSSH and FTP. Beyond the three parts, natural next steps are writing your own systemd units and timers, configuration management across more than one machine, and a deeper study of the **permission and privilege model** that this guide has only introduced.
->>>>>>>> origin/arena/52f71d52-attack-scripts:docs/01-linux-fundamentals-part-1.md
