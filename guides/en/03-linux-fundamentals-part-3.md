@@ -45,6 +45,8 @@ When you see a block labelled as a script, type it into the file named in the su
 
 ## 1. Bash scripting basics
 
+> **Concept.** A shell script is a text file of commands that the kernel hands to an interpreter, chosen by the *shebang* on the first line (`#!` plus a path), and it runs as an ordinary process created by `fork`/`exec`. Its contract with the system is the exit code: `0` means success and anything else means failure, which is what lets `if`, `&&`, `||` and cron react to a result, and which is why `set -euo pipefail` — exit on error, error on unset variables, fail on any pipeline stage — is the modern default (POSIX shell). Because the shell splits unquoted expansions into separate words, quoting (`"$var"`) is not cosmetic but the difference between one argument and several; `$?`, `$#`, `$@` and `$1` expose the last status, the argument count and the arguments themselves.
+
 When you have to run the same set of commands repeatedly, or compile the output of several tools into one result, the answer is to write a small program. On Linux the natural language for that is the one you have been speaking all along: the shell.
 
 A shell is the interface between you and the operating system, and there are several to choose from — `sh`, `bash`, `zsh`, `dash`, `fish` — each with its own dialect. The one used throughout this guide is **bash**, the Bourne Again SHell, which is the default interactive shell on most Linux distributions and on virtually every security distribution.
@@ -344,6 +346,99 @@ There are three special variables that come with arguments: `$1`, `$2` and so on
 
 The `[ $# -ne 1 ]` test therefore means "if the script was not given exactly one argument". The message it prints goes to **standard error** (`>&2`) rather than standard output, so that a caller redirecting the output to a file does not capture the error message into the data. `basename "$0"` strips the directory from the script's own name so the usage message reads `sweep` rather than `./sweep`.
 
+A script that is meant to run unattended is worth checking with the two tools that catch what the eye misses. The first is `bash -x`, which prints each command as it is expanded and executed (after variable substitution), so the exact arguments the shell finally uses are visible:
+
+```bash
+bash -x sweep 192.168.1
+```
+
+**Output:**
+
+```text
++ set -euo pipefail
++ '[' 1 -ne 1 ']'
++ command -v nmap
++ net=192.168.1
++ nmap -sn 192.168.1.0/24
++ grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}'
+192.168.1.1
+192.168.1.9
+192.168.1.17
+192.168.1.20
+```
+
+Each line that begins with `+` is one command after expansion, which is how you see that `$net` became `192.168.1`, that the `[ ... ]` test ran, and that the two stages of the pipeline were launched. The trace goes to standard error, so `bash -x sweep 192.168.1 > out.txt` still shows the trace on screen while the addresses land in the file.
+
+The second tool is `shellcheck`, a static analyser that reads a script the way a compiler would and reports the constructs that behave differently from what a beginner expects:
+
+```bash
+shellcheck sweep
+```
+
+**Output:**
+
+```text
+In sweep line 1:
+#!/bin/bash
+^-- SC2148 (error): Tips depend on target shell and yours is unknown. Add a shebang or a 'shell' directive.
+
+In sweep line 3:
+read -p "Enter the network prefix (for example 192.168.1): " net
+     ^-- SC2162 (info): read without -r will mangle backslashes.
+
+In sweep line 4:
+nmap -sn "$net.0/24" | grep "Nmap scan report" | cut -d " " -f 5
+                       ^-- SC2086 (info): Double quote to prevent globbing and word splitting.
+
+Did you mean:
+nmap -sn "$net.0/24" | grep "Nmap scan report" | cut -d " " -f 5
+```
+
+Each finding has a code (`SC2086` is the unquoted-variable rule, `SC2162` the missing `-r` on `read`) and the caret points at the exact column. `shellcheck` exits with a non-zero status when it finds something, so it can be wired into a test or a pre-commit hook, and running it habitually is the closest thing shell scripting has to a compiler.
+
+The two remaining habits are about what a script does when it stops. `trap` registers a command to run when the shell receives a signal or exits, which is how a script removes the files it created even when it is interrupted:
+
+```bash
+bash -c 'tmp=$(mktemp); trap "echo cleaning up $tmp; rm -f $tmp" EXIT; echo working in $tmp'
+```
+
+**Output:**
+
+```text
+working in /tmp/tmp.9c3QpXm1Bz
+cleaning up /tmp/tmp.9c3QpXm1Bz
+```
+
+The `trap ... EXIT` fires when the shell terminates for any reason, so the cleanup runs whether the script succeeded, failed or was interrupted — and the same idea with `trap ... INT` covers Ctrl+C specifically. It is the standard way to make a script leave the system as it found it.
+
+That example also uses `mktemp`, which creates a file or directory with a unique name and restrictive permissions (mode 600), so that a predictable filename cannot be pre-created by another user — a classic race condition:
+
+```bash
+mktemp
+```
+
+**Output:**
+
+```text
+/tmp/tmp.9c3QpXm1Bz
+```
+
+`mktemp` prints the name it created, here a file under `/tmp`, and `mktemp -d` makes a temporary directory instead. Compare it with the habit it replaces — redirecting into a fixed path such as `/tmp/scan.tmp`, which any local user could pre-create as a symbolic link to a file you can write but should not.
+
+Finally, the `set -euo pipefail` line is worth seeing in action, because its three settings are what turn silent misfires into loud ones. The `-u` option catches the empty-variable trap from Part 2:
+
+```bash
+bash -c 'set -u; echo "prefix is $net"'
+```
+
+**Output:**
+
+```text
+bash: net: unbound variable
+```
+
+With `-u` in effect, referring to a variable that was never set — `$net` here — aborts the shell with a message naming the variable, instead of quietly substituting an empty string and running the command with a missing argument. `-e` does the same for a failed command, and `-o pipefail` for a failed stage in the middle of a pipeline; together they are why the robust version of `sweep` can be trusted from cron.
+
 <details>
 <summary><strong>Read more</strong> — what <code>set -euo pipefail</code> buys you, and the two habits that follow from it</summary>
 
@@ -360,6 +455,8 @@ Two more habits belong in this list because they are what separate script author
 ---
 
 ## 2. Scheduling your tasks
+
+> **Concept.** A scheduler is a daemon that sleeps and wakes to run work nobody is watching: the traditional one is Vixie `cron`, whose table format is fixed by `man 5 crontab` and whose lines are five time fields — minute, hour, day-of-month, month, day-of-week — followed by the command. The system table `/etc/crontab` adds a sixth field naming the user to run as, and every job starts in a minimal environment with a short `PATH` and no login shell, so absolute paths are mandatory and output is either mailed (per `MAILTO`) or silently discarded. Modern distributions increasingly replace cron with `systemd` timers — a `.timer` unit paired with a `.service` unit, described by `man 5 systemd.timer` — while boot-time behaviour is described by units and targets (`man 5 systemd.unit`), the successor to the LSB and SysV init scripts kept in `/etc/init.d/`.
 
 There are times when a task needs to happen on a schedule rather than when you remember it: a nightly backup, a weekly report, a check that runs every hour. Linux has had an answer to this for decades in the **cron** daemon, and it remains the mechanism you will meet on almost every server.
 
@@ -541,6 +638,42 @@ Those lines answer the two questions that matter: did cron *start* the job, and 
 
 If a line appears but the job produced no result, the problem is inside the command — a tool that is missing from the minimal `PATH`, a script that assumed it was being run from its own directory, or a relative path that resolved somewhere unexpected. If no line appears at all, the problem is in the schedule, the crontab, or the daemon — and the checks in section 2.2 are the way to narrow it down.
 
+On a system where the traditional log file has been replaced by the `systemd` journal, the same records are read with `journalctl`. Restricting the output to the cron unit (`-u`) filters the journal down to that service's own messages:
+
+```bash
+journalctl -u cron --since today | tail -5
+```
+
+**Output:**
+
+```text
+Oct 13 03:00:01 kali CRON[8123]: (root) CMD (/usr/local/bin/backup.sh >> /var/log/backup.log 2>&1)
+Oct 13 03:05:02 kali CRON[8188]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)
+Oct 13 14:22:04 kali systemd[1]: Started Regular background program processing daemon.
+Oct 13 14:22:04 kali cron[918]: (CRON) INFO (pidfile fd = 3)
+Oct 13 14:22:04 kali cron[918]: (CRON) INFO (Running @reboot jobs)
+```
+
+The `-u cron` selector is the journal equivalent of the `grep CRON /var/log/syslog` above, and `--since` bounds the range; `journalctl -u cron -f` follows it live, which is the fastest way to watch a job fire while you edit its crontab. Unlike a plain log file, the journal keeps the metadata — the unit, the PID and the timestamp — attached to every line.
+
+Where a distribution schedules work with `systemd` timers rather than `cron`, the equivalent of `crontab -l` is `systemctl list-timers`, which shows each timer, when it last ran and when it is next due:
+
+```bash
+systemctl list-timers
+```
+
+**Output:**
+
+```text
+NEXT                        LEFT          LAST                        PASSED     UNIT                         ACTIVATES
+Tue 2026-10-13 06:36:11 UTC 8h left       Mon 2026-10-12 06:30:11 UTC 16h ago    apt-daily.timer              apt-daily.service
+Tue 2026-10-13 07:01:29 UTC 8h left       Mon 2026-10-12 07:01:02 UTC 15h ago    fstrim.timer                 fstrim.service
+Tue 2026-10-13 14:22:04 UTC 33min left    Tue 2026-10-13 13:22:04 UTC 27min ago  man-db.timer                 man-db.service
+3 timers listed.
+```
+
+Each row pairs a `.timer` unit with the `.service` it triggers, shown in the `ACTIVATES` column, and the `NEXT` and `LAST` columns answer the same questions cron's log does — when it will run and whether it ran. A timer with no `LAST` value has never fired, which is the quickest way to spot one that was enabled but never started.
+
 <details>
 <summary><strong>Read more</strong> — where the log lives on other systems, and three refinements worth knowing</summary>
 
@@ -639,6 +772,8 @@ For security work, the whole of this subsection matters for one practical reason
 ---
 
 ## 3. Using services in Linux
+
+> **Concept.** A service, or daemon, is a long-running program that holds a socket open so the network can reach it: at startup it `bind`s to an address and port and then `listen`s for connections, which is why the same process appears both in `systemctl status` and in `ss -tlnp`. Apache, OpenSSH and vsftpd are three such daemons on three well-known ports — 80/443, 22 and 21 — and each is configured by a text file whose syntax can be validated before it is applied (`apache2ctl configtest`, `sshd -t`). Managing them means distinguishing *start* from *enable* (now versus at boot) and reading the states `active`, `inactive` and `failed` from the service manager, whose contract is defined by `man 5 systemd.unit` and, for the HTTP dialogue Apache speaks, by RFC 9110. Each daemon also chooses *how* it serves: Apache picks its concurrency model through a multi-processing module (the default on Debian is `mpm_event`), while a modern service manager can go one step beyond an always-on daemon with *socket activation*, in which systemd owns the listening socket and starts the program only when the first connection arrives.
 
 A **service** is a program that runs in the background and waits to be used: it holds a socket open, or keeps a queue moving, or watches a file, and it does this whether or not anyone is logged in. Most of what a server does is services.
 
@@ -921,6 +1056,20 @@ The `enable` output is a small piece of archaeology worth one sentence: systemd 
 
 Then `ss` shows the daemon listening, and the `ssh` command from the attacker machine authenticates, prints the target's login banner and hands over a prompt on the remote host. The syntax is `ssh <username>@<address>`, and everything about what happens next — host keys, passwords against keys, port forwarding — is covered in the companion guide.
 
+The habit of validating configuration before applying it has an SSH-specific form. `sshd -t` parses `/etc/ssh/sshd_config` and every file it includes in the same way the daemon will, and reports the first error without touching the running service:
+
+```bash
+sshd -t
+```
+
+**Output:**
+
+```text
+/etc/ssh/sshd_config line 89: Bad SSH2 cipher spec 'aes256-cbc,aes128-cbc'.
+```
+
+The output names the file, the line number and the offending value, which is enough to fix the file before a restart rather than discovering the break when the daemon refuses to come up and you have locked yourself out. Running `sshd -t` should be the last step before `systemctl restart ssh` on a remote host: a syntax error caught here is an inconvenience, whereas the same error caught by the restart is a lost session.
+
 ### 3.4 Working with FTP
 
 The **File Transfer Protocol** is the third example, and it is included because it is instructive rather than because it is good practice.
@@ -1107,6 +1256,9 @@ Enumerating services is the first substantive step of both administering a machi
 | `>&2` | sends a message to standard error | `echo "usage: ..." >&2` |
 | `exit 1` | exits with a failure status | after a usage message |
 | `shellcheck script` | analyses a script for common mistakes | `shellcheck sweep` |
+| `bash -x script` | runs a script with a trace of each expanded command | `bash -x sweep 192.168.1` |
+| `trap 'cmd' EXIT` | runs a command when the shell exits or is signalled | `trap 'rm -f "$tmp"' EXIT` |
+| `mktemp` / `mktemp -d` | creates a uniquely named temp file / directory | `tmp=$(mktemp)` |
 
 ### Scheduling
 
@@ -1126,6 +1278,7 @@ Enumerating services is the first substantive step of both administering a machi
 | `journalctl -u cron` | the same on a journal-based system | as shown |
 | `/etc/crontab` | the system crontab (7 fields: adds the user) | `cat /etc/crontab` |
 | `at 23:55` | a one-off job instead of a recurring one (Part 2) | end with `Ctrl+D` |
+| `systemctl list-timers` | shows systemd timers, with last and next run | `systemctl list-timers` |
 
 ### Boot, runlevels and services
 
@@ -1150,6 +1303,7 @@ Enumerating services is the first substantive step of both administering a machi
 | `ftp <host>` | connects to an FTP server (`ls`, `cd`, `get`, `put`, `bye`) | `ftp 192.168.1.9` |
 | `sftp <user>@<host>` | the secure replacement, over SSH | `sftp pentest@192.168.1.9` |
 | `scp <src> <dst>` | simple encrypted copies (Part 1 and the SSH guide) | `scp file.txt user@host:/tmp/` |
+| `sshd -t` | validates the SSH daemon configuration without restarting it | `sshd -t` |
 
 ---
 

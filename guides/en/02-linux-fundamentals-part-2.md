@@ -40,6 +40,8 @@ The conventions are the same as in Part 1, and they are worth restating because 
 
 ## 1. Managing networks
 
+> **Concept.** A host's networking is a stack of layers — the link, internet, transport and application layers of the TCP/IP model that the seven-layer OSI model refines — and each layer wraps the one above in its own header, a process called *encapsulation* [RFC 1122]. Addressing lives at several layers at once: an IPv4 address is split into a network and a host part by its prefix length or netmask, so CIDR notation such as `192.168.1.0/24` decides whether a destination is local or must be handed to a router [RFC 791, RFC 4632], while a MAC address identifies a card on the local segment and the loopback interface (`127.0.0.1`, `::1`) names the host itself so that "local" traffic never leaves the machine. Neighbours, dynamic addresses and names are each answered by a dedicated protocol — ARP resolves an address to a MAC on the local link [RFC 826], DHCP hands out leases [RFC 2131], and DNS resolves a name to an address and publishes a zone's records [RFC 1034/1035]. When a destination is not local, the kernel consults its routing table and forwards the packet to the default gateway, which is why reading `ip route` is the first step in almost every connectivity problem.
+
 Networking is a crucial topic for anyone heading towards security work, because a great deal of what you will eventually be asked to test lives on the network rather than on a single machine.
 
 Even for everyday administration you cannot get far without knowing how to look at an interface, read the address it holds, and change any of it deliberately. This section works through the tools that do exactly that, in the order you would reach for them: inspect an interface, inspect a wireless interface, change an address, spoof a hardware address, ask a DHCP server for a lease, interrogate DNS, change which resolver you use, and override a name locally.
@@ -110,6 +112,77 @@ default via 192.168.1.1 dev eth0 proto dhcp metric 100
 ```
 
 The key line is `default via 192.168.1.1 dev eth0`, which names the default gateway: the router that packets are sent to when their destination is not on the local `192.168.1.0/24` network.
+
+The kernel also keeps a table of *neighbours*: the link-layer addresses it has learned for hosts on the local segment. That table is the ARP cache, and `ip neigh` prints it (the legacy equivalent is `arp -n` from `net-tools`):
+
+```bash
+ip neigh
+```
+
+**Output:**
+
+```text
+192.168.1.1 dev eth0 lladdr c8:3a:35:1f:2a:40 REACHABLE
+192.168.1.9 dev eth0 lladdr 00:0c:29:aa:bb:cc STALE
+192.168.1.20 dev eth0 lladdr 00:50:56:c0:00:08 DELAY
+```
+
+Reading the columns in order: the first field is the neighbour's IP address, `dev eth0` is the interface it was seen on, and `lladdr` is the MAC address the kernel resolved for it through ARP — the protocol defined in [RFC 826](https://www.rfc-editor.org/rfc/rfc826) that maps a known IP address to an unknown hardware address on the local link. The trailing word is the entry's state: `REACHABLE` means it was confirmed recently, `STALE` means the value is still usable but unverified, and `DELAY` means the kernel is waiting a moment before re-checking it. A neighbour entry is what makes "the gateway is up" or "that host is on this segment" concrete, and it is the table that an ARP-spoofing attack poisons.
+
+Knowing the gateway is not the same as knowing the path beyond it. To see every router a packet passes through on its way to a destination, use `traceroute`, which sends probes with steadily increasing TTL values and reads the ICMP "time exceeded" replies that come back:
+
+```bash
+traceroute example.com
+```
+
+**Output:**
+
+```text
+traceroute to example.com (93.184.216.34), 30 hops max, 60 byte packets
+ 1  _gateway (192.168.1.1)  0.482 ms  0.511 ms  0.489 ms
+ 2  10.10.0.1 (10.10.0.1)  3.204 ms  3.187 ms  3.411 ms
+ 3  ae-1.edge.lab (203.0.113.9)  8.771 ms  8.690 ms  9.013 ms
+ 4  93.184.216.34 (93.184.216.34)  24.105 ms  24.228 ms  24.060 ms
+```
+
+Each line is one hop: its number, the name and address of the router that answered, and three round-trip times in milliseconds, one per probe. A line of `* * *` means a router that declined to answer, which is common in the middle of the internet; the cases worth attention are a path that never leaves your own network (a routing problem) and one that reaches the destination by a surprising route.
+
+`mtr` — "my traceroute" — is the same probe measured repeatedly and summarised. In report mode it prints one line per hop with packet-loss and latency statistics, which is easier to read and to paste into a report than a single `traceroute` run:
+
+```bash
+mtr --report --report-cycles 5 example.com
+```
+
+**Output:**
+
+```text
+HOST: kali                       Loss%   Snt   Last   Avg  Best  Wrst StDev
+  1.|-- _gateway                 0.0%     5    0.5   0.5   0.4   0.6   0.1
+  2.|-- 10.10.0.1                0.0%     5    3.2   3.3   3.1   3.6   0.2
+  3.|-- ae-1.edge.lab            0.0%     5    8.8   8.9   8.7   9.3   0.2
+  4.|-- 93.184.216.34            0.0%     5   24.1  24.2  24.0  24.5   0.2
+```
+
+The `Loss%` column is what earns `mtr` its place: a hop that drops a few percent of probes while everything after it is clean is usually rate-limiting rather than a fault, whereas loss that persists to the final hop is a real problem. `Snt` is how many probes were sent, and the remaining columns summarise the round-trip time across them.
+
+Finally, the same machine that *sends* packets is usually also *offering* services, and `ss -tulpn` lists the sockets it is listening on: TCP and UDP sockets (`-tu`), listening only (`-l`), with numeric ports (`-n`) and the owning process shown (`-p`):
+
+```bash
+ss -tulpn
+```
+
+**Output:**
+
+```text
+Netid State  Recv-Q Send-Q Local Address:Port  Peer Address:Port Process
+udp   UNCONN 0      0          127.0.0.54:53         0.0.0.0:*     users:(("systemd-resolve",pid=712,fd=13))
+tcp   LISTEN 0      128          0.0.0.0:22           0.0.0.0:*     users:(("sshd",pid=812,fd=3))
+tcp   LISTEN 0      511          0.0.0.0:80           0.0.0.0:*     users:(("apache2",pid=3312,fd=4))
+tcp   LISTEN 0      4096       127.0.0.53:53           0.0.0.0:*     users:(("systemd-resolve",pid=712,fd=14))
+tcp   LISTEN 0      128             [::]:22              [::]:*     users:(("sshd",pid=812,fd=4))
+```
+
+The flags are the whole command: `-t` for TCP, `-u` for UDP, `-l` for listening sockets only, `-p` to show the owning process, and `-n` to print numbers instead of names. `State` is `LISTEN` for TCP and `UNCONN` for UDP; `Local Address:Port` shows what is bound, so `0.0.0.0:22` means "every interface on this host, port 22" while `127.0.0.53:53` means the loopback address only; and `Process` names the daemon that owns the socket, which is why the command needs root to show it. That last column is the single most useful one for security work: it is the shortest path from "a port is open" to "this program opened it".
 
 <details>
 <summary><strong>Read more</strong> — reading the <code>ifconfig</code> output line by line</summary>
@@ -407,6 +480,39 @@ For an assessment these are the servers you would query directly (`dig @a.iana-s
 
 A few shortcuts make `dig` pleasant to use in scripts and in a hurry: `+short` for the answer data only, `+noall +answer` to drop the header and status blocks, `@1.1.1.1` to query a specific resolver, `-x` for a reverse lookup, and `+trace` to follow the resolution step by step from the root servers down.
 
+The record types you will reach for most often are `A` (IPv4), `AAAA` (IPv6), `MX` (mail exchangers), `NS` (name servers), `CNAME` (an alias), `PTR` (reverse) and `TXT` (free-form text, which is where mail policies and, often, useful leakage live). Asking for `TXT` is a single added word:
+
+```bash
+dig example.com txt +short
+```
+
+**Output:**
+
+```text
+"v=spf1 -all"
+```
+
+That one `TXT` record is a policy statement in a single string: `v=spf1` announces a Sender Policy Framework record and `-all` says "no host is authorised to send mail for this domain", the mail-side twin of the null MX seen above.
+
+The `nslookup` tool predates `dig` and is still found everywhere, including on systems where `dig` is not installed. Given a name it reports the responding server and then the answer, using the same query types:
+
+```bash
+nslookup example.com
+```
+
+**Output:**
+
+```text
+Server:		192.168.1.1
+Address:	192.168.1.1#53
+
+Non-authoritative answer:
+Name:	example.com
+Address: 93.184.216.34
+```
+
+The first two lines name the resolver that answered and the port it answered on — the same information `dig` prints as `SERVER:`. The phrase `Non-authoritative answer` is `nslookup`'s way of saying the data came from a cache rather than from the zone's own servers. In interactive mode (`nslookup` with no argument) you can change the record type with `set type=TXT` or `set type=AAAA` and query several names in one session, which is convenient when you are enumerating what a domain publishes. Both tools query DNS directly and therefore bypass `/etc/hosts`, which is why a name that resolves in your browser can still answer differently here.
+
 <details>
 <summary><strong>Read more</strong> — the whole <code>dig</code> answer, the null MX, and the shortcuts in full</summary>
 
@@ -599,6 +705,8 @@ The defensive answers follow from the mechanism: monitor the integrity of `/etc/
 
 ## 2. Process management
 
+> **Concept.** A process is a running program with an identity and a state of its own: the kernel gives it a PID and records its parent's PID (PPID), creates it from an existing process with `fork` and then replaces its image with a new program via `exec`, and moves it between states such as running, sleeping and zombie. Processes are steered with signals, the asynchronous notifications standardised by POSIX (`man 7 signal`): `SIGTERM` (15) politely asks a program to terminate so that it can clean up, whereas `SIGKILL` (9) cannot be caught, blocked or ignored and removes it on the spot. The scheduler decides which process runs next and weights that decision by each process's nice value, from −20 (highest priority) to 19 (lowest). The rule that any user may lower a process's priority but only root may raise it is the principle of least privilege applied to the CPU [Saltzer & Schroeder, 1975].
+
 A process is simply a program that is running: the kernel has loaded it into memory, given it an identifier, scheduled it onto a CPU and accounted for the resources it uses. On a single-user laptop you might have two hundred processes running at any moment, most of them daemons — background services with no terminal attached — and on a server the number is larger still.
 
 Knowing how to list them, read what they are consuming, decide which of them deserve more of the machine, stop the ones that have gone wrong, and move the ones that should be out of the way is the difference between administering a system and guessing at it.
@@ -665,6 +773,26 @@ Each column answers a different question. `USER` is the account the process is r
 The `STAT` codes are worth learning because they tell you whether a process is healthy: `R` means running or runnable — on the CPU or waiting its turn; `S` means interruptible sleep, the normal state of a process waiting for something such as a network packet or a keystroke, and almost everything on a quiet system is in `S`; `D` is uninterruptible sleep, which usually means blocked on disk or network I/O; `T` means stopped, which is what `Ctrl+Z` leaves behind; and `Z` means zombie, a process that has finished but whose parent has not yet collected its exit status.
 
 `START` is the time the process began, `TIME` is cumulative CPU time and `COMMAND` is the command line — with the additional detail that a command wrapped in square brackets at the start is a kernel thread rather than a user process, which is why `[kthreadd]` has no memory and no terminal.
+
+Where `ps` lists processes as rows, `pstree` draws them as a tree, which makes parentage obvious: every daemon that starts workers, and every shell that spawns children, appears as a branch rather than as two rows far apart. Adding `-p` prints each process's PID alongside its name:
+
+```bash
+pstree -p
+```
+
+**Output:**
+
+```text
+systemd(1)─┬─NetworkManager(645)─┬─{NetworkManager}(662)
+           │                     └─{NetworkManager}(663)
+           ├─apache2(3312)─┬─apache2(3313)
+           │               └─apache2(3314)
+           ├─cron(918)
+           ├─sshd(812)───sshd(3901)───bash(4122)───pstree(4402)
+           └─systemd-resolve(712)───{systemd-resolve}(714)
+```
+
+Every process sits under the one that started it, and the braces (`{...}`) mark threads rather than processes — the workers of NetworkManager and systemd-resolved are drawn that way because they share the PID of their leader. The line for `sshd` is the clearest illustration of the whole model: the daemon `sshd(812)` accepted a connection, forked a child `sshd(3901)` to handle it, and that child started the shell `bash(4122)` in which `pstree` itself is running.
 
 <details>
 <summary><strong>Read more</strong> — reading <code>STAT</code>, and the variations worth keeping</summary>
@@ -772,6 +900,29 @@ The five header lines summarise the whole machine and are worth reading before t
 Below the header comes the process list, which repeats several `ps` columns with two additions: `PR`, the kernel's priority, and `NI`, the nice value discussed in the next subsection.
 
 `top` is interactive, and half a dozen keys carry most of its value.
+
+If you would rather have colour, mouse support and scrollable columns, install `htop`, which presents the same information as `top` in a friendlier layout and adds a per-core percentage scale that many people find easier to read:
+
+```bash
+htop
+```
+
+**Output:**
+
+```text
+    0[|||||              35.0%]   Tasks: 87, 214 thr; 1 running
+    1[|||                21.4%]   Load average: 0.42 0.31 0.24
+  Mem[||||######     2.41G/3.82G]   Uptime: 00:55:12
+  Swp[                   0K/2.00G]
+
+  PID USER      PRI  NI  VIRT   RES  S CPU% MEM%   TIME+  Command
+ 1204 www-data   20   0 3233M 86.1M S  4.3  2.2  0:06.42 python3 /opt/portal/app.py
+ 1044 root       20   0  234M 33.4M S  0.7  0.9  0:01.19 /usr/lib/snapd/snapd
+ 5210 root       20   0  598M  194M S  0.3  5.0  0:02.11 ruby /usr/bin/msfconsole -q
+    1 root       20   0  164M 12.7M S  0.0  0.6  0:04.33 /sbin/init splash
+```
+
+The header is the same information as `top`'s — per-core CPU bars, the load average, and memory and swap — and each process row repeats the fields you already know, with `CPU%` and `MEM%` on the same 100-per-cent scale. The keys are also familiar: `F6` chooses the sort column, `F9` sends a signal, `F10` quits, and `htop -u www-data` starts it filtered to one user, which is a quick way to watch a single service.
 
 <details>
 <summary><strong>Read more</strong> — reading the header, and the keys that matter</summary>
@@ -1105,6 +1256,28 @@ The first line is a warning rather than a complaint, and it is worth heeding: `a
 
 The queue of pending jobs is managed with three short commands: `atq` lists them, `at -c <job>` prints the entire environment and command that a scheduled job will run — the definitive way to debug one that misbehaves — and `atrm <job>` removes it.
 
+The service behind `at` is a daemon called `atd`, and on a minimal system it may not be running — which is the classic reason a job is accepted but never fires. The service manager reports both whether it is running now and whether it will start at boot:
+
+```bash
+systemctl status atd
+```
+
+**Output:**
+
+```text
+● atd.service - Debian atd, a job scheduler daemon
+     Loaded: loaded (/lib/systemd/system/atd.service; enabled; vendor preset: enabled)
+     Active: active (running) since Tue 2026-10-13 09:41:02 UTC; 1h 12min ago
+   Main PID: 733 (atd)
+      Tasks: 1 (limit: 2261)
+     Memory: 1.1M
+        CPU: 12ms
+     CGroup: /system.slice/atd.service
+             └─733 /usr/sbin/atd -f
+```
+
+Reading the same two fields as everywhere else: `Loaded … enabled` means `atd` starts at boot, and `Active: active (running)` means it is alive right now, with `Main PID 733 (atd)` naming the process. If `Active` read `inactive (dead)`, you would run `systemctl enable --now atd` to start it immediately and at every boot.
+
 For jobs that should run **repeatedly** — every night, every hour, every Monday — the tool is `cron` rather than `at`, and the difference is worth stating plainly: `at` is for one-offs, `cron` is for recurrence. A user's scheduled jobs live in a crontab, edited with `crontab -e`, and each line contains five time fields followed by the command to run:
 
 ```bash
@@ -1139,6 +1312,8 @@ Defensively, `cron` is a classic persistence mechanism, so anything scheduled th
 ---
 
 ## 3. User environment variables
+
+> **Concept.** Every process carries an *environment block* — a private array of `NAME=value` strings that the kernel copies into a child when it is created by `fork`/`exec` — so environment variables flow down the process tree and never back up. A shell variable stays inside the shell that defined it, and `export` is what marks it for inclusion in the environment of children; this is why a value set with `HISTSIZE=0` is invisible to another program until it is exported, and why `env` and `printenv` show only the exported set. The environment decides concrete behaviour: `PATH` is the ordered, colon-separated list of directories searched for a bare command name (POSIX), and `EDITOR`/`VISUAL` choose the editor that tools such as `crontab -e` and `visudo` launch. Because a child inherits its parent's environment without re-checking it, a writable directory early in `PATH` or an attacker-controlled `LD_PRELOAD` is a classic privilege-escalation vector — an environment variable is trusted input, and trusted input is where least privilege [Saltzer & Schroeder] must be enforced.
 
 Variables are simply named values — key-value pairs held by a running shell — and understanding them is a must for getting the most out of a Linux system, because a great deal of what the shell and the programs it launches consider to be "the environment" is nothing more than a list of them. There are two families, and the distinction matters: a **shell variable** exists only inside the shell that created it, while an **environment variable** has been *exported*, which means it is copied into the environment of every child process.
 
@@ -1476,6 +1651,11 @@ Taken together, the three topics of this part — networks, processes and the en
 | `cat /etc/resolv.conf` | shows the resolvers in use | `cat /etc/resolv.conf` |
 | `echo "nameserver 1.1.1.1" > /etc/resolv.conf` | changes the resolver (may be overwritten) | as shown |
 | `getent hosts <name>` | resolves a name the way applications do | `getent hosts portal.example.com` |
+| `ip neigh` | shows the ARP/neighbour cache | `ip neigh` |
+| `ss -tulpn` | lists listening TCP/UDP sockets and their processes | `ss -tulpn` |
+| `traceroute <host>` | prints the router-by-router path to a host | `traceroute example.com` |
+| `mtr --report <host>` | path plus per-hop loss and latency statistics | `mtr --report example.com` |
+| `nslookup <name>` | quick DNS lookup and interactive query mode | `nslookup example.com` |
 
 ### Processes
 
@@ -1499,6 +1679,9 @@ Taken together, the three topics of this part — networks, processes and the en
 | `at 9:00pm` | schedules a one-off job (end with Ctrl+D) | `at now + 10 minutes` |
 | `atq` / `atrm <job>` | lists / removes scheduled `at` jobs | `atq` |
 | `crontab -e` / `crontab -l` | edits / lists recurring jobs | `crontab -l` |
+| `pstree -p` | draws the process tree with PIDs | `pstree -p` |
+| `htop` | interactive process viewer with colour and mouse | `htop` |
+| `systemctl status <unit>` | running state and boot state of a service | `systemctl status atd` |
 
 ### Environment variables
 
