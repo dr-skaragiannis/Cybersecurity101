@@ -79,21 +79,29 @@ uid=1000(student) gid=1000(student) groups=1000(student),27(sudo)
 
 ```bash
 id
-sudo ss -tulpn
 ```
 
 **Έξοδος:**
 
 ```text
 uid=1000(admin) gid=1000(admin) groups=1000(admin)
+```
+
+Η `id` επιβεβαιώνει τον τρέχοντα χρήστη και τις ομάδες του, δηλαδή αν κατέχετε πραγματικά τα administrative δικαιώματα που προϋποθέτει ο οδηγός.
+
+```bash
+sudo ss -tulpn
+```
+
+**Έξοδος:**
+
+```text
 Netid State  Local Address:Port  Process
 LISTEN 0      128    0.0.0.0:22   users:(('sshd',pid=742,fd=3))
 LISTEN 0      128    0.0.0.0:80   users:(('apache2',pid=911,fd=4))
 ```
 
-Η `id` επιβεβαιώνει τον τρέχοντα χρήστη και τις ομάδες του. Η `ss` εμφανίζει listening TCP και UDP sockets.
-
-Στο παράδειγμα, το SSH ακούει στη θύρα 22 και το HTTP στη θύρα 80. Το inventory αυτό πρέπει να καθοδηγεί τους κανόνες· δεν πρέπει να επιτρέπετε μηχανικά κάθε υπηρεσία που εντοπίζετε.
+Η `ss -tulpn` εμφανίζει τις listening TCP και UDP υποδοχές μαζί με τη διεργασία που κατέχει καθεμία. Εδώ το SSH ακούει στη θύρα 22 και το HTTP στη θύρα 80· το inventory αυτό πρέπει να καθοδηγεί τους κανόνες, γι' αυτό μην επιτρέπετε μηχανικά κάθε υπηρεσία που εντοπίζετε.
 
 <details>
 <summary><strong>Περισσότερα</strong> — ανάγνωση της εξόδου <code>ss</code> και αποφυγή αποκλεισμού</summary>
@@ -112,6 +120,19 @@ LISTEN 0      128    0.0.0.0:80   users:(('apache2',pid=911,fd=4))
 
 ```bash
 sudo apt update
+```
+
+**Έξοδος:**
+
+```text
+Reading package lists... Done
+Building dependency tree... Done
+All packages are up to date.
+```
+
+Η `apt update` ανανεώνει το τοπικό ευρετήριο των διαθέσιμων πακέτων από τα ρυθμισμένα repositories· δεν εγκαθιστά ούτε αναβαθμίζει τίποτα.
+
+```bash
 sudo apt install ufw
 ```
 
@@ -125,9 +146,7 @@ The following NEW packages will be installed:
 Setting up ufw ...
 ```
 
-Η `apt update` ανανεώνει τα metadata των πακέτων. Η `apt install ufw` εγκαθιστά το εργαλείο και τα υποστηρικτικά αρχεία.
-
-Η ακριβής έξοδος διαφέρει ανάλογα με τη διανομή και την έκδοση πακέτου. Εξετάζετε πάντα τυχόν prompts πριν επιβεβαιώσετε αλλαγές.
+Η `apt install ufw` κατεβάζει και εγκαθιστά το εργαλείο διαχείρισης firewall και τα υποστηρικτικά αρχεία. Η ακριβής έξοδος διαφέρει ανά διανομή και έκδοση πακέτου, οπότε εξετάζετε πάντα τυχόν prompts πριν επιβεβαιώσετε αλλαγές.
 
 Ελέγξτε την αρχική κατάσταση:
 
@@ -162,19 +181,27 @@ Status: inactive
 
 ```bash
 sudo ufw default deny incoming
-sudo ufw default allow outgoing
 ```
 
 **Έξοδος:**
 
 ```text
 Default incoming policy changed to 'deny'
+```
+
+Η incoming policy ελέγχει νέες συνδέσεις προς τον server· θέτοντάς την σε `deny` απορρίπτετε εξ ορισμού την ανεπιθύμητη κίνηση.
+
+```bash
+sudo ufw default allow outgoing
+```
+
+**Έξοδος:**
+
+```text
 Default outgoing policy changed to 'allow'
 ```
 
-Η incoming policy ελέγχει νέες συνδέσεις προς τον server. Η outgoing policy ελέγχει συνδέσεις που ξεκινούν από τον server.
-
-Οι προεπιλογές δεν αντικαθιστούν τους ειδικούς κανόνες υπηρεσιών και δεν μπλοκάρουν απαραίτητα κίνηση που ανήκει σε ήδη εδραιωμένη σύνδεση.
+Η outgoing policy ελέγχει συνδέσεις που ξεκινά ο server, οι οποίες συνήθως χρειάζονται για ενημερώσεις, DNS και συγχρονισμό ώρας. Οι προεπιλογές δεν αντικαθιστούν τους ειδικούς κανόνες υπηρεσιών και δεν μπλοκάρουν απαραίτητα κίνηση που ανήκει σε ήδη εδραιωμένη σύνδεση.
 
 <details>
 <summary><strong>Περισσότερα</strong> — γιατί το «deny incoming, allow outgoing» είναι το συνηθισμένο σημείο εκκίνησης</summary>
@@ -407,14 +434,25 @@ Rule deleted
 
 ## 10. Απόρριψη IP ή subnet
 
-Για να μπλοκάρετε διεύθυνση ή subnet:
+Για να μπλοκάρετε διεύθυνση πηγής:
 
 ```bash
 sudo ufw deny from 192.168.1.1
+```
+
+**Έξοδος:**
+
+```text
+Rule added
+```
+
+Για να μπλοκάρετε subnet:
+
+```bash
 sudo ufw deny from 192.168.1.0/24
 ```
 
-Κάθε εντολή προσθέτει κανόνα απόρριψης για την αντίστοιχη πηγή. Οι ευρείες αρνήσεις μπορεί να μπλοκάρουν administrators, monitoring ή health checks. Προτιμήστε ακριβείς κανόνες και καταγράψτε τον λόγο ύπαρξης κάθε deny.
+Ένας κανόνας `deny` απορρίπτει την ταιριαστή κίνηση. Οι ευρείες αρνήσεις μπορεί να μπλοκάρουν administrators, monitoring ή health checks. Προτιμήστε ακριβείς κανόνες και καταγράψτε τον λόγο ύπαρξης κάθε deny.
 
 Για αφαίρεση:
 
@@ -427,6 +465,8 @@ sudo ufw delete deny from 192.168.1.1
 ```text
 Rule deleted
 ```
+
+Η διαγραφή αντιστοιχεί στους όρους του αρχικού κανόνα· αν ο κανόνας περιλάμβανε θύρα ή πρωτόκολλο, η αντίστοιχη εντολή πρέπει να τα περιλαμβάνει επίσης. Ελέγξτε ξανά την αριθμημένη λίστα πριν από την επόμενη αλλαγή.
 
 <details>
 <summary><strong>Περισσότερα</strong> — deny έναντι reject, και γιατί το μπλοκ είναι τελευταία λύση</summary>
@@ -462,7 +502,6 @@ Firewall is active and enabled on system startup
 
 ```bash
 sudo ufw status verbose
-sudo ufw show added
 ```
 
 **Έξοδος:**
@@ -481,9 +520,22 @@ To                         Action      From
 22/tcp (v6)                ALLOW IN    Anywhere (v6)
 ```
 
-Η verbose κατάσταση εμφανίζει ενεργοποίηση, logging, default policies και κανόνες. Το `show added` δείχνει κανόνες που προστέθηκαν μέσω UFW.
+Η `status verbose` εμφανίζει αν το UFW είναι ενεργό, την κατάσταση logging, τις default policies και τους ενεργούς κανόνες. Οι IPv6 εγγραφές είναι σημαντικές όταν ο server έχει IPv6, διαφορετικά η αξιολόγηση μόνο IPv4 μπορεί να δώσει ψευδή αίσθηση κάλυψης.
 
-Οι IPv6 εγγραφές είναι σημαντικές όταν ο server έχει IPv6, διαφορετικά η αξιολόγηση μόνο IPv4 μπορεί να δώσει ψευδή αίσθηση κάλυψης.
+```bash
+sudo ufw show added
+```
+
+**Έξοδος:**
+
+```text
+Added user rules (see 'ufw status' for running firewall rules):
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+```
+
+Το `show added` παραθέτει ακριβώς τους κανόνες που εισήχθησαν μέσω εντολών `ufw`, χρήσιμο για επισκόπηση ή αναδημιουργία της πολιτικής σας αργότερα.
 
 <details>
 <summary><strong>Περισσότερα</strong> — ανάγνωση της επικεφαλίδας verbose, γραμμή προς γραμμή</summary>
@@ -502,18 +554,28 @@ To                         Action      From
 
 ```bash
 sudo ufw logging medium
-sudo ufw status verbose
 ```
 
 **Έξοδος:**
 
 ```text
 Logging enabled
+```
+
+Η εντολή θέτει το επίπεδο logging του firewall· το `medium` καταγράφει αρκετή λεπτομέρεια για να ερευνήσετε απορριφθείσα κίνηση χωρίς να πλημμυρίζει το log.
+
+```bash
+sudo ufw status verbose
+```
+
+**Έξοδος:**
+
+```text
 Status: active
 Logging: on (medium)
 ```
 
-Τα επίπεδα logging καθορίζουν πόσες πληροφορίες firewall καταγράφονται. Περισσότερο logging βοηθά στη διάγνωση αλλά αυξάνει τον όγκο των logs.
+Η γραμμή κατάστασης επιβεβαιώνει ότι το νέο επίπεδο ισχύει. Περισσότερο logging βοηθά στη διάγνωση αλλά αυξάνει τον όγκο των logs, οπότε κρατήστε το επίπεδο όσο χαμηλό επιτρέπει η έρευνα.
 
 Εξετάστε τα firewall και kernel logs με το σύστημα καταγραφής της διανομής σας, για παράδειγμα:
 
@@ -608,7 +670,17 @@ Backing up 'user.rules' to '/etc/ufw/user.rules.20261008_190000'
 
 ```bash
 sudo cp -a /etc/ufw/before.rules /etc/ufw/before.rules.backup
+```
+
+Η `cp -a` αντιγράφει το αρχείο διατηρώντας τα χαρακτηριστικά του· στο Linux μια επιτυχημένη αντιγραφή δεν εκτυπώνει τίποτα, οπότε η σιωπή εδώ είναι επιτυχία και το backup υπάρχει πλέον.
+
+```bash
 sudoedit /etc/ufw/before.rules
+```
+
+Το `sudoedit` ανοίγει το αρχείο στον editor σας με ασφαλέστερη ροή που δεν τρέχει τον editor ως root· αποθηκεύετε και βγαίνετε όπως συνήθως, και ένα συντακτικό λάθος εδώ μπορεί να εμποδίσει το UFW να φορτώσει.
+
+```bash
 sudo ufw reload
 ```
 
@@ -618,7 +690,7 @@ sudo ufw reload
 Firewall reloaded
 ```
 
-Το backup επιτρέπει ανάκτηση από συντακτικό ή λογικό λάθος. Το `sudoedit` ανοίγει το αρχείο με ασφαλέστερη ροή επεξεργασίας. Μετά την αλλαγή, το `ufw reload` ζητά από το UFW να φορτώσει τη νέα ρύθμιση.
+Το `ufw reload` ζητά από το UFW να φορτώσει την επεξεργασμένη ρύθμιση, και η γραμμή επιβεβαίωσης δείχνει ότι οι νέοι κανόνες ισχύουν.
 
 Δοκιμάστε μετά τόσο την επιθυμητή όσο και την ανεπιθύμητη κίνηση, και εξετάστε τη ρύθμιση IPv6 ξεχωριστά, γιατί οι κανόνες ICMP του IPv4 δεν περιγράφουν αυτόματα τη συμπεριφορά του IPv6.
 
@@ -639,8 +711,34 @@ Firewall reloaded
 
 ```bash
 sudo ufw status numbered
+```
+
+**Έξοδος:**
+
+```text
+Status: active
+
+     To                         Action      From
+[ 1] 22/tcp                     ALLOW IN    192.168.1.1
+[ 2] 80/tcp                     ALLOW IN    Anywhere
+[ 3] 443/tcp                    ALLOW IN    Anywhere
+```
+
+Το `status numbered` δείχνει τους ενεργούς κανόνες με τη θέση τους, ώστε να επιβεβαιώσετε ότι κάθε προοριζόμενη υπηρεσία επιτρέπεται από τη σωστή πηγή.
+
+```bash
 sudo ss -tulpn
 ```
+
+**Έξοδος:**
+
+```text
+Netid State  Local Address:Port  Process
+LISTEN 0      128    0.0.0.0:22   users:(('sshd',pid=742,fd=3))
+LISTEN 0      128    0.0.0.0:80   users:(('apache2',pid=911,fd=4))
+```
+
+Η εντολή inventory της ενότητας 2 επαναλαμβάνεται εδώ, γιατί η πολιτική και οι listening υποδοχές πρέπει να διαβάζονται δίπλα-δίπλα.
 
 Επιβεβαιώστε ότι:
 

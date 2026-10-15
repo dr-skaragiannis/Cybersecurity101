@@ -79,21 +79,29 @@ A useful initial check is to confirm who you are and what is listening:
 
 ```bash
 id
-sudo ss -tulpn
 ```
 
 **Output:**
 
 ```text
 uid=1000(admin) gid=1000(admin) groups=1000(admin)
+```
+
+`id` confirms the current identity and group memberships, which tells you whether you actually hold the administrative rights this guide assumes.
+
+```bash
+sudo ss -tulpn
+```
+
+**Output:**
+
+```text
 Netid State  Local Address:Port  Process
 LISTEN 0      128    0.0.0.0:22   users:(('sshd',pid=742,fd=3))
 LISTEN 0      128    0.0.0.0:80   users:(('apache2',pid=911,fd=4))
 ```
 
-The `id` command confirms the current identity and groups. The `ss` command lists listening TCP and UDP sockets.
-
-In this example, SSH listens on port 22 and HTTP listens on port 80. This inventory should guide the firewall rules; do not blindly allow every discovered service.
+`ss -tulpn` lists the listening TCP and UDP sockets together with the process that owns each one. Here SSH listens on port 22 and HTTP on port 80; this inventory should guide the firewall rules, so do not blindly allow every discovered service.
 
 <details>
 <summary><strong>Read more</strong> — reading <code>ss</code> output and avoiding a lockout</summary>
@@ -112,6 +120,19 @@ On a Debian-based system, refresh package metadata and install UFW:
 
 ```bash
 sudo apt update
+```
+
+**Output:**
+
+```text
+Reading package lists... Done
+Building dependency tree... Done
+All packages are up to date.
+```
+
+`apt update` refreshes the local index of available packages from the configured repositories; it does not install or upgrade anything.
+
+```bash
 sudo apt install ufw
 ```
 
@@ -125,9 +146,7 @@ The following NEW packages will be installed:
 Setting up ufw ...
 ```
 
-`apt update` downloads current package metadata. `apt install ufw` installs the firewall management utility and its supporting files.
-
-The exact output varies by distribution and package version. Review package prompts carefully rather than accepting unexpected changes automatically.
+`apt install ufw` downloads and installs the firewall management utility and its supporting files. The exact output varies by distribution and package version, so review package prompts carefully rather than accepting unexpected changes automatically.
 
 Check the initial state:
 
@@ -162,19 +181,27 @@ Before enabling UFW, choose default policies. A common server baseline denies un
 
 ```bash
 sudo ufw default deny incoming
-sudo ufw default allow outgoing
 ```
 
 **Output:**
 
 ```text
 Default incoming policy changed to 'deny'
+```
+
+The incoming policy controls new connections initiated toward the server; setting it to `deny` refuses unsolicited traffic by default.
+
+```bash
+sudo ufw default allow outgoing
+```
+
+**Output:**
+
+```text
 Default outgoing policy changed to 'allow'
 ```
 
-The incoming policy controls new connections initiated toward the server. The outgoing policy controls connections initiated by the server.
-
-These defaults do not replace specific service rules, and they do not necessarily block traffic that belongs to an already established connection.
+The outgoing policy controls connections initiated by the server, which are normally needed for updates, DNS, and time synchronisation. These defaults do not replace specific service rules, and they do not necessarily block traffic that belongs to an already established connection.
 
 <details>
 <summary><strong>Read more</strong> — why deny-incoming and allow-outgoing is the usual starting point</summary>
@@ -441,6 +468,8 @@ sudo ufw delete deny from 192.168.1.1
 Rule deleted
 ```
 
+The deletion mirrors the terms of the original rule; if the rule included a port or protocol, the matching command must include them too. Review the numbered list again before the next change.
+
 <details>
 <summary><strong>Read more</strong> — deny versus reject, and why a block is a last resort</summary>
 
@@ -475,7 +504,6 @@ Review the complete configuration:
 
 ```bash
 sudo ufw status verbose
-sudo ufw show added
 ```
 
 **Output:**
@@ -494,9 +522,22 @@ To                         Action      From
 22/tcp (v6)                ALLOW IN    Anywhere (v6)
 ```
 
-The verbose status displays whether UFW is active, logging state, default policies, and configured rules. `show added` displays rules entered through UFW commands.
+`status verbose` displays whether UFW is active, the logging state, the default policies, and the running rules. The IPv6 entries matter when the server has IPv6 connectivity; otherwise an IPv4-only review may give a false sense of coverage.
 
-The IPv6 entries are important when the server has IPv6 connectivity; otherwise an IPv4-only review may give a false sense of coverage.
+```bash
+sudo ufw show added
+```
+
+**Output:**
+
+```text
+Added user rules (see 'ufw status' for running firewall rules):
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+```
+
+`show added` lists exactly the rules entered through `ufw` commands, which is handy for reviewing or recreating your policy later.
 
 <details>
 <summary><strong>Read more</strong> — reading the verbose header line by line</summary>
@@ -515,18 +556,28 @@ Enable moderate logging when you need visibility into blocked traffic:
 
 ```bash
 sudo ufw logging medium
-sudo ufw status verbose
 ```
 
 **Output:**
 
 ```text
 Logging enabled
+```
+
+The command sets the firewall logging level; `medium` records enough detail to investigate blocked traffic without flooding the log.
+
+```bash
+sudo ufw status verbose
+```
+
+**Output:**
+
+```text
 Status: active
 Logging: on (medium)
 ```
 
-Logging levels affect the amount of firewall event information recorded. More logging can help troubleshooting but may increase log volume.
+The status line confirms the new level took effect. More logging can help troubleshooting but increases log volume, so keep the level as low as the investigation allows.
 
 Review the system's firewall and kernel logs using the logging system used by your distribution, for example:
 
@@ -621,7 +672,17 @@ If a documented policy requires changing pre-routing or pre-input ICMP behavior,
 
 ```bash
 sudo cp -a /etc/ufw/before.rules /etc/ufw/before.rules.backup
+```
+
+`cp -a` copies the file while preserving its attributes; on Linux a successful copy prints nothing, so the silence here is success and the backup now exists.
+
+```bash
 sudoedit /etc/ufw/before.rules
+```
+
+`sudoedit` opens the file in your editor through a safer workflow that does not run the editor as root; you save and exit as usual, and any syntax error here can stop UFW from loading.
+
+```bash
 sudo ufw reload
 ```
 
@@ -631,7 +692,7 @@ sudo ufw reload
 Firewall reloaded
 ```
 
-The backup allows recovery from a syntax or policy mistake. `sudoedit` opens the file through a safer editing workflow. After editing, `ufw reload` asks UFW to load the new configuration.
+`ufw reload` asks UFW to load the edited configuration, and the confirmation line shows the new rules are in effect.
 
 Test both intended and unintended traffic afterward, and consider IPv6 configuration separately because IPv4 ICMP rules do not automatically describe IPv6 behavior.
 
@@ -652,8 +713,34 @@ After configuration, validate from an authorized management host and from the se
 
 ```bash
 sudo ufw status numbered
+```
+
+**Output:**
+
+```text
+Status: active
+
+     To                         Action      From
+[ 1] 22/tcp                     ALLOW IN    192.168.1.1
+[ 2] 80/tcp                     ALLOW IN    Anywhere
+[ 3] 443/tcp                    ALLOW IN    Anywhere
+```
+
+`status numbered` shows the running rules with their position, so you can confirm each intended service is allowed from the intended source.
+
+```bash
 sudo ss -tulpn
 ```
+
+**Output:**
+
+```text
+Netid State  Local Address:Port  Process
+LISTEN 0      128    0.0.0.0:22   users:(('sshd',pid=742,fd=3))
+LISTEN 0      128    0.0.0.0:80   users:(('apache2',pid=911,fd=4))
+```
+
+The inventory command from section 2 is repeated here, because the policy and the listening sockets must be read side by side.
 
 Confirm that:
 

@@ -249,23 +249,31 @@ In production, that combination is a critical exposure whenever port 21 is reach
 
 ### 3.4 Creating the anonymous directory and marker file
 
-The anonymous FTP user maps to the local `ftp` account. The lab creates a conventional public subdirectory and seeds it with a small retrieval marker:
+The anonymous FTP user maps to the local `ftp` account. Create the conventional public subdirectory:
 
 ```bash
 mkdir -p /var/ftp/pub
 ```
 
+Give that directory the conventional unprivileged owner so anonymous activity does not land as root:
+
 ```bash
 chown nobody:nogroup /var/ftp/pub
 ```
+
+Change into it so the next command writes to the right place:
 
 ```bash
 cd /var/ftp/pub
 ```
 
+Seed a small retrieval marker whose bytes can be verified after download:
+
 ```bash
 echo "Lab FTP retrieval marker" > note.txt
 ```
+
+Confirm the file is present with the expected size and permissions:
 
 ```bash
 ls -l
@@ -277,6 +285,8 @@ ls -l
 total 4
 -rw-r--r-- 1 root root 25 Feb 10 12:01 note.txt
 ```
+
+The listing shows a 25-byte file readable by every account. Read it back locally to record the expected contents:
 
 ```bash
 cat note.txt
@@ -337,9 +347,13 @@ Restart the daemon to apply the configuration:
 service vsftpd restart
 ```
 
+Return to the home directory so the verification commands run from a predictable location:
+
 ```bash
 cd ~
 ```
+
+Confirm the daemon is bound to the expected port:
 
 ```bash
 ss -tlnp | grep ':21'
@@ -350,6 +364,8 @@ ss -tlnp | grep ':21'
 ```text
 LISTEN 0      32                 *:21              *:*    users:(("vsftpd",pid=1842,fd=3))
 ```
+
+The socket is bound to port 21. Now confirm the service is healthy and loaded the edited configuration:
 
 ```bash
 systemctl status vsftpd --no-pager
@@ -429,7 +445,7 @@ The `-A` option is noisy and slow compared with `-sV`, so it is best used after 
 
 ### 4.2 FTP session and file retrieval
 
-Connect as `anonymous`, inspect the share, enter `pub`, and download `note.txt`:
+Start the interactive client against the target; it prompts for a username and then opens the FTP command shell:
 
 ```bash
 ftp 192.168.1.9
@@ -444,28 +460,92 @@ Name (192.168.1.9:root): anonymous
 230 Login successful.
 Remote system type is UNIX.
 Using binary mode to transfer files.
-ftp> ls
+```
+
+The server greets with `220`, the client accepts the username `anonymous`, and the login is answered with `230 Login successful` — no password is requested. Binary mode is selected so file contents transfer byte for byte.
+
+List the anonymous root:
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 229 Entering Extended Passive Mode (|||40217|).
 150 Here comes the directory listing.
 drwxr-xr-x    2 ftp      ftp          4096 Feb 10 12:01 pub
 226 Directory send OK.
-ftp> cd pub
+```
+
+`229` announces a passive-mode data connection, `150` marks the start of the listing, `226` closes it, and the only entry is the `pub` directory.
+
+Enter that directory:
+
+```bash
+cd pub
+```
+
+**Output:**
+
+```text
 250 Directory successfully changed.
-ftp> ls
+```
+
+Code `250` confirms the working directory changed.
+
+List again, now inside `pub`:
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
 229 Entering Extended Passive Mode (|||40245|).
 150 Here comes the directory listing.
 -rw-r--r--    1 ftp      ftp            25 Feb 10 12:01 note.txt
 226 Directory send OK.
-ftp> get note.txt
+```
+
+A second passive data connection returns the marker file, `note.txt`, again 25 bytes.
+
+Download it over the data connection:
+
+```bash
+get note.txt
+```
+
+**Output:**
+
+```text
 local: note.txt remote: note.txt
 229 Entering Extended Passive Mode (|||40271|).
 150 Opening BINARY mode data connection for note.txt (25 bytes).
 100% |********************************|    25        0.01 KiB/s    00:00 ETA
 226 Transfer complete.
 25 bytes received in 0.00 secs (12.4 kB/s)
-ftp> bye
+```
+
+`150` opens the data connection and `226` reports a complete transfer of exactly 25 bytes, so retrieval succeeded without any credentials.
+
+Close the session:
+
+```bash
+bye
+```
+
+**Output:**
+
+```text
 221 Goodbye.
 ```
+
+`221 Goodbye` is the server acknowledging the session teardown.
+
+Confirm the retrieved bytes locally:
 
 ```bash
 cat note.txt
@@ -477,7 +557,7 @@ cat note.txt
 Lab FTP retrieval marker
 ```
 
-The session authenticates as `anonymous`, receives code `230` for successful login, lists the anonymous root, navigates into `pub`, and downloads the marker. The local `cat` confirms the retrieved bytes match what the server seeded.
+The local file matches the marker seeded on the server, completing the anonymous download round trip: the session authenticated as `anonymous`, received code `230`, listed the root, entered `pub`, and retrieved the file.
 
 <details>
 <summary><strong>Read more</strong> — passive mode, cleartext, and the masked owner</summary>
@@ -531,11 +611,13 @@ The daemon is ready to configure after installation, but it does not yet expose 
 
 ### 5.2 Inspecting the Samba configuration directory
 
-Move to the configuration directory and inspect its contents:
+Move to the configuration directory:
 
 ```bash
 cd /etc/samba/
 ```
+
+List its contents to see which files govern the daemon:
 
 ```bash
 ls -al
@@ -551,6 +633,8 @@ drwxr-xr-x 96 root root  4096 Feb 10 11:58 ..
 -rw-r--r--  1 root root  9831 Feb 10 11:59 smb.conf
 drwxr-xr-x  2 root root  4096 Feb 10 11:59 tls
 ```
+
+The listing shows the main configuration file, a debugging helper, and the TLS material directory. Open the main file for editing:
 
 ```bash
 nano smb.conf
@@ -621,11 +705,13 @@ Server role: ROLE_STANDALONE
 
 `testparm` parses the effective configuration and reports syntax or semantic problems. Its normalised output doubles as useful evidence: it shows the share path and writable state without requiring the reader to interpret every redundant directive in the source file.
 
-Restart the SMB daemon and confirm the expected listeners:
+Restart the SMB daemon to apply the configuration:
 
 ```bash
 systemctl restart smbd
 ```
+
+Confirm the daemon is listening on the traditional SMB ports:
 
 ```bash
 ss -tlnp | grep -E ':(139|445)'
@@ -637,6 +723,8 @@ ss -tlnp | grep -E ':(139|445)'
 LISTEN 0      50                 *:139             *:*    users:(("smbd",pid=2261,fd=34))
 LISTEN 0      50                 *:445             *:*    users:(("smbd",pid=2261,fd=33))
 ```
+
+Both sockets are bound. Return to the home directory:
 
 ```bash
 cd ~
@@ -655,15 +743,19 @@ Port 445 is the one that matters for modern clients — it carries SMB2/SMB3 dir
 
 ### 5.4 Seeding and inspecting the shared files
 
-Create a marker in the shared web directory and confirm its contents locally:
+Create a marker in the shared web directory:
 
 ```bash
 echo "Lab SMB retrieval marker" > /var/www/file.txt
 ```
 
+Enter that directory so the inspection below targets the shared files:
+
 ```bash
 cd /var/www/
 ```
+
+List the directory to confirm the marker sits alongside the normal web content:
 
 ```bash
 ls -l
@@ -677,6 +769,8 @@ total 12
 drwxr-xr-x 2 root root 4096 Feb 10 11:47 html
 ```
 
+The marker and the `html` directory share the same root. Read the marker back locally to record its bytes:
+
 ```bash
 cat file.txt
 ```
@@ -686,6 +780,8 @@ cat file.txt
 ```text
 Lab SMB retrieval marker
 ```
+
+Return to the home directory:
 
 ```bash
 cd ~
@@ -772,7 +868,7 @@ The trailing SMB1 messages are informative: the client attempts an obsolete dial
 
 ### 6.3 `smbclient` interactive retrieval
 
-Open the `shares` export without a password, list it, and retrieve the marker:
+Open the `shares` export without a password; `-N` suppresses the password prompt and drops you into the SMB command shell:
 
 ```bash
 smbclient //192.168.1.9/shares -N
@@ -782,17 +878,57 @@ smbclient //192.168.1.9/shares -N
 
 ```text
 Try "help" to get a list of possible commands.
-smb: \> ls
+```
+
+The client connects as a guest and prints its help hint, ready for commands.
+
+List the share contents:
+
+```bash
+ls
+```
+
+**Output:**
+
+```text
   .                                   D        0  Sat Oct 10 12:14:22 2026
   ..                                  D        0  Sat Oct 10 11:47:09 2026
   file.txt                            A       25  Sat Oct 10 12:14:22 2026
   html                                D        0  Sat Oct 10 11:47:09 2026
 
 		26632192 blocks of size 1024. 18874368 blocks available
-smb: \> get file.txt
-getting file \file.txt of size 25 as file.txt (1.2 KiloBytes/sec) (average 1.2 KiloBytes/sec)
-smb: \> exit
 ```
+
+Each entry carries an attribute: `D` marks a directory and `A` marks a normal file, so `file.txt` is a 25-byte file and `html` is a directory.
+
+Retrieve the marker:
+
+```bash
+get file.txt
+```
+
+**Output:**
+
+```text
+getting file \file.txt of size 25 as file.txt (1.2 KiloBytes/sec) (average 1.2 KiloBytes/sec)
+```
+
+The transfer reports the same 25-byte size the listing showed.
+
+Close the session:
+
+```bash
+exit
+```
+
+**Output:**
+
+```text
+```
+
+The session closes and returns to the local shell.
+
+Confirm the retrieved bytes locally:
 
 ```bash
 cat file.txt
@@ -804,7 +940,7 @@ cat file.txt
 Lab SMB retrieval marker
 ```
 
-The `A` attribute marks a normal file and `D` marks a directory, and the local `cat` proves that the retrieved bytes match the seeded marker.
+The local `cat` proves that the retrieved bytes match the seeded marker.
 
 <details>
 <summary><strong>Read more</strong> — the same session could also write</summary>
@@ -857,23 +993,31 @@ Five packages are installed, and the supporting ones are not optional — the se
 
 ### 7.2 Creating the export directory
 
-Create a public export directory, make it world-writable, and seed a marker file:
+Create a public export directory:
 
 ```bash
 mkdir -p /srv/nfs/public
 ```
 
+Make it world-writable so any client can write there:
+
 ```bash
 chmod 777 /srv/nfs/public
 ```
+
+Enter that directory so the next command writes to the right place:
 
 ```bash
 cd /srv/nfs/public
 ```
 
+Seed a marker file whose bytes can be verified after download:
+
 ```bash
 echo "Lab NFS retrieval marker" > data.txt
 ```
+
+Confirm the file is present with the expected size and permissions:
 
 ```bash
 ls -l
@@ -886,6 +1030,8 @@ total 4
 -rw-r--r-- 1 root root 25 Feb 10 12:20 data.txt
 ```
 
+The listing shows the 25-byte marker. Read it back locally to record the expected contents:
+
 ```bash
 cat data.txt
 ```
@@ -895,6 +1041,8 @@ cat data.txt
 ```text
 Lab NFS retrieval marker
 ```
+
+Return to the home directory:
 
 ```bash
 cd ~
@@ -936,11 +1084,13 @@ Use commas between options. A missing comma or an accidental space can change pa
 
 ### 7.4 Applying and verifying the export
 
-Reload the export table, inspect the effective export, restart the NFS server, and verify the listeners:
+Reload the export table:
 
 ```bash
 exportfs -a
 ```
+
+Display the effective export options to confirm the change is live:
 
 ```bash
 exportfs -v
@@ -953,9 +1103,13 @@ exportfs -v
 		*(rw,wdelay,no_root_squash,no_subtree_check,sec=sys,rw,insecure,no_root_squash,no_all_squash)
 ```
 
+The output still lists `no_root_squash`. Restart the user-space NFS services:
+
 ```bash
 systemctl restart nfs-kernel-server
 ```
+
+Then verify the RPC and NFS listeners:
 
 ```bash
 ss -tlnp | grep -E ':(111|2049)'
@@ -999,6 +1153,8 @@ showmount -e 192.168.1.9
 Export list for 192.168.1.9:
 /srv/nfs/public *
 ```
+
+The wildcard export is visible. Now confirm which RPC services expose it:
 
 ```bash
 rpcinfo -p 192.168.1.9 | head -12
@@ -1044,6 +1200,8 @@ nxc nfs 192.168.1.9 --enum-shares
 [+] NFS         192.168.1.9    2049   UBUNTU-LAB     /srv/nfs/public (rw, no_root_squash, root escape: True)
 ```
 
+The export is discovered. Now list its root without performing a local mount:
+
 ```bash
 nxc nfs 192.168.1.9 --share '/srv/nfs/public' --ls '/'
 ```
@@ -1082,6 +1240,8 @@ nxc nfs 192.168.1.9 --share /srv/nfs/public/ --get-file data.txt data.txt
 [+] NFS         192.168.1.9    2049   UBUNTU-LAB     File successfully downloaded to data.txt
 ```
 
+The file is on local disk. Read it back to confirm the retrieved bytes:
+
 ```bash
 cat data.txt
 ```
@@ -1105,15 +1265,19 @@ A downloaded copy can be hashed and archived as-is; a mounted filesystem, by con
 
 ### 8.4 Mounting the export with `mount -t nfs`
 
-A mount provides full filesystem semantics: `ls`, `find`, `grep`, `cp`, permission inspection, and execution against the remote export as if it were a local directory. Create a mount point and mount the export:
+A mount provides full filesystem semantics: `ls`, `find`, `grep`, `cp`, permission inspection, and execution against the remote export as if it were a local directory. Create a mount point:
 
 ```bash
 mkdir -p /tmp/nfs
 ```
 
+Mount the export onto it:
+
 ```bash
 mount -t nfs 192.168.1.9:/srv/nfs/public /tmp/nfs
 ```
+
+Inspect the mounted directory with full filesystem listing detail:
 
 ```bash
 ls -la /tmp/nfs
@@ -1127,6 +1291,8 @@ drwxrwxrwx  2 root root 4096 Feb 10 12:20 .
 drwxrwxrwt 14 root root 4096 Feb 10 12:24 ..
 -rw-r--r--  1 root root   25 Feb 10 12:20 data.txt
 ```
+
+The ownership and permissions match the server side. Read the marker through the mount:
 
 ```bash
 cat /tmp/nfs/data.txt
@@ -1154,6 +1320,8 @@ Unmount the export when finished:
 ```bash
 umount /tmp/nfs
 ```
+
+Confirm the mount point is now empty:
 
 ```bash
 ls /tmp/nfs

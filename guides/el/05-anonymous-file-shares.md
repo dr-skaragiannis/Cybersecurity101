@@ -249,23 +249,31 @@ anonymous_enable=YES
 
 ### 3.4 Δημιουργία του anonymous καταλόγου και του marker file
 
-Ο ανώνυμος χρήστης FTP αντιστοιχίζεται στον τοπικό λογαριασμό `ftp`. Το εργαστήριο δημιουργεί έναν συμβατικό public υποκατάλογο και τον αρχικοποιεί με ένα μικρό marker ανάκτησης:
+Ο ανώνυμος χρήστης FTP αντιστοιχίζεται στον τοπικό λογαριασμό `ftp`. Δημιουργήστε τον συμβατικό public υποκατάλογο:
 
 ```bash
 mkdir -p /var/ftp/pub
 ```
 
+Δώστε σε αυτόν τον κατάλογο τη συμβατική μη προνομιούχα ιδιοκτησία, ώστε η anonymous δραστηριότητα να μην καταλήγει ως root:
+
 ```bash
 chown nobody:nogroup /var/ftp/pub
 ```
+
+Μεταβείτε σε αυτόν, ώστε η επόμενη εντολή να γράψει στο σωστό σημείο:
 
 ```bash
 cd /var/ftp/pub
 ```
 
+Δημιουργήστε ένα μικρό marker ανάκτησης του οποίου τα bytes μπορούν να επαληθευτούν μετά τη λήψη:
+
 ```bash
 echo "Lab FTP retrieval marker" > note.txt
 ```
+
+Επιβεβαιώστε ότι το αρχείο υπάρχει με το αναμενόμενο μέγεθος και δικαιώματα:
 
 ```bash
 ls -l
@@ -277,6 +285,8 @@ ls -l
 total 4
 -rw-r--r-- 1 root root 25 Feb 10 12:01 note.txt
 ```
+
+Το listing δείχνει ένα αρχείο 25 byte αναγνώσιμο από κάθε λογαριασμό. Διαβάστε το τοπικά για να καταγράψετε τα αναμενόμενα περιεχόμενα:
 
 ```bash
 cat note.txt
@@ -337,9 +347,13 @@ pasv_max_port=50000
 service vsftpd restart
 ```
 
+Επιστρέψτε στον οικιακό κατάλογο, ώστε οι εντολές επαλήθευσης να εκτελεστούν από προβλέψιμη θέση:
+
 ```bash
 cd ~
 ```
+
+Επιβεβαιώστε ότι ο daemon είναι συνδεδεμένος στην αναμενόμενη θύρα:
 
 ```bash
 ss -tlnp | grep ':21'
@@ -350,6 +364,8 @@ ss -tlnp | grep ':21'
 ```text
 LISTEN 0      32                 *:21              *:*    users:(("vsftpd",pid=1842,fd=3))
 ```
+
+Η υποδοχή είναι δεσμευμένη στη θύρα 21. Τώρα επιβεβαιώστε ότι η υπηρεσία είναι υγιής και φόρτωσε το τροποποιημένο αρχείο ρυθμίσεων:
 
 ```bash
 systemctl status vsftpd --no-pager
@@ -429,7 +445,7 @@ Nmap done: 1 IP address (1 host up) scanned in 8.42 seconds
 
 ### 4.2 FTP session και ανάκτηση αρχείου
 
-Συνδεθείτε ως `anonymous`, ελέγξτε το share, μπείτε στο `pub` και κατεβάστε το `note.txt`:
+Ξεκινήστε τον διαδραστικό client κατά του στόχου· ζητά όνομα χρήστη και στη συνέχεια ανοίγει το κέλυφος εντολών FTP:
 
 ```bash
 ftp 192.168.1.9
@@ -444,28 +460,92 @@ Name (192.168.1.9:root): anonymous
 230 Login successful.
 Remote system type is UNIX.
 Using binary mode to transfer files.
-ftp> ls
+```
+
+Ο server χαιρετά με `220`, ο client δέχεται το όνομα χρήστη `anonymous`, και η σύνδεση απαντάται με `230 Login successful` — δεν ζητείται κωδικός. Επιλέγεται binary λειτουργία ώστε τα περιεχόμενα των αρχείων να μεταφέρονται byte προς byte.
+
+Κάντε listing της anonymous root:
+
+```bash
+ls
+```
+
+**Έξοδος:**
+
+```text
 229 Entering Extended Passive Mode (|||40217|).
 150 Here comes the directory listing.
 drwxr-xr-x    2 ftp      ftp          4096 Feb 10 12:01 pub
 226 Directory send OK.
-ftp> cd pub
+```
+
+Το `229` αναγγέλλει σύνδεση δεδομένων σε passive λειτουργία, το `150` σηματοδοτεί την έναρξη του listing, το `226` το κλείνει, και η μοναδική εγγραφή είναι ο κατάλογος `pub`.
+
+Μπείτε σε αυτόν τον κατάλογο:
+
+```bash
+cd pub
+```
+
+**Έξοδος:**
+
+```text
 250 Directory successfully changed.
-ftp> ls
+```
+
+Ο κωδικός `250` επιβεβαιώνει την αλλαγή του καταλόγου εργασίας.
+
+Κάντε ξανά listing, τώρα μέσα στο `pub`:
+
+```bash
+ls
+```
+
+**Έξοδος:**
+
+```text
 229 Entering Extended Passive Mode (|||40245|).
 150 Here comes the directory listing.
 -rw-r--r--    1 ftp      ftp            25 Feb 10 12:01 note.txt
 226 Directory send OK.
-ftp> get note.txt
+```
+
+Μια δεύτερη passive σύνδεση δεδομένων επιστρέφει το marker file, `note.txt`, και πάλι 25 byte.
+
+Κατεβάστε το μέσω της σύνδεσης δεδομένων:
+
+```bash
+get note.txt
+```
+
+**Έξοδος:**
+
+```text
 local: note.txt remote: note.txt
 229 Entering Extended Passive Mode (|||40271|).
 150 Opening BINARY mode data connection for note.txt (25 bytes).
 100% |********************************|    25        0.01 KiB/s    00:00 ETA
 226 Transfer complete.
 25 bytes received in 0.00 secs (12.4 kB/s)
-ftp> bye
+```
+
+Το `150` ανοίγει τη σύνδεση δεδομένων και το `226` αναφέρει ολοκληρωμένη μεταφορά ακριβώς 25 byte, άρα η ανάκτηση πέτυχε χωρίς κανένα διαπιστευτήριο.
+
+Κλείστε τη session:
+
+```bash
+bye
+```
+
+**Έξοδος:**
+
+```text
 221 Goodbye.
 ```
+
+Το `221 Goodbye` είναι η επιβεβαίωση του server για τον τερματισμό της session.
+
+Επιβεβαιώστε τοπικά τα bytes που ανακτήθηκαν:
 
 ```bash
 cat note.txt
@@ -477,7 +557,7 @@ cat note.txt
 Lab FTP retrieval marker
 ```
 
-Η session αυθεντικοποιείται ως `anonymous`, λαμβάνει κωδικό `230` για επιτυχή σύνδεση, κάνει listing της anonymous root, μεταβαίνει στο `pub` και κατεβάζει το marker. Το τοπικό `cat` επιβεβαιώνει ότι τα bytes που ανακτήθηκαν ταιριάζουν με αυτά που έσπειρε ο server.
+Το τοπικό αρχείο ταιριάζει με το marker που δημιουργήθηκε στον server, ολοκληρώνοντας τον κύκλο της anonymous λήψης: η session αυθεντικοποιήθηκε ως `anonymous`, έλαβε κωδικό `230`, έκανε listing της root, μπήκε στο `pub` και ανακτήθηκαν το αρχείο.
 
 <details>
 <summary><strong>Περισσότερα</strong> — η passive λειτουργία, το cleartext και το αποκρυμμένο ownership</summary>
@@ -531,11 +611,13 @@ Do you want to continue? [Y/n] y
 
 ### 5.2 Έλεγχος του καταλόγου ρυθμίσεων του Samba
 
-Μεταβείτε στον κατάλογο ρυθμίσεων και ελέγξτε τα περιεχόμενά του:
+Μεταβείτε στον κατάλογο ρυθμίσεων:
 
 ```bash
 cd /etc/samba/
 ```
+
+Κάντε listing των περιεχομένων του για να δείτε ποια αρχεία κυβερνούν τον daemon:
 
 ```bash
 ls -al
@@ -551,6 +633,8 @@ drwxr-xr-x 96 root root  4096 Feb 10 11:58 ..
 -rw-r--r--  1 root root  9831 Feb 10 11:59 smb.conf
 drwxr-xr-x  2 root root  4096 Feb 10 11:59 tls
 ```
+
+Το listing δείχνει το κύριο αρχείο ρυθμίσεων, ένα βοηθητικό εργαλείο debugging και τον κατάλογο υλικού TLS. Ανοίξτε το κύριο αρχείο για επεξεργασία:
 
 ```bash
 nano smb.conf
@@ -621,11 +705,13 @@ Server role: ROLE_STANDALONE
 
 Το `testparm` αναλύει την ισχύουσα ρύθμιση και αναφέρει συντακτικά ή σημασιολογικά προβλήματα. Η κανονικοποιημένη έξοδός του λειτουργεί διπλά και ως χρήσιμο στοιχείο: δείχνει τη διαδρομή του share και την writable κατάσταση χωρίς να απαιτεί από τον αναγνώστη να ερμηνεύσει κάθε περιττή εντολή του αρχείου προέλευσης.
 
-Κάντε restart στον SMB daemon και επιβεβαιώστε τους αναμενόμενους listeners:
+Κάντε restart στον SMB daemon για να εφαρμοστεί η ρύθμιση:
 
 ```bash
 systemctl restart smbd
 ```
+
+Επιβεβαιώστε ότι ο daemon ακούει στις παραδοσιακές θύρες SMB:
 
 ```bash
 ss -tlnp | grep -E ':(139|445)'
@@ -637,6 +723,8 @@ ss -tlnp | grep -E ':(139|445)'
 LISTEN 0      50                 *:139             *:*    users:(("smbd",pid=2261,fd=34))
 LISTEN 0      50                 *:445             *:*    users:(("smbd",pid=2261,fd=33))
 ```
+
+Και οι δύο υποδοχές είναι δεσμευμένες. Επιστρέψτε στον οικιακό κατάλογο:
 
 ```bash
 cd ~
@@ -655,15 +743,19 @@ cd ~
 
 ### 5.4 Δημιουργία και έλεγχος των κοινόχρηστων αρχείων
 
-Δημιουργήστε ένα marker στον κοινόχρηστο web κατάλογο και επιβεβαιώστε τοπικά τα περιεχόμενά του:
+Δημιουργήστε ένα marker στον κοινόχρηστο web κατάλογο:
 
 ```bash
 echo "Lab SMB retrieval marker" > /var/www/file.txt
 ```
 
+Μεταβείτε σε αυτόν τον κατάλογο, ώστε ο παρακάτω έλεγχος να στοχεύει τα κοινόχρηστα αρχεία:
+
 ```bash
 cd /var/www/
 ```
+
+Κάντε listing του καταλόγου για να επιβεβαιώσετε ότι το marker βρίσκεται δίπλα στο κανονικό web content:
 
 ```bash
 ls -l
@@ -677,6 +769,8 @@ total 12
 drwxr-xr-x 2 root root 4096 Feb 10 11:47 html
 ```
 
+Το marker και ο κατάλογος `html` μοιράζονται την ίδια ρίζα. Διαβάστε το marker τοπικά για να καταγράψετε τα bytes του:
+
 ```bash
 cat file.txt
 ```
@@ -686,6 +780,8 @@ cat file.txt
 ```text
 Lab SMB retrieval marker
 ```
+
+Επιστρέψτε στον οικιακό κατάλογο:
 
 ```bash
 cd ~
@@ -772,7 +868,7 @@ Unable to connect with SMB1 -- no workgroup available
 
 ### 6.3 Διαδραστική ανάκτηση με `smbclient`
 
-Ανοίξτε το export `shares` χωρίς κωδικό, κάντε listing και ανακτήστε το marker:
+Ανοίξτε το export `shares` χωρίς κωδικό· το `-N` καταστέλλει το prompt κωδικού και σας βάζει στο κέλυφος εντολών SMB:
 
 ```bash
 smbclient //192.168.1.9/shares -N
@@ -782,17 +878,57 @@ smbclient //192.168.1.9/shares -N
 
 ```text
 Try "help" to get a list of possible commands.
-smb: \> ls
+```
+
+Ο client συνδέεται ως guest και εκτυπώνει την υπόδειξη βοήθειας, έτοιμος για εντολές.
+
+Κάντε listing των περιεχομένων του share:
+
+```bash
+ls
+```
+
+**Έξοδος:**
+
+```text
   .                                   D        0  Sat Oct 10 12:14:22 2026
   ..                                  D        0  Sat Oct 10 11:47:09 2026
   file.txt                            A       25  Sat Oct 10 12:14:22 2026
   html                                D        0  Sat Oct 10 11:47:09 2026
 
 		26632192 blocks of size 1024. 18874368 blocks available
-smb: \> get file.txt
-getting file \file.txt of size 25 as file.txt (1.2 KiloBytes/sec) (average 1.2 KiloBytes/sec)
-smb: \> exit
 ```
+
+Κάθε εγγραφή φέρει ένα attribute: το `D` δηλώνει κατάλογο και το `A` δηλώνει κανονικό αρχείο, οπότε το `file.txt` είναι ένα αρχείο 25 byte και το `html` είναι κατάλογος.
+
+Ανακτήστε το marker:
+
+```bash
+get file.txt
+```
+
+**Έξοδος:**
+
+```text
+getting file \file.txt of size 25 as file.txt (1.2 KiloBytes/sec) (average 1.2 KiloBytes/sec)
+```
+
+Η μεταφορά αναφέρει το ίδιο μέγεθος 25 byte που έδειξε το listing.
+
+Κλείστε τη session:
+
+```bash
+exit
+```
+
+**Έξοδος:**
+
+```text
+```
+
+Η session κλείνει και επιστρέφει στο τοπικό κέλυφος.
+
+Επιβεβαιώστε τοπικά τα bytes που ανακτήθηκαν:
 
 ```bash
 cat file.txt
@@ -804,7 +940,7 @@ cat file.txt
 Lab SMB retrieval marker
 ```
 
-Το attribute `A` δηλώνει ένα κανονικό αρχείο και το `D` δηλώνει έναν κατάλογο, και το τοπικό `cat` αποδεικνύει ότι τα bytes που ανακτήθηκαν ταιριάζουν με το marker που δημιουργήθηκε.
+Το τοπικό `cat` αποδεικνύει ότι τα bytes που ανακτήθηκαν ταιριάζουν με το marker που δημιουργήθηκε.
 
 <details>
 <summary><strong>Περισσότερα</strong> — η ίδια session θα μπορούσε επίσης να γράφει</summary>
@@ -857,23 +993,31 @@ After this operation, 3,862 kB of additional disk space will be used.
 
 ### 7.2 Δημιουργία του καταλόγου export
 
-Δημιουργήστε έναν public κατάλογο export, κάντε τον world-writable και δημιουργήστε ένα marker file:
+Δημιουργήστε έναν public κατάλογο export:
 
 ```bash
 mkdir -p /srv/nfs/public
 ```
 
+Κάντε τον world-writable ώστε οποιοσδήποτε client να μπορεί να γράψει εκεί:
+
 ```bash
 chmod 777 /srv/nfs/public
 ```
+
+Μεταβείτε σε αυτόν τον κατάλογο, ώστε η επόμενη εντολή να γράψει στο σωστό σημείο:
 
 ```bash
 cd /srv/nfs/public
 ```
 
+Δημιουργήστε ένα marker file του οποίου τα bytes μπορούν να επαληθευτούν μετά τη λήψη:
+
 ```bash
 echo "Lab NFS retrieval marker" > data.txt
 ```
+
+Επιβεβαιώστε ότι το αρχείο υπάρχει με το αναμενόμενο μέγεθος και δικαιώματα:
 
 ```bash
 ls -l
@@ -886,6 +1030,8 @@ total 4
 -rw-r--r-- 1 root root 25 Feb 10 12:20 data.txt
 ```
 
+Το listing δείχνει το marker των 25 byte. Διαβάστε το τοπικά για να καταγράψετε τα αναμενόμενα περιεχόμενα:
+
 ```bash
 cat data.txt
 ```
@@ -895,6 +1041,8 @@ cat data.txt
 ```text
 Lab NFS retrieval marker
 ```
+
+Επιστρέψτε στον οικιακό κατάλογο:
 
 ```bash
 cd ~
@@ -936,11 +1084,13 @@ nano /etc/exports
 
 ### 7.4 Εφαρμογή και επαλήθευση του export
 
-Επαναφορτώστε τον πίνακα export, ελέγξτε το ισχύον export, κάντε restart στον NFS server και επαληθεύστε τους listeners:
+Επαναφορτώστε τον πίνακα export:
 
 ```bash
 exportfs -a
 ```
+
+Εμφανίστε τις ισχύουσες επιλογές export για να επιβεβαιώσετε ότι η αλλαγή είναι ενεργή:
 
 ```bash
 exportfs -v
@@ -953,9 +1103,13 @@ exportfs -v
 		*(rw,wdelay,no_root_squash,no_subtree_check,sec=sys,rw,insecure,no_root_squash,no_all_squash)
 ```
 
+Η έξοδος εξακολουθεί να αναφέρει το `no_root_squash`. Κάντε restart στις υπηρεσίες NFS του user space:
+
 ```bash
 systemctl restart nfs-kernel-server
 ```
+
+Έπειτα επαληθεύστε τους listeners RPC και NFS:
 
 ```bash
 ss -tlnp | grep -E ':(111|2049)'
@@ -999,6 +1153,8 @@ showmount -e 192.168.1.9
 Export list for 192.168.1.9:
 /srv/nfs/public *
 ```
+
+Το wildcard export είναι ορατό. Τώρα επιβεβαιώστε ποιες υπηρεσίες RPC το εκθέτουν:
 
 ```bash
 rpcinfo -p 192.168.1.9 | head -12
@@ -1044,6 +1200,8 @@ nxc nfs 192.168.1.9 --enum-shares
 [+] NFS         192.168.1.9    2049   UBUNTU-LAB     /srv/nfs/public (rw, no_root_squash, root escape: True)
 ```
 
+Το export ανακαλύπτεται. Τώρα κάντε listing της ρίζας του χωρίς τοπικό mount:
+
 ```bash
 nxc nfs 192.168.1.9 --share '/srv/nfs/public' --ls '/'
 ```
@@ -1082,6 +1240,8 @@ nxc nfs 192.168.1.9 --share /srv/nfs/public/ --get-file data.txt data.txt
 [+] NFS         192.168.1.9    2049   UBUNTU-LAB     File successfully downloaded to data.txt
 ```
 
+Το αρχείο βρίσκεται στον τοπικό δίσκο. Διαβάστε το ξανά για να επιβεβαιώσετε τα bytes που ανακτήθηκαν:
+
 ```bash
 cat data.txt
 ```
@@ -1105,15 +1265,19 @@ Lab NFS retrieval marker
 
 ### 8.4 Mounting του export με `mount -t nfs`
 
-Ένα mount παρέχει πλήρη σημασιολογία filesystem: `ls`, `find`, `grep`, `cp`, επιθεώρηση δικαιωμάτων και εκτέλεση πάνω στο απομακρυσμένο export σαν να ήταν τοπικός κατάλογος. Δημιουργήστε ένα mount point και κάντε mount το export:
+Ένα mount παρέχει πλήρη σημασιολογία filesystem: `ls`, `find`, `grep`, `cp`, επιθεώρηση δικαιωμάτων και εκτέλεση πάνω στο απομακρυσμένο export σαν να ήταν τοπικός κατάλογος. Δημιουργήστε ένα mount point:
 
 ```bash
 mkdir -p /tmp/nfs
 ```
 
+Κάντε mount το export πάνω του:
+
 ```bash
 mount -t nfs 192.168.1.9:/srv/nfs/public /tmp/nfs
 ```
+
+Επιθεωρήστε τον mounted κατάλογο με πλήρη λεπτομέρεια listing filesystem:
 
 ```bash
 ls -la /tmp/nfs
@@ -1127,6 +1291,8 @@ drwxrwxrwx  2 root root 4096 Feb 10 12:20 .
 drwxrwxrwt 14 root root 4096 Feb 10 12:24 ..
 -rw-r--r--  1 root root   25 Feb 10 12:20 data.txt
 ```
+
+Η ιδιοκτησία και τα δικαιώματα ταιριάζουν με την πλευρά του server. Διαβάστε το marker μέσω του mount:
 
 ```bash
 cat /tmp/nfs/data.txt
@@ -1154,6 +1320,8 @@ Lab NFS retrieval marker
 ```bash
 umount /tmp/nfs
 ```
+
+Επιβεβαιώστε ότι το mount point είναι τώρα κενό:
 
 ```bash
 ls /tmp/nfs
