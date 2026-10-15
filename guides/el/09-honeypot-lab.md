@@ -44,7 +44,7 @@ ip -brief address
 sudo ss -tulpn
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 PRETTY_NAME="Kali GNU/Linux Rolling"
@@ -63,7 +63,7 @@ sudo apt update
 sudo apt upgrade -y
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Hit:1 http://http.kali.org/kali kali-rolling InRelease
@@ -87,7 +87,7 @@ cd pentbox
 ruby --version
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Cloning into 'pentbox'...
@@ -105,7 +105,7 @@ sed -n '1,80p' pentbox.rb
 ruby pentbox.rb --help
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 ./LICENSE
@@ -125,7 +125,7 @@ Usage: pentbox.rb [options]
 sudo ss -ltnp '( sport = :8088 )'
 ```
 
-Αναμενόμενη έξοδος πριν ξεκινήσει το decoy:
+**Έξοδος (πριν ξεκινήσει το decoy):**
 
 ```text
 State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
@@ -133,7 +133,7 @@ State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
 
 Η κεφαλίδα χωρίς γραμμές δεδομένων σημαίνει ότι κανένα TCP process δεν ακούει στη θύρα 8088. Αν εμφανιστεί γραμμή, επιλέξτε άλλη θύρα ή σταματήστε το συγκρουόμενο lab service μόνο αν έχετε εξουσιοδότηση.
 
-Η τυπική menu-based ροή low-interaction εργαλείου μπορεί να μοιάζει με:
+**Έξοδος (τυπική ροή μενού):**
 
 ```text
 1) Network tools
@@ -153,7 +153,7 @@ Log path: ./other/log_honeypot.txt
 sudo ss -ltnp '( sport = :8088 )'
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
@@ -176,7 +176,7 @@ sudo ufw enable
 sudo ufw status numbered
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Status: active
@@ -197,7 +197,7 @@ Status: active
 nc -vz 192.168.56.20 8088
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Connection to 192.168.56.20 8088 port [tcp/*] succeeded!
@@ -211,7 +211,7 @@ Connection to 192.168.56.20 8088 port [tcp/*] succeeded!
 nc 192.168.56.20 8088
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Training decoy — access is monitored.
@@ -227,7 +227,7 @@ Training decoy — access is monitored.
 tail -F ./other/log_honeypot.txt
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 2026-10-08T20:25:14+03:00 connection source=192.168.56.30:49152 destination_port=8088
@@ -235,7 +235,7 @@ tail -F ./other/log_honeypot.txt
 
 Η `tail -F` συνεχίζει να παρακολουθεί το αρχείο ακόμη και αν γίνει rotate ή αναδημιουργηθεί. Το timestamp βοηθά στην ανακατασκευή γεγονότων. Η source IP και η ephemeral source port αναγνωρίζουν τον connecting test client, ενώ η `destination_port` αναφέρει την decoy service.
 
-Ένα console μήνυμα μπορεί να μοιάζει με:
+**Έξοδος:**
 
 ```text
 CONNECTION ATTEMPT DETECTED from 192.168.56.30:49152
@@ -249,7 +249,7 @@ CONNECTION ATTEMPT DETECTED from 192.168.56.30:49152
 tail -n 50 ./other/log_honeypot.txt
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 2026-10-08T20:25:14+03:00 connection source=192.168.56.30:49152 destination_port=8088
@@ -266,7 +266,7 @@ tail -n 50 ./other/log_honeypot.txt
 awk -F'source=' '/source=/{split($2,a,":"); print a[1]}' ./other/log_honeypot.txt | sort | uniq -c | sort -nr
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
       8 192.168.56.30
@@ -286,7 +286,7 @@ chmod 0640 ~/honeypot-evidence/*.txt
 sha256sum ~/honeypot-evidence/*.txt
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 c9a4...e17b  /home/analyst/honeypot-evidence/log_2026-10-08_202700.txt
@@ -302,7 +302,7 @@ c9a4...e17b  /home/analyst/honeypot-evidence/log_2026-10-08_202700.txt
 sudo ss -ltnp '( sport = :8088 )'
 ```
 
-Αναμενόμενη έξοδος:
+**Έξοδος:**
 
 ```text
 State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process

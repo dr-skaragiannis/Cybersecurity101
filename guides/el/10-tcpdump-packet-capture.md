@@ -38,7 +38,7 @@ sudo apt install -y tcpdump
 sudo tcpdump -D
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 1.eth0 [Up, Running]
@@ -53,7 +53,7 @@ tcpdump --version
 tcpdump --help | head -25
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 tcpdump version 4.x
@@ -71,7 +71,7 @@ Capture χωρίς όρια μπορεί να δημιουργήσει πολύ 
 sudo tcpdump -i eth0 -c 5
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
@@ -91,7 +91,7 @@ listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
 sudo tcpdump -i eth0 -c 3 -nn
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 20:33:01.100001 IP 192.168.56.30.53530 > 192.168.56.20.53: 1234+ A? example.test. (30)
@@ -103,7 +103,7 @@ sudo tcpdump -i eth0 -c 3 -nn
 sudo tcpdump -i eth0 -c 3 -q -nn
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 IP 192.168.56.30.49152 > 192.168.56.20.80: tcp 0
@@ -120,7 +120,7 @@ BPF filter τοποθετείται μετά από tcpdump options. Καταγ�
 sudo tcpdump -i eth0 -c 10 -nn icmp
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 20:34:10.000200 IP 192.168.56.30 > 192.168.56.20: ICMP echo request, id 4512, seq 1, length 64
@@ -133,7 +133,7 @@ sudo tcpdump -i eth0 -c 10 -nn icmp
 sudo tcpdump -i eth0 -c 10 -nn 'port 80'
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
@@ -170,7 +170,7 @@ sudo tcpdump -i eth0 -c 5 -nn -Q out
 sudo tcpdump -i eth0 -c 2 -nn -e
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 20:35:44.200001 08:00:27:aa:bb:01 > 08:00:27:aa:bb:20, ethertype IPv4 (0x0800), length 74: 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
@@ -188,7 +188,7 @@ sudo tcpdump -i eth0 -c 2 -nn -vv
 sudo tcpdump -i eth0 -c 2 -nn -vvv
 ```
 
-Πιο verbose packet μπορεί να εμφανίζεται ως:
+**Έξοδος (verbose packet):**
 
 ```text
 IP (tos 0x0, ttl 64, id 22301, offset 0, flags [DF], proto TCP (6), length 60)
@@ -214,7 +214,7 @@ sudo tcpdump -i eth0 -c 2 -nn -tttt
 sudo tcpdump -i eth0 -c 2 -nn -A 'tcp port 8080'
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 GET /health HTTP/1.1
@@ -228,7 +228,7 @@ User-Agent: lab-client/1.0
 sudo tcpdump -i eth0 -c 1 -nn -X 'tcp port 8080'
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 0x0000:  4500 0054 1a2b 4000 4006 ...
@@ -243,7 +243,7 @@ sudo tcpdump -i eth0 -c 1 -nn -X 'tcp port 8080'
 sudo tcpdump -i eth0 -c 2 -nn -s 96 'tcp port 8080'
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 96 bytes
@@ -259,7 +259,7 @@ tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 96 byte
 sudo tcpdump -i eth0 -nn -c 5 'tcp[tcpflags] & (tcp-syn|tcp-ack) == tcp-syn'
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], seq 125430, win 64240, length 0
@@ -271,7 +271,7 @@ IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], seq 125430, win 64240, len
 sudo tcpdump -i eth0 -nn -c 5 'tcp[tcpflags] & tcp-rst != 0'
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [R.], seq 1, ack 1, win 0, length 0
@@ -294,7 +294,7 @@ sudo tcpdump -i eth0 -c 100 -nn -w lab-web-test.pcap 'tcp port 8080'
 ls -lh lab-web-test.pcap
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 100 packets captured
@@ -307,7 +307,7 @@ ls -lh lab-web-test.pcap
 tcpdump -nn -r lab-web-test.pcap
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 reading from file lab-web-test.pcap, link-type EN10MB (Ethernet), snapshot length 262144

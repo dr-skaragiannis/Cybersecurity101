@@ -38,7 +38,7 @@ sudo apt install -y tcpdump
 sudo tcpdump -D
 ```
 
-Representative output:
+**Output:**
 
 ```text
 1.eth0 [Up, Running]
@@ -55,7 +55,7 @@ tcpdump --version
 tcpdump --help | head -25
 ```
 
-Example output:
+**Output:**
 
 ```text
 tcpdump version 4.x
@@ -73,7 +73,7 @@ Capturing without limits can create very large files or expose more data than ne
 sudo tcpdump -i eth0 -c 5
 ```
 
-Representative output:
+**Output:**
 
 ```text
 tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
@@ -93,7 +93,7 @@ By default, tcpdump may resolve addresses or service names. Disable name resolut
 sudo tcpdump -i eth0 -c 3 -nn
 ```
 
-Representative output:
+**Output:**
 
 ```text
 20:33:01.100001 IP 192.168.56.30.53530 > 192.168.56.20.53: 1234+ A? example.test. (30)
@@ -107,7 +107,7 @@ Use quick mode when a short flow summary is enough:
 sudo tcpdump -i eth0 -c 3 -q -nn
 ```
 
-Example output:
+**Output:**
 
 ```text
 IP 192.168.56.30.49152 > 192.168.56.20.80: tcp 0
@@ -124,7 +124,7 @@ A BPF filter is placed after tcpdump options. Capture ten ICMP packets on the se
 sudo tcpdump -i eth0 -c 10 -nn icmp
 ```
 
-Representative output:
+**Output:**
 
 ```text
 20:34:10.000200 IP 192.168.56.30 > 192.168.56.20: ICMP echo request, id 4512, seq 1, length 64
@@ -139,7 +139,7 @@ Capture traffic involving a web port:
 sudo tcpdump -i eth0 -c 10 -nn 'port 80'
 ```
 
-Example output:
+**Output:**
 
 ```text
 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
@@ -180,7 +180,7 @@ Include Ethernet-level headers:
 sudo tcpdump -i eth0 -c 2 -nn -e
 ```
 
-Representative output:
+**Output:**
 
 ```text
 20:35:44.200001 08:00:27:aa:bb:01 > 08:00:27:aa:bb:20, ethertype IPv4 (0x0800), length 74: 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], length 0
@@ -198,7 +198,7 @@ sudo tcpdump -i eth0 -c 2 -nn -vv
 sudo tcpdump -i eth0 -c 2 -nn -vvv
 ```
 
-A more verbose packet may look like:
+**Output (verbose packet):**
 
 ```text
 IP (tos 0x0, ttl 64, id 22301, offset 0, flags [DF], proto TCP (6), length 60)
@@ -226,7 +226,7 @@ Payload display can reveal plaintext application content and therefore requires 
 sudo tcpdump -i eth0 -c 2 -nn -A 'tcp port 8080'
 ```
 
-Representative output:
+**Output:**
 
 ```text
 GET /health HTTP/1.1
@@ -242,7 +242,7 @@ View packet bytes in hexadecimal and ASCII:
 sudo tcpdump -i eth0 -c 1 -nn -X 'tcp port 8080'
 ```
 
-Example output:
+**Output:**
 
 ```text
 0x0000:  4500 0054 1a2b 4000 4006 ...
@@ -257,7 +257,7 @@ The snapshot length limits how many bytes tcpdump retains from each packet. For 
 sudo tcpdump -i eth0 -c 2 -nn -s 96 'tcp port 8080'
 ```
 
-Representative output:
+**Output:**
 
 ```text
 tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 96 bytes
@@ -273,7 +273,7 @@ TCP flags explain connection state. Capture initial SYN packets with a bit-mask 
 sudo tcpdump -i eth0 -nn -c 5 'tcp[tcpflags] & (tcp-syn|tcp-ack) == tcp-syn'
 ```
 
-Representative output:
+**Output:**
 
 ```text
 IP 192.168.56.30.49152 > 192.168.56.20.80: Flags [S], seq 125430, win 64240, length 0
@@ -287,7 +287,7 @@ Capture TCP reset packets:
 sudo tcpdump -i eth0 -nn -c 5 'tcp[tcpflags] & tcp-rst != 0'
 ```
 
-Example output:
+**Output:**
 
 ```text
 IP 192.168.56.20.80 > 192.168.56.30.49152: Flags [R.], seq 1, ack 1, win 0, length 0
@@ -312,7 +312,7 @@ sudo tcpdump -i eth0 -c 100 -nn -w lab-web-test.pcap 'tcp port 8080'
 ls -lh lab-web-test.pcap
 ```
 
-Representative output:
+**Output:**
 
 ```text
 100 packets captured
@@ -327,7 +327,7 @@ Read the file without needing live traffic:
 tcpdump -nn -r lab-web-test.pcap
 ```
 
-Example output:
+**Output:**
 
 ```text
 reading from file lab-web-test.pcap, link-type EN10MB (Ethernet), snapshot length 262144

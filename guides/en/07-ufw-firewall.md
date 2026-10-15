@@ -19,7 +19,7 @@ id
 sudo ss -tulpn
 ```
 
-Example output:
+**Output:**
 
 ```text
 uid=1000(admin) gid=1000(admin) groups=1000(admin)
@@ -39,7 +39,7 @@ sudo apt update
 sudo apt install ufw
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Reading package lists... Done
@@ -57,7 +57,7 @@ Check the initial state:
 sudo ufw status verbose
 ```
 
-Typical output after installation:
+**Output (right after installation):**
 
 ```text
 Status: inactive
@@ -74,7 +74,7 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Default incoming policy changed to 'deny'
@@ -91,7 +91,7 @@ Allow the actual SSH port before activating the firewall:
 sudo ufw allow 22/tcp
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Rule added
@@ -114,7 +114,7 @@ UFW can use named application profiles:
 sudo ufw app list
 ```
 
-Example output:
+**Output:**
 
 ```text
 Available applications:
@@ -129,7 +129,7 @@ The list is generated from installed UFW application profiles. A profile usually
 sudo ufw app info "Apache Full"
 ```
 
-Example output:
+**Output:**
 
 ```text
 Profile: Apache Full
@@ -145,7 +145,7 @@ To allow the profile:
 sudo ufw allow "Apache Full"
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Rule added
@@ -162,7 +162,7 @@ To allow all supported traffic from one trusted source address:
 sudo ufw allow from 192.168.1.1
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Rule added
@@ -182,7 +182,7 @@ Remove the broad rule when it is no longer needed:
 sudo ufw delete allow from 192.168.1.1
 ```
 
-Typical output:
+**Output:**
 
 ```text
 Rule deleted
@@ -196,7 +196,7 @@ The deletion command must match the rule's meaning. If the original rule include
 sudo ufw allow from 192.168.1.0/24 to any port 22 proto tcp
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Rule added
@@ -210,7 +210,7 @@ The `/24` network contains addresses in the range represented by `192.168.1.0` t
 sudo ufw status numbered
 ```
 
-Example output:
+**Output:**
 
 ```text
 Status: active
@@ -227,7 +227,7 @@ The numbered listing shows rule order, destination, action, direction, and sourc
 sudo ufw delete 2
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Deleting:
@@ -246,7 +246,7 @@ To block a source address:
 sudo ufw deny from 192.168.1.1
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Rule added
@@ -266,7 +266,7 @@ Remove a deny rule with:
 sudo ufw delete deny from 192.168.1.1
 ```
 
-Typical output:
+**Output:**
 
 ```text
 Rule deleted
@@ -280,7 +280,7 @@ After adding all required rules, enable UFW:
 sudo ufw enable
 ```
 
-Typical output:
+**Output:**
 
 ```text
 Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
@@ -296,7 +296,7 @@ sudo ufw status verbose
 sudo ufw show added
 ```
 
-Example output:
+**Output:**
 
 ```text
 Status: active
@@ -323,7 +323,7 @@ sudo ufw logging medium
 sudo ufw status verbose
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Logging enabled
@@ -337,7 +337,7 @@ Logging levels affect the amount of firewall event information recorded. More lo
 sudo journalctl -k --since "10 minutes ago" | grep -i ufw
 ```
 
-Example output:
+**Output:**
 
 ```text
 kernel: [UFW BLOCK] IN=eth0 OUT= SRC=203.0.113.50 DST=198.51.100.10 PROTO=TCP DPT=23
@@ -353,7 +353,7 @@ After manual changes to supported UFW configuration, reload the rules:
 sudo ufw reload
 ```
 
-Typical output:
+**Output:**
 
 ```text
 Firewall reloaded
@@ -367,7 +367,7 @@ To disable enforcement temporarily:
 sudo ufw disable
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Firewall stopped and disabled on system startup
@@ -381,7 +381,7 @@ To return UFW to a clean state:
 sudo ufw reset
 ```
 
-Typical output:
+**Output:**
 
 ```text
 Resetting all rules to installed defaults. Proceed with operation (y|n)? y
@@ -402,7 +402,7 @@ sudoedit /etc/ufw/before.rules
 sudo ufw reload
 ```
 
-Expected reload output:
+**Output:**
 
 ```text
 Firewall reloaded

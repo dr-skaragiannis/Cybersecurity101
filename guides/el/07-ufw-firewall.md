@@ -17,7 +17,7 @@ id
 sudo ss -tulpn
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 uid=1000(admin) gid=1000(admin) groups=1000(admin)
@@ -37,7 +37,7 @@ sudo apt update
 sudo apt install ufw
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Reading package lists... Done
@@ -55,7 +55,7 @@ Setting up ufw ...
 sudo ufw status verbose
 ```
 
-Τυπική έξοδος:
+**Έξοδος:**
 
 ```text
 Status: inactive
@@ -72,7 +72,7 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Default incoming policy changed to 'deny'
@@ -89,7 +89,7 @@ Default outgoing policy changed to 'allow'
 sudo ufw allow 22/tcp
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Rule added
@@ -112,7 +112,7 @@ sudo ufw allow 7822/tcp
 sudo ufw app list
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 Available applications:
@@ -127,7 +127,7 @@ Available applications:
 sudo ufw app info "Apache Full"
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Profile: Apache Full
@@ -141,7 +141,7 @@ Ports: 80/tcp,443/tcp
 sudo ufw allow "Apache Full"
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Rule added
@@ -158,7 +158,7 @@ Rule added (v6)
 sudo ufw allow from 192.168.1.1
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Rule added
@@ -178,7 +178,7 @@ sudo ufw allow from 192.168.1.1 to any port 22 proto tcp
 sudo ufw delete allow from 192.168.1.1
 ```
 
-Τυπική έξοδος:
+**Έξοδος:**
 
 ```text
 Rule deleted
@@ -192,7 +192,7 @@ Rule deleted
 sudo ufw allow from 192.168.1.0/24 to any port 22 proto tcp
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Rule added
@@ -206,7 +206,7 @@ Rule added
 sudo ufw status numbered
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 Status: active
@@ -223,7 +223,7 @@ Status: active
 sudo ufw delete 2
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Deleting:
@@ -249,7 +249,7 @@ sudo ufw deny from 192.168.1.0/24
 sudo ufw delete deny from 192.168.1.1
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Rule deleted
@@ -263,7 +263,7 @@ Rule deleted
 sudo ufw enable
 ```
 
-Τυπική έξοδος:
+**Έξοδος:**
 
 ```text
 Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
@@ -279,7 +279,7 @@ sudo ufw status verbose
 sudo ufw show added
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Status: active
@@ -306,7 +306,7 @@ sudo ufw logging medium
 sudo ufw status verbose
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Logging enabled
@@ -320,7 +320,7 @@ Logging: on (medium)
 sudo journalctl -k --since "10 minutes ago" | grep -i ufw
 ```
 
-Παράδειγμα εξόδου:
+**Έξοδος:**
 
 ```text
 kernel: [UFW BLOCK] IN=eth0 OUT= SRC=203.0.113.50 DST=198.51.100.10 PROTO=TCP DPT=23
@@ -334,7 +334,7 @@ kernel: [UFW BLOCK] IN=eth0 OUT= SRC=203.0.113.50 DST=198.51.100.10 PROTO=TCP DP
 sudo ufw reload
 ```
 
-Αναμενόμενη έξοδος:
+**Έξοδος:**
 
 ```text
 Firewall reloaded
@@ -346,7 +346,7 @@ Firewall reloaded
 sudo ufw disable
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Firewall stopped and disabled on system startup
@@ -358,7 +358,7 @@ Firewall stopped and disabled on system startup
 sudo ufw reset
 ```
 
-Τυπική έξοδος:
+**Έξοδος:**
 
 ```text
 Resetting all rules to installed defaults. Proceed with operation (y|n)? y
@@ -379,7 +379,7 @@ sudoedit /etc/ufw/before.rules
 sudo ufw reload
 ```
 
-Αναμενόμενη έξοδος:
+**Έξοδος:**
 
 ```text
 Firewall reloaded

