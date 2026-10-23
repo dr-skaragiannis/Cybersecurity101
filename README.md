@@ -27,7 +27,7 @@ new/
 │   └── README.md                    Θεωρία + 4 μέρη ασκήσεων με ερωτήματα
 ├── 02. Raven-CTF/
 │   ├── README.md                    Write-up σε 8 βήματα
-│   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
+│   └── images/                      14 στιγμιότυπα οθόνης (image*.png)
 ├── 03. DC-CTF/
 │   ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
 │   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
@@ -93,11 +93,11 @@ new/
 3. **Ανάλυση ιστοσελίδας** — Developer Tools (F12), σχόλια HTML → **Flag 1**.
 4. **Directory fuzzing** — DirBuster / Gobuster → ανακάλυψη καταλόγου `wordpress`.
 5. **WPScan** — έκδοση WordPress, plugins, απαρίθμηση χρηστών (`-e u`).
-6. **SSH access** — αδύναμος κωδικός (`michael:michael`) → **Flag 2** στο `/var/www/html/`.
+6. **SSH access** — brute-force με `hydra` σε λεξικό `rockyou.txt` → αδύναμος κωδικός (`michael:michael`) → **Flag 2** στο `/var/www/html/`.
 7. **Βάση δεδομένων** — `wp-config.php` → MySQL → `wp_posts` → **Flags 3 & 4**.
 8. **Root** — hashes από `wp_users` → John the Ripper (`rockyou.txt`) → `steven` → `root`.
 
-**Εργαλεία:** `netdiscover`, `nmap`, `DirBuster`/`gobuster`, `WPScan`, `ssh`, `mysql`, `john`.
+**Εργαλεία:** `netdiscover`, `nmap`, `DirBuster`/`gobuster`, `WPScan`, `hydra`, `ssh`, `mysql`, `john`.
 **Πηγή:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/) · [Writeup: Hariharan](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 
 ---
