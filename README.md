@@ -12,6 +12,7 @@
 | 01 | **Εισαγωγή στο Linux CLI** | Πλοήγηση συστήματος αρχείων, εντολές, δίκτυο, δικαιώματα | Αρχάριος | [README.md](01.%20Εισαγωγή%20στο%20Linux%20CLI/README.md) |
 | 02 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Αρχάριος | [README.md](02.%20Raven-CTF/README.md) |
 | 03 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](03.%20DC-CTF/README.md) |
+| 04 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Μεσαίο | [README.md](04.%20Raven2-CTF/README.md) |
 
 ---
 
@@ -27,8 +28,11 @@ new/
 ├── 02. Raven-CTF/
 │   ├── README.md                    Write-up σε 8 βήματα
 │   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
-└── 03. DC-CTF/
-    ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
+├── 03. DC-CTF/
+│   ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
+│   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
+└── 04. Raven2-CTF/
+    ├── README.md                    Write-up σε 6 ενότητες
     └── images/                      13 στιγμιότυπα οθόνης (image*.png)
 ```
 
@@ -36,7 +40,7 @@ new/
 
 ## 00. Virtualization
 
-Εισαγωγή στην εικονικοποίηση και πρακτική ρύθμιση του **Oracle VM VirtualBox**: πώς λειτουργεί ο hypervisor κάτω από τις εικονικές μηχανές, πώς εισάγεται ένα έτοιμο image και πώς στήνεται σωστά το δίκτυο του εργαστηρίου. Είναι το προαπαιτούμενο βήμα για όλα τα υπόλοιπα εργαστήρια, αφού τόσο η μηχανή επίθεσης (Kali) όσο και οι στόχοι (Raven 1, DC-1) εκτελούνται ως VMs.
+Εισαγωγή στην εικονικοποίηση και πρακτική ρύθμιση του **Oracle VM VirtualBox**: πώς λειτουργεί ο hypervisor κάτω από τις εικονικές μηχανές, πώς εισάγεται ένα έτοιμο image και πώς στήνεται σωστά το δίκτυο του εργαστηρίου. Είναι το προαπαιτούμενο βήμα για όλα τα υπόλοιπα εργαστήρια, αφού τόσο η μηχανή επίθεσης (Kali) όσο και οι στόχοι (Raven 1, DC-1, Raven 2) εκτελούνται ως VMs.
 
 **Θεματικές ενότητες:**
 
@@ -127,12 +131,30 @@ new/
 
 ---
 
+## 04. Raven2-CTF
+
+Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (VulnHub), επιπέδου *Beginner/Intermediate*, με στόχο την ανάκτηση 4 σημαιών και την απόκτηση δικαιωμάτων root.
+
+**Ροή επίλυσης:**
+
+1. **Αναγνώριση δικτύου** — `netdiscover` για εντοπισμό του στόχου (`192.168.1.101`), `nmap -A` για OS/version detection (22 SSH, 80 HTTP, 111 RPC).
+2. **Απαρίθμηση ιστού** — `dirb` → κατάλογος `/vendor/`, όπου το αρχείο `PATH` περιέχει το **Flag 1** και το `VERSION` αποκαλύπτει **PHPMailer 5.2.6**.
+3. **Αρχική πρόσβαση** — Exploit-DB **40974** / **CVE-2016-10033** (PHPMailer < 5.2.18 RCE) σε Python: `nc -lvp 4444` για αντίστροφο κέλυφος, αναβάθμιση σε TTY με `pty.spawn`, ανάκτηση **Flag 2** από το `/var/www`.
+4. **Απαρίθμηση συστήματος** — `wp-config.php` → διαπιστευτήρια MySQL (`R@v3nSecurity`), `LinEnum.sh` για εντοπισμό ευπαθειών.
+5. **MySQL UDF (CVE-2016-6662)** — μεταγλώττιση του `1518.c` (`gcc -shared`), φόρτωση ως plugin μέσω `dumpfile` και κλήση `do_system('chmod u+s /usr/bin/find')`.
+6. **Root** — `find raj -exec "/bin/sh" \;` → κέλυφος root, **Flag 4** στο `/root` και **Flag 3** στο `wp-content/uploads/2018/11`.
+
+**Εργαλεία:** `netdiscover`, `nmap`, `dirb`, Exploit-DB / `searchsploit`, `nc`, MySQL client, `gcc`, `find`.
+**Πηγή:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
+
+---
+
 ## Απαιτήσεις Περιβάλλοντος
 
 - **Λογισμικό υπερεπόπτη:** VirtualBox ή VMware Workstation (βλ. εργαστήριο [00](00.%20Virtualization/README.md)).
 - **Εικονικοποίηση υλικού:** ενεργή στο BIOS/UEFI (Intel VT-x / AMD-V).
 - **Επιτιθέμενη μηχανή:** Kali Linux (ή οποιαδήποτε διανομή με τα εργαλεία των ασκήσεων).
-- **Στόχοι:** εικόνες VM από [VulnHub](https://www.vulnhub.com/) (Raven 1, DC-1).
+- **Στόχοι:** εικόνες VM από [VulnHub](https://www.vulnhub.com/) (Raven 1, DC-1, Raven 2).
 - **Δίκτυο:** απομονωμένο NAT Network ή Host-Only.
 - **Γνώσεις:** άνεση με terminal, βασικές έννοιες TCP/IP.
 
@@ -141,12 +163,12 @@ new/
 ## Συνιστώμενη Σειρά Εκτέλεσης
 
 ```
-00. Virtualization   →   01. Εισαγωγή στο Linux CLI   →   02. Raven-CTF   →   03. DC-CTF
-   (στήσιμο VMs,             (θεμέλια: CLI, δίκτυο)          (πρώτη CTF        (μεθοδολογία
-    δίκτυο, snapshots)                                       εμπειρία)         pentest)
+00. Virtualization   →   01. Εισαγωγή στο Linux CLI   →   02. Raven-CTF   →   03. DC-CTF   →   04. Raven2-CTF
+   (στήσιμο VMs,             (θεμέλια: CLI, δίκτυο)          (πρώτη CTF        (μεθοδολογία       (web RCE +
+    δίκτυο, snapshots)                                       εμπειρία)         pentest)           privesc UDF)
 ```
 
-Το εργαστήριο 00 είναι προαπαιτούμενο για όλα: χωρίς εικονική μηχανή και σωστά ρυθμισμένο δίκτυο δεν εκτελείται κανένα από τα επόμενα. Το 01 με τη σειρά του παρέχει τις εντολές (`ls`, `grep`, `chmod`, `ss`, `ping`) που χρησιμοποιούνται άμεσα στα 02 και 03.
+Το εργαστήριο 00 είναι προαπαιτούμενο για όλα: χωρίς εικονική μηχανή και σωστά ρυθμισμένο δίκτυο δεν εκτελείται κανένα από τα επόμενα. Το 01 με τη σειρά του παρέχει τις εντολές (`ls`, `grep`, `chmod`, `ss`, `ping`) που χρησιμοποιούνται άμεσα στα 02, 03 και 04. Το 04 είναι η φυσική συνέχεια του 02 (ίδια σειρά Raven, δυσκολότερη διαδρομή root).
 
 ---
 
@@ -161,8 +183,12 @@ new/
 ## Πηγές & Αναφορές
 
 - [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/)
+- [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
 - [Raven 1 CTF Write-up — Hariharan (corruptedprotocol.medium.com)](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 - [CVE-2014-3704 — Drupalgeddon](https://nvd.nist.gov/vuln/detail/CVE-2014-3704)
+- [CVE-2016-10033 — PHPMailer RCE](https://nvd.nist.gov/vuln/detail/CVE-2016-10033)
+- [CVE-2016-6662 — MySQL / MariaDB privilege escalation](https://nvd.nist.gov/vuln/detail/CVE-2016-6662)
+- [Exploit-DB 40974 — PHPMailer < 5.2.18 RCE](https://www.exploit-db.com/exploits/40974)
 - [OWASP Core Rule Set](https://owasp.org/www-project-modsecurity-core-rule-set/)
 - [Metasploit Framework](https://www.metasploit.com/)
 - [Oracle VM VirtualBox — Documentation](https://www.virtualbox.org/manual/)
