@@ -10,8 +10,8 @@
 | :--- | :--- | :--- | :--- | :--- |
 | 00 | **Virtualization** | Hypervisors, εισαγωγή OVA, snapshots, λειτουργίες δικτύου VM | Αρχάριος | [README.md](00.%20Virtualization/README.md) |
 | 01 | **Εισαγωγή στο Linux CLI** | Πλοήγηση συστήματος αρχείων, εντολές, δίκτυο, δικαιώματα | Αρχάριος | [README.md](01.%20Εισαγωγή%20στο%20Linux%20CLI/README.md) |
-| 02 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Μεσαίο | [README.md](02.%20Raven-CTF/README.md) |
-| 03 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Προχωρημένο | [README.md](03.%20DC-CTF/README.md) |
+| 02 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Αρχάριος | [README.md](02.%20Raven-CTF/README.md) |
+| 03 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](03.%20DC-CTF/README.md) |
 
 ---
 
