@@ -98,7 +98,7 @@ new/
 8. **Root** — hashes από `wp_users` → John the Ripper (`rockyou.txt`) → `steven` → `root`.
 
 **Εργαλεία:** `netdiscover`, `nmap`, `DirBuster`/`gobuster`, `WPScan`, `ssh`, `mysql`, `john`.
-**Πηγή:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/)
+**Πηγή:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/) · [Writeup: Hariharan](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 
 ---
 
@@ -128,6 +128,7 @@ new/
 **Τεχνική σύνοψη & αποκατάσταση:** πίνακας επικινδυνότητας (CVSS v3) και μέτρα hardening — patch management, WAF/ModSecurity με OWASP CRS, αφαίρεση SUID (`chmod u-s /usr/bin/find`), έλεγχοι ακεραιότητας (AIDE/Tripwire), AppArmor/SELinux.
 
 **Εργαλεία:** `netdiscover`, `nmap`, Metasploit Framework, Meterpreter, `find`, `cat`, `whoami`.
+**Πηγή:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/) · [Writeup: Hacking Articles](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
 
 ---
 
@@ -145,7 +146,7 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 6. **Root** — `find raj -exec "/bin/sh" \;` → κέλυφος root, **Flag 4** στο `/root` και **Flag 3** στο `wp-content/uploads/2018/11`.
 
 **Εργαλεία:** `netdiscover`, `nmap`, `dirb`, Exploit-DB / `searchsploit`, `nc`, MySQL client, `gcc`, `find`.
-**Πηγή:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
+**Πηγή:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/) · [Writeup: Hacking Articles](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
 
 ---
 
@@ -182,14 +183,30 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 
 ## Πηγές & Αναφορές
 
-- [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/)
-- [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
-- [Raven 1 CTF Write-up — Hariharan (corruptedprotocol.medium.com)](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
-- [CVE-2014-3704 — Drupalgeddon](https://nvd.nist.gov/vuln/detail/CVE-2014-3704)
-- [CVE-2016-10033 — PHPMailer RCE](https://nvd.nist.gov/vuln/detail/CVE-2016-10033)
-- [CVE-2016-6662 — MySQL / MariaDB privilege escalation](https://nvd.nist.gov/vuln/detail/CVE-2016-6662)
-- [Exploit-DB 40974 — PHPMailer < 5.2.18 RCE](https://www.exploit-db.com/exploits/40974)
-- [OWASP Core Rule Set](https://owasp.org/www-project-modsecurity-core-rule-set/)
-- [Metasploit Framework](https://www.metasploit.com/)
+### Εργαστήριο 00 — Virtualization
 - [Oracle VM VirtualBox — Documentation](https://www.virtualbox.org/manual/)
 - [DMTF — Open Virtualization Format (DSP0243)](https://www.dmtf.org/standards/ovf)
+- [Kali Linux — Downloads (VirtualBox images)](https://www.kali.org/get-kali/#kali-platforms)
+
+### Εργαστήριο 02 — Raven: 1
+- **Λήψη μηχανήματος:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/)
+- **Writeup αναφοράς:** [Raven 1 CTF Write-up — Hariharan (corruptedprotocol.medium.com)](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
+- **Εργαλεία:** [WPScan](https://wpscan.com/), [OWASP DirBuster/Gobuster](https://www.kali.org/tools/gobuster/), [John the Ripper](https://www.openwall.com/john/)
+
+### Εργαστήριο 03 — DC: 1
+- **Λήψη μηχανήματος:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/)
+- **Writeup αναφοράς:** [DC-1: Vulnhub Walkthrough — Hacking Articles](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
+- **Ευπάθεια:** [CVE-2014-3704 — Drupalgeddon (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2014-3704)
+- **Module:** [Metasploit — `exploit/multi/http/drupal_drupageddon`](https://www.rapid7.com/db/modules/exploit/multi/http/drupal_drupageddon/)
+- **Αποκατάσταση:** [OWASP Core Rule Set (ModSecurity)](https://owasp.org/www-project-modsecurity-core-rule-set/)
+
+### Εργαστήριο 04 — Raven: 2
+- **Λήψη μηχανήματος:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
+- **Writeup αναφοράς:** [Raven 2: Vulnhub Walkthrough — Hacking Articles](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
+- **Ευπάθειες:** [CVE-2016-10033 — PHPMailer RCE (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-10033) · [CVE-2016-6662 — MySQL/MariaDB privilege escalation (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-6662)
+- **Exploit:** [Exploit-DB 40974 — PHPMailer < 5.2.18 RCE (Python)](https://www.exploit-db.com/exploits/40974)
+
+### Γενικά
+- [Metasploit Framework](https://www.metasploit.com/)
+- [Nmap — Reference Guide](https://nmap.org/book/man.html)
+- [VulnHub — Vulnerable Machines](https://www.vulnhub.com/)
