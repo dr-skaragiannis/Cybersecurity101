@@ -22,17 +22,22 @@
 new/
 ├── README.md                        ← το παρόν αρχείο (ευρετήριο)
 ├── 00. Virtualization/
-│   └── README.md                    Hypervisor, OVA/OVF, snapshots, δικτύωση VM
+│   ├── README.md                    Hypervisor, OVA/OVF, snapshots, δικτύωση VM
+│   └── Detailed-Notes.md            Αναλυτικές σημειώσεις με θεωρία
 ├── 01. Εισαγωγή στο Linux CLI/
-│   └── README.md                    Θεωρία + 4 μέρη ασκήσεων με ερωτήματα
+│   ├── README.md                    Θεωρία + 4 μέρη ασκήσεων με ερωτήματα
+│   └── Detailed-Notes.md            Αναλυτικές σημειώσεις + απαντήσεις
 ├── 02. Raven-CTF/
 │   ├── README.md                    Write-up σε 8 βήματα
+│   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά βήμα
 │   └── images/                      15 στιγμιότυπα οθόνης (image*.png)
 ├── 03. DC-CTF/
 │   ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
+│   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά φάση
 │   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
 └── 04. Raven2-CTF/
     ├── README.md                    Write-up σε 6 ενότητες
+    ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά ενότητα
     └── images/                      13 στιγμιότυπα οθόνης (image*.png)
 ```
 
@@ -63,11 +68,15 @@ new/
 
 **Γρήγορη εκκίνηση:** κατεβάστε το έτοιμο image του **Kali Linux** για VirtualBox από το [kali.org/get-kali](https://www.kali.org/get-kali/#kali-platforms) (σε macOS προτιμήστε το UTM), βεβαιωθείτε ότι είναι ενεργή η εικονικοποίηση στο BIOS/UEFI (Intel VT-x / AMD-V) και εισάγετε το OVA — χωρίς εγκατάσταση.
 
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](00.%20Virtualization/Detailed-Notes.md) — θεωρία, ανάλυση κάθε βήματος, πίνακες διάγνωσης, γλωσσάρι και ερωτήσεις αυτοελέγχου.
+
 ---
 
 ## 01. Εισαγωγή στο Linux CLI
 
 Εργαστηριακή άσκηση με στόχο την εξοικείωση με το περιβάλλον γραμμής εντολών και τις βασικές εντολές δικτύου.
+
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](01.%20Εισαγωγή%20στο%20Linux%20CLI/Detailed-Notes.md) — επεξήγηση κάθε εντολής, θεωρία δικτύου, **απαντήσεις στα ερωτήματα** και γλωσσάρι.
 
 **Θεματικές ενότητες:**
 
@@ -85,6 +94,8 @@ new/
 ## 02. Raven-CTF
 
 Μεταφρασμένο και εμπλουτισμένο write-up για τη μηχανή **Raven 1** της VulnHub.
+
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](02.%20Raven-CTF/Detailed-Notes.md) — μεθοδολογία, ανάλυση κάθε βήματος και εικόνας, παγίδες και ερωτήσεις αυτοελέγχου.
 
 **Ροή επίλυσης:**
 
@@ -105,6 +116,8 @@ new/
 ## 03. DC-CTF
 
 Πλήρες εγχειρίδιο δοκιμής παρείσδυσης στη μηχανή **DC-1**, δομημένο σε τέσσερις μεθοδολογικές φάσεις.
+
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](03.%20DC-CTF/Detailed-Notes.md) — θεωρία Drupalgeddon, Metasploit, PTY, SUID και CVSS, με γλωσσάρι και ερωτήσεις.
 
 **Φάσεις:**
 
@@ -135,6 +148,8 @@ new/
 ## 04. Raven2-CTF
 
 Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (VulnHub), επιπέδου *Beginner/Intermediate*, με στόχο την ανάκτηση 4 σημαιών και την απόκτηση δικαιωμάτων root.
+
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](04.%20Raven2-CTF/Detailed-Notes.md) — PHPMailer RCE, MySQL UDF, SUID, με αναλυτική εξήγηση κάθε εντολής.
 
 **Ροή επίλυσης:**
 
