@@ -6,8 +6,7 @@
 
 > * **Λήψη:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/)
 > * **Writeup στα Αγγλικά:** [Hacking Articles — DC-1: Vulnhub Walkthrough](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
-> - **Youtube Video:** [Vulnhub - DC-1 Series Walkthrough with S1REN
-](https://www.youtube.com/watch?v=PzPTXDIbw6c)
+> - **Youtube Video:** [Vulnhub - DC-1 Series Walkthrough with S1REN](https://www.youtube.com/watch?v=PzPTXDIbw6c)
 
 Η συνολική διαδικασία δομείται στις ακόλουθες τέσσερις μεθοδολογικές φάσεις:
 1. **Αναγνώριση & Χαρτογράφηση Δικτύου (Reconnaissance & Service Fingerprinting)**

@@ -5,11 +5,7 @@
 
 > - **Πηγή / Λήψη:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
 > - **Writeup στα Αγγλικά:** [Hacking Articles — Raven 2: Vulnhub Walkthrough](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
-> - **Youtube Video:** [
-Raven 2 Vulnhub CTF Walkthrough](https://www.youtube.com/watch?v=MvmZj3LncRo)
-
-
-
+> - **Youtube Video:** [Raven 2 Vulnhub CTF Walkthrough](https://www.youtube.com/watch?v=MvmZj3LncRo)
 
 
 ---

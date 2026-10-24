@@ -5,8 +5,8 @@
 Το **Raven 1** είναι ένα εξαιρετικό παράδειγμα ενός δομημένου CTF, με πολύ πρακτική προσέγγιση. Αυτό το απαιτητικό μηχάνημα έχει ιδιαίτερο ενδιαφέρον καθώς εμπλέκει τη χρήση πολλών διαφορετικών εργαλείων και τεχνικών.
 Μπορείτε να κατεβάσετε το μηχάνημα από την επίσημη σελίδα: [VulnHub - Raven: 1](https://www.vulnhub.com/entry/raven-1,256/)
 
-> **Writeup αναφοράς:** [Raven 1 CTF Write-up — Hariharan](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
-> **Youtube Video:** [Raven1 VulnHub CTF Walkthrough - Boot-To-Root](https://www.youtube.com/watch?v=Aha7JWSIfSI)
+> - **Writeup στα Αγγλικά:** [Raven 1 CTF Write-up — Hariharan](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
+> - **Youtube Video:** [Raven1 VulnHub CTF Walkthrough - Boot-To-Root](https://www.youtube.com/watch?v=Aha7JWSIfSI)
 
 Ο κεντρικός στόχος σε αυτό το CTF είναι να βρούμε **4 flags** τα οποία είναι πολύ καλά κρυμμένα μέσα στο σύστημα.
 
