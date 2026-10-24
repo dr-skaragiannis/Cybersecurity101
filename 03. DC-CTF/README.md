@@ -4,7 +4,10 @@
 
 Μέσα από τη μελέτη της μηχανής DC-1 εξετάζονται σε βάθος κρίσιμες έννοιες της ασφάλειας πληροφοριακών συστημάτων, όπως η αναγνώριση επιφανειών επίθεσης στο τοπικό δίκτυο, η ανάλυση και εκμετάλλευση γνωστών αρχιτεκτονικών σφαλμάτων σε Συστήματα Διαχείρισης Περιεχομένου (Content Management Systems - CMS), η σταθεροποίηση κελύφους και η μετα-εκμετάλλευση υποδομών Linux, καθώς και η εκμετάλλευση εσφαλμένων διαμορφώσεων δικαιωμάτων πρόσβασης (misconfigurations) στο σύστημα αρχείων Unix για την επίτευξη τοπικής κλιμάκωσης προνομίων (Local Privilege Escalation).
 
-> **Πηγή / Λήψη:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/) · **Writeup αναφοράς:** [Hacking Articles — DC-1: Vulnhub Walkthrough](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
+> * **Λήψη:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/)
+> * **Writeup στα Αγγλικά:** [Hacking Articles — DC-1: Vulnhub Walkthrough](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
+> - **Youtube Video:** [Vulnhub - DC-1 Series Walkthrough with S1REN
+](https://www.youtube.com/watch?v=PzPTXDIbw6c)
 
 Η συνολική διαδικασία δομείται στις ακόλουθες τέσσερις μεθοδολογικές φάσεις:
 1. **Αναγνώριση & Χαρτογράφηση Δικτύου (Reconnaissance & Service Fingerprinting)**

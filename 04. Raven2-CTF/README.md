@@ -3,7 +3,14 @@
 ## 1. Εισαγωγή
 Το παρόν έγγραφο αποτελεί έναν αναλυτικό, τεχνικό οδηγό για την επίλυση του εικονικού μηχανήματος (Virtual Machine) **Raven 2**, το οποίο διατίθεται μέσω της πλατφόρμας Vulnhub. Το Raven 2 ταξινομείται ως μηχάνημα επιπέδου "Beginner/Intermediate" τύπου boot2root. Ο αντικειμενικός σκοπός της άσκησης είναι η απόκτηση τεσσάρων (4) ψηφιακών σημαιών (flags) και, τελικά, η πλήρης παραβίαση του συστήματος με την απόκτηση δικαιωμάτων υπερχρήστη (root).
 
-> **Πηγή / Λήψη:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/) · **Writeup αναφοράς:** [Hacking Articles — Raven 2: Vulnhub Walkthrough](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
+> - **Πηγή / Λήψη:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
+> - **Writeup στα Αγγλικά:** [Hacking Articles — Raven 2: Vulnhub Walkthrough](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
+> - **Youtube Video:** [
+Raven 2 Vulnhub CTF Walkthrough](https://www.youtube.com/watch?v=MvmZj3LncRo)
+
+
+
+
 
 ---
 
