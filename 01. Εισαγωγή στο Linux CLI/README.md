@@ -15,6 +15,9 @@
 
 ## Εισαγωγή στο CLI: Δομή Εργαστηρίου & Προετοιμασία Ιεραρχίας
 
+Τρέξτε τις παρακάτω εντολές. Επιπλέον ακολουθείστε τον οδηγό για να εγκαταστήσετε το VPN για το HackTheBox. https://help.hackthebox.com/en/articles/5185687-introduction-to-lab-access
+Έπειτα μπορείτε να δείτε και για τις βασικές εντολές Linux το εργαστήριο https://ctf.hackthebox.com/pack/linux-fundamentals-essentials
+
 1. Εξακριβώστε τον αρχικό κατάλογο εργασίας σας:
    ```bash
    pwd
