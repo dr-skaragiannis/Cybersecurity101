@@ -256,7 +256,7 @@ nmap 192.168.29.167 -Pn
 
 ![Privilege Escalation στο Raven](images/Odigos2.jpg)
 
-## Βήμα 8: John The Ripper - Εναλλακτική Πρόσβαση (Root)
+## Βήμα 8: John The Ripper - Εναλλακτική Πρόσβαση (Root) διαφορετικά bruteforce με Hydra
 Ο πίνακας `wp_users` που είδαμε προηγουμένως στη βάση δεδομένων, περιέχει τα "hashes" (κρυπτογραφημένες μορφές) των κωδικών πρόσβασης των χρηστών του WordPress.
 
 ![Πίνακας wp_users με τα password hashes](images/image-14.png)
@@ -299,7 +299,7 @@ User steven may run the following commands on raven:
 Παρατηρούμε ότι ο χρήστης έχει δικαιώματα εκτέλεσης της Python ως διαχειριστής χωρίς απαίτηση κωδικού (NOPASSWD). Εκμεταλλευόμαστε αυτή τη ρύθμιση για να κάνουμε Privilege Escalation, καλώντας ένα διαδραστικό bash shell με δικαιώματα root μέσω της βιβλιοθήκης
 
 ![alt text](images/image-1a.png)
-
+**Προσοχή γράψε την εντολή με το χέρι, όχι copy-paste γιατί οι ειδικοί χαρακτήρες διαφέρουν. Αλλιώς δεν θα λειτουργήσει.**
 `sudo python -c 'import os; os.system("/bin/bash")'`
 
 
