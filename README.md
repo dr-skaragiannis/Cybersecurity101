@@ -10,7 +10,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | 00 | **Virtualization** | Hypervisors, εισαγωγή OVA, snapshots, λειτουργίες δικτύου VM | Αρχάριος | [README.md](00.%20Virtualization/README.md) |
 | 01 | **Εισαγωγή στο Linux CLI** | Πλοήγηση συστήματος αρχείων, εντολές, δίκτυο, δικαιώματα | Αρχάριος | [README.md](01.%20Εισαγωγή%20στο%20Linux%20CLI/README.md) |
-| 02 | **Bandit** | OverTheWire wargame: αρχεία, pipes, δίκτυο, cron, SUID, git, διαφυγή από κέλυφος | Αρχάριος | [PDF](02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
+| 02 | **Bandit** | OverTheWire wargame: αρχεία, pipes, δίκτυο, cron, SUID, git, διαφυγή από κέλυφος | Αρχάριος | [README.md](02.%20Bandit/README.md), [PDF](02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
 | 03 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Αρχάριος | [README.md](03.%20Raven-CTF/README.md), [Hardening](03.%20Raven-CTF/Hardening-Guide.md) |
 | 04 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](04.%20DC-CTF/README.md), [Hardening](04.%20DC-CTF/Hardening-Guide.md) |
 | 05 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Μεσαίο | [README.md](05.%20Raven2-CTF/README.md), [Hardening](05.%20Raven2-CTF/Hardening-Guide.md) |
@@ -30,6 +30,7 @@ new/
 │   ├── README.md                    Θεωρία + 4 μέρη ασκήσεων με ερωτήματα
 │   └── Detailed-Notes.md            Αναλυτικές σημειώσεις + απαντήσεις
 ├── 02. Bandit/
+│   ├── README.md                    Walkthrough 34 επιπέδων με επεξηγήσεις
 │   └── Lab 02 - Bandit.pdf          Walkthrough του OverTheWire Bandit (επίπεδα 0–33)
 ├── 03. Raven-CTF/
 │   ├── README.md                    Write-up σε 8 βήματα
@@ -106,7 +107,7 @@ new/
 
 Ελληνική, εμπλουτισμένη απόδοση του walkthrough για το wargame **Bandit** της κοινότητας OverTheWire: 34 επίπεδα σε πραγματικό εξυπηρετητή Linux, όπου σε κάθε επίπεδο συνδέεστε μέσω SSH και αναζητάτε τον κωδικό του επόμενου χρήστη.
 
-📘 **Εγχειρίδιο:** [Lab 02 - Bandit.pdf](02.%20Bandit/Lab%2002%20-%20Bandit.pdf)
+📘 **Αναλυτικό κείμενο:** [README.md](02.%20Bandit/README.md) · **PDF:** [Lab 02 - Bandit.pdf](02.%20Bandit/Lab%2002%20-%20Bandit.pdf)
 
 **Θεματικές ενότητες:**
 
