@@ -9,7 +9,7 @@
 
 **Το κεντρικό μάθημα του Raven 2:** η διόρθωση **μόνο** των σημείων που εκμεταλλεύτηκε η προηγούμενη επίθεση δεν αρκεί. Χρειάζεται συστηματική θωράκιση **όλων** των επιπέδων: βιβλιοθήκες κώδικα, web server, βάση δεδομένων, λειτουργικό σύστημα.
 
-Αυτό το εγχειρίδιο εστιάζει σε όσα είναι **νέα** σε σχέση με το Raven 1. Για τα κοινά (firewall, SSH, WordPress, `wp-config.php`) παραπέμπει στο [Hardening-Guide του Raven 1](../02.%20Raven-CTF/Hardening-Guide.md).
+Αυτό το εγχειρίδιο εστιάζει σε όσα είναι **νέα** σε σχέση με το Raven 1. Για τα κοινά (firewall, SSH, WordPress, `wp-config.php`) παραπέμπει στο [Hardening-Guide του Raven 1](../03.%20Raven-CTF/Hardening-Guide.md).
 
 > ⚠️ **Πριν ξεκινήσετε:** πάρτε **snapshot** της VM. Εκτελέστε πρώτα την επίθεση, ώστε να δείτε τα ίχνη που αφήνει (§3), και μετά εφαρμόστε τη θωράκιση.
 
@@ -43,7 +43,7 @@
 | 4. Exploit-DB 40974 | Εκτέλεση εντολών μέσω της φόρμας `contact.php` | PHPMailer < 5.2.18 | §4, §5 |
 | 4. `backdoor.php` γράφτηκε στο web root | Μόνιμο web shell | Ο `www-data` μπορεί να γράψει στο `/var/www/html` | §6 |
 | 4. `nc -lvp 4444` | Reverse shell προς τον επιτιθέμενο | Καμία πολιτική εξερχόμενων συνδέσεων | §11.3 |
-| 5.1 `wp-config.php` | Κωδικός **root** της MySQL | Η εφαρμογή χρησιμοποιεί τον root της βάσης | §9.4, [Raven 1 §8](../02.%20Raven-CTF/Hardening-Guide.md#8-θωράκιση-mysql) |
+| 5.1 `wp-config.php` | Κωδικός **root** της MySQL | Η εφαρμογή χρησιμοποιεί τον root της βάσης | §9.4, [Raven 1 §8](../03.%20Raven-CTF/Hardening-Guide.md#8-θωράκιση-mysql) |
 | 5.1 `wget LinEnum.sh` | Λήψη εργαλείων από το Kali | Ελεύθερη έξοδος, εγγράψιμο/εκτελέσιμο `/tmp` | §11 |
 | 5.2 `gcc ... 1518.so` | Μεταγλώττιση κακόβουλης βιβλιοθήκης | (στο Kali ή στον στόχο) μεταγλωττιστής διαθέσιμος | §11.1 |
 | 5.2 `INTO DUMPFILE '/usr/lib/mysql/plugin/'` | Εγγραφή αρχείου στον φάκελο plugins | Δικαίωμα `FILE`, κενό `secure_file_priv`, εγγράψιμο `plugin_dir` | §9 |
@@ -172,7 +172,7 @@ mail($to, $subject, $body, $headers, "-f sender@example.com");
 "attacker\" -oQ/tmp/ -X/var/www/html/backdoor.php  some"@email.com
 ```
 
-Τα εισαγωγικά και το κενό «σπάνε» το όρισμα και το `sendmail` λαμβάνει **επιπλέον παραμέτρους**:
+Τα εισαγωγικά και το κενό διασπούν το όρισμα, με αποτέλεσμα το `sendmail` να λαμβάνει **επιπλέον παραμέτρους**:
 
 * **`-X /var/www/html/backdoor.php`**: «γράψε όλη την κίνηση SMTP σε αυτό το αρχείο καταγραφής».
 
@@ -331,7 +331,7 @@ apache2ctl configtest && systemctl reload apache2
 1. **Directory listing**: ο Apache έδειχνε λίστα αρχείων.
 2. **Βιβλιοθήκες στο web root**: ο φάκελος `vendor/` ήταν προσβάσιμος.
 
-Το πρώτο διορθώνεται όπως στο [Raven 1 §5.2](../02.%20Raven-CTF/Hardening-Guide.md#52-directory-listing-dirbuster) (`Options -Indexes`). Το δεύτερο το λύσαμε στην §5.2 μετακινώντας τις βιβλιοθήκες στο `/var/www/app/`. Ως **δεύτερη γραμμή άμυνας**, απαγορεύουμε την πρόσβαση σε τέτοιους φακέλους γενικά:
+Το πρώτο διορθώνεται όπως στο [Raven 1 §5.2](../03.%20Raven-CTF/Hardening-Guide.md#52-directory-listing-dirbuster) (`Options -Indexes`). Το δεύτερο το λύσαμε στην §5.2 μετακινώντας τις βιβλιοθήκες στο `/var/www/app/`. Ως **δεύτερη γραμμή άμυνας**, απαγορεύουμε την πρόσβαση σε τέτοιους φακέλους γενικά:
 
 ```apache
 # /etc/apache2/conf-available/deny-dev-files.conf
@@ -348,7 +348,7 @@ a2enconf deny-dev-files
 apache2ctl configtest && systemctl reload apache2
 ```
 
-Εφαρμόστε επίσης τις ρυθμίσεις `ServerTokens Prod`, `ServerSignature Off` και `expose_php = Off` του [Raven 1 §5.4](../02.%20Raven-CTF/Hardening-Guide.md#54-απόκρυψη-εκδόσεων-banners).
+Εφαρμόστε επίσης τις ρυθμίσεις `ServerTokens Prod`, `ServerSignature Off` και `expose_php = Off` του [Raven 1 §5.4](../03.%20Raven-CTF/Hardening-Guide.md#54-απόκρυψη-εκδόσεων-banners).
 
 ---
 
@@ -356,7 +356,7 @@ apache2ctl configtest && systemctl reload apache2
 
 ### 8.1 Γιατί αυτό είναι το πιο σοβαρό λάθος του Raven 2
 
-Ένας web server κινδυνεύει πάντα να παραβιαστεί, γι' αυτό τρέχει ως **`www-data`**, έναν χρήστη χωρίς προνόμια. Αν τον παραβιάσεις, έχεις τα δικαιώματα του `www-data`, όχι του root. Αυτό είναι ο **διαχωρισμός προνομίων** (privilege separation).
+Ένας διακομιστής ιστού είναι διαρκώς εκτεθειμένος σε κίνδυνο παραβίασης, για τον λόγο αυτό εκτελείται ως **`www-data`**, ένας χρήστης χωρίς προνόμια. Σε περίπτωση παραβίασής του, ο επιτιθέμενος αποκτά τα δικαιώματα του `www-data` και όχι του root. Αυτό συνιστά τον **διαχωρισμό προνομίων** (privilege separation).
 
 Η MySQL στο Raven 2 έτρεχε ως **root**. Η συνάρτηση `do_system()` εκτελείται **μέσα** στη διεργασία `mysqld`, άρα με τα δικαιώματά της. Ο επιτιθέμενος, μέσω SQL, έγινε root.
 
@@ -395,7 +395,7 @@ ps -eo user,cmd | grep [m]ysqld
 # → mysql  /usr/sbin/mysqld ... --user=mysql
 ```
 
-> 💡 Το `grep [m]ysqld` είναι ένα κόλπο: η κανονική έκφραση `[m]ysqld` ταιριάζει με το «mysqld», αλλά όχι με τη γραμμή της ίδιας της εντολής `grep` (που περιέχει «[m]ysqld»). Έτσι δεν χρειάζεται `grep -v grep`.
+> 💡 Το `grep [m]ysqld` αποτελεί μια χρήσιμη τεχνική: η κανονική έκφραση `[m]ysqld` ταιριάζει με το «mysqld», αλλά όχι με τη γραμμή της ίδιας της εντολής `grep` (η οποία περιέχει το κυριολεκτικό «[m]ysqld»). Με τον τρόπο αυτό αποφεύγεται η ανάγκη για `grep -v grep`.
 
 ---
 
@@ -461,7 +461,7 @@ systemctl restart mysql
 
 ### 9.4 Ξεχωριστός χρήστης για το WordPress, χωρίς `FILE`
 
-Όπως στο [Raven 1 §8.3](../02.%20Raven-CTF/Hardening-Guide.md#83-ξεχωριστός-χρήστης-για-την-εφαρμογή-least-privilege):
+Όπως στο [Raven 1 §8.3](../03.%20Raven-CTF/Hardening-Guide.md#83-ξεχωριστός-χρήστης-για-την-εφαρμογή-least-privilege):
 
 ```sql
 CREATE USER 'wp_app'@'localhost' IDENTIFIED BY 'Ένας-Μακρύς-Τυχαίος-Κωδικός-2026!';
@@ -546,7 +546,7 @@ chmod 700 /usr/bin/gcc* /usr/bin/cc /usr/bin/make 2>/dev/null
 
 ### 11.2 `/tmp` χωρίς εκτέλεση και SUID
 
-Η επίθεση χρησιμοποίησε το `/tmp` για το `LinEnum.sh` και το `1518.so`. Εφαρμόζουμε τις επιλογές `nosuid,nodev,noexec` όπως εξηγούνται στο [DC-1 §10](../03.%20DC-CTF/Hardening-Guide.md#10-επιλογές-προσάρτησης):
+Η επίθεση χρησιμοποίησε το `/tmp` για το `LinEnum.sh` και το `1518.so`. Εφαρμόζουμε τις επιλογές `nosuid,nodev,noexec` όπως εξηγούνται στο [DC-1 §10](../04.%20DC-CTF/Hardening-Guide.md#10-επιλογές-προσάρτησης):
 
 ```text
 # /etc/fstab
@@ -562,7 +562,7 @@ mount -o remount /tmp ; mount -o remount /dev/shm
 
 ### 11.3 Περιορισμός εξερχόμενων συνδέσεων
 
-Ο web server ξεκίνησε **δύο** εξερχόμενες συνδέσεις: το reverse shell (`nc` στη θύρα 4444) και τη λήψη του `LinEnum.sh` (`wget`). Το φιλτράρισμα εξόδου ανά χρήστη εξηγείται αναλυτικά στο [DC-1 §8](../03.%20DC-CTF/Hardening-Guide.md#8-περιορισμός-εξερχόμενων-συνδέσεων). Στο Raven 2 προσθέτουμε έναν ειδικό κανόνα: η φόρμα επικοινωνίας χρειάζεται να στέλνει email, οπότε επιτρέπουμε **μόνο** SMTP προς τον mail server:
+Ο web server ξεκίνησε **δύο** εξερχόμενες συνδέσεις: το reverse shell (`nc` στη θύρα 4444) και τη λήψη του `LinEnum.sh` (`wget`). Το φιλτράρισμα εξόδου ανά χρήστη εξηγείται αναλυτικά στο [DC-1 §8](../04.%20DC-CTF/Hardening-Guide.md#8-περιορισμός-εξερχόμενων-συνδέσεων). Στο Raven 2 προσθέτουμε έναν ειδικό κανόνα: η φόρμα επικοινωνίας χρειάζεται να στέλνει email, οπότε επιτρέπουμε **μόνο** SMTP προς τον mail server:
 
 ```bash
 iptables -A OUTPUT -o lo -j ACCEPT
@@ -580,11 +580,11 @@ apt-get install iptables-persistent && iptables-save > /etc/iptables/rules.v4
 
 ### 11.4 SUID: γραμμή βάσης και καθημερινός έλεγχος
 
-Στο Raven 2 το SUID στο `find` **το πρόσθεσε ο επιτιθέμενος**. Ένας καθημερινός έλεγχος σε σχέση με γραμμή βάσης θα το εντόπιζε. Δείτε το script του [DC-1 §9.5](../03.%20DC-CTF/Hardening-Guide.md#95-περιοδικός-έλεγχος-με-γραμμή-βάσης-baseline).
+Στο Raven 2 το SUID στο `find` **το πρόσθεσε ο επιτιθέμενος**. Ένας καθημερινός έλεγχος σε σχέση με γραμμή βάσης θα το εντόπιζε. Δείτε το script του [DC-1 §9.5](../04.%20DC-CTF/Hardening-Guide.md#95-περιοδικός-έλεγχος-με-γραμμή-βάσης-baseline).
 
 ### 11.5 Τα υπόλοιπα (κοινά με το Raven 1)
 
-Εφαρμόστε επίσης από το [Hardening-Guide του Raven 1](../02.%20Raven-CTF/Hardening-Guide.md):
+Εφαρμόστε επίσης από το [Hardening-Guide του Raven 1](../03.%20Raven-CTF/Hardening-Guide.md):
 
 * §3 — ενημέρωση πακέτων / μετάβαση σε υποστηριζόμενο Debian
 * §4 — απενεργοποίηση `rpcbind`, firewall `default deny`
@@ -669,11 +669,21 @@ ls -l /usr/bin/find                                              # → -rwxr-xr-
 6. Γιατί η MySQL μπορεί να κινδυνεύει από το CVE-2016-6662 **ακόμη κι αν** τρέχει ως χρήστης `mysql`; Ποιο μέτρο της §10 το αντιμετωπίζει;
 7. Γιατί η απλή αναβάθμιση του PHPMailer **δεν αρκεί** σε ένα σύστημα που έχει ήδη παραβιαστεί;
 
+### Ενδεικτικές απαντήσεις
+
+1. Η `mail()` δεν στέλνει email μόνη της, καλεί το εξωτερικό binary **`/usr/sbin/sendmail`** περνώντας του ορίσματα. Το PHPMailer έβαζε τη διεύθυνση αποστολέα στα **additional parameters** (`-f...`) χωρίς επαρκές φιλτράρισμα, οπότε ο επιτιθέμενος «έσπαγε» το όρισμα και πρόσθετε `-X /path/shell.php`. Έτσι το sendmail έγραφε αρχείο ελεγχόμενου περιεχομένου στον δίσκο — webshell.
+2. (1) **Αναβάθμιση PHPMailer** σε ≥5.2.18 (διορθωμένος sanitizer) — η injection δεν περνά. (2) **Αυστηρό server-side validation της διεύθυνσης email** (`filter_var`/regex) ώστε να απορρίπτονται τιμές με κενά/`-X`. (3) **Μη-εγγράψιμο webroot από τον web server** (δικαιώματα + `open_basedir`) — ακόμη κι αν περάσει η injection, δεν γράφεται `.php` στο προσβάσιμο directory. Κάθε ένα μόνο του σταματά το 40974.
+3. Το `From`/`Sender` χρησιμοποιούνται από το PHPMailer για να δομήσουν τα ορίσματα προς το sendmail (envelope/`-f`), άρα μια κακόβουλη τιμή εκεί γίνεται εκμεταλλεύσιμη (injection). Το `Reply-To` είναι απλό header του μηνύματος που **δεν** περνά ως παράμετρος εκτέλεσης. Βάζοντας τη διεύθυνση του επισκέπτη στο `Reply-To` κρατάμε τη λειτουργικότητα (απάντηση στον επισκέπτη) χωρίς να εκθέτουμε το επικίνδυνο μονοπάτι.
+4. Η πιο κρίσιμη είναι το ότι **η MySQL τρέχει ως root** στο OS. Αν τρέχει ως απλός χρήστης `mysql`, τότε ακόμη κι αν ο επιτιθέμενος έχει `FILE` privilege, γράψει το `.so` και φορτώσει το UDF, η εκτέλεση εντολών γίνεται με δικαιώματα `mysql` — **όχι root** — οπότε δεν υπάρχει privilege escalation στο λειτουργικό. Οι άλλες τρεις προϋποθέσεις γίνονται ακίνδυνες για το OS.
+5. Το `secure_file_priv` περιορίζει **σε ποιον κατάλογο** επιτρέπονται οι λειτουργίες αρχείων (`LOAD_FILE`, `INTO OUTFILE/DUMPFILE`). **Κενή τιμή (`''`)** = **κανένας περιορισμός** (επικίνδυνο). Μια **διαδρομή** = επιτρέπεται μόνο μέσα σε εκείνον τον φάκελο. **`NULL`** = οι λειτουργίες αρχείων είναι **εντελώς απενεργοποιημένες** (ασφαλέστερο). Άρα empty ≠ NULL: το πρώτο ανοίγει τα πάντα, το δεύτερο τα κλείνει όλα.
+6. Το CVE-2016-6662 επιτρέπει σε επιτιθέμενο με πρόσβαση στη βάση να κάνει τη MySQL να φορτώσει **κακόβουλο αρχείο ρυθμίσεων** (μέσω `general_log` → εγγραφή σε `my.cnf`), εισάγοντας `malloc_lib`/plugin που εκτελείται **κατά την εκκίνηση της mysqld** — και επειδή η εκκίνηση συχνά γίνεται από init/`mysqld_safe` **ως root**, αποκτάται root ακόμη κι αν η κανονική διεργασία τρέχει ως `mysql`. Αντιμετώπιση (§10): τα αρχεία ρυθμίσεων (`my.cnf`) να **ανήκουν στον root και να μην είναι εγγράψιμα** από τον `mysql`.
+7. Η αναβάθμιση κλείνει το **μονοπάτι εισόδου**, αλλά αν το σύστημα έχει ήδη παραβιαστεί ο επιτιθέμενος έχει πιθανότατα αφήσει **persistence** (webshells, cron jobs, backdoor χρήστες, κλεμμένα credentials/κλειδιά) που παραμένουν μετά το patch. Απαιτείται incident response: εντοπισμός/καθαρισμός artifacts, αλλαγή όλων των κωδικών/κλειδιών και, ιδανικά, **rebuild** από καθαρό image.
+
 ---
 
 ## Πηγές
 
-- [NVD — CVE-2016-10033 (PHPMailer)](https://nvd.nist.gov/vuln/detail/CVE-2016-10033) · [CVE-2016-10045](https://nvd.nist.gov/vuln/detail/CVE-2016-10045)
+- [NVD — CVE-2016-10033 (PHPMailer)](https://nvd.nist.gov/vuln/detail/CVE-2016-10033), [CVE-2016-10045](https://nvd.nist.gov/vuln/detail/CVE-2016-10045)
 - [PHPMailer — GitHub & Security notes](https://github.com/PHPMailer/PHPMailer/blob/master/SECURITY.md)
 - [NVD — CVE-2016-6662 (MySQL)](https://nvd.nist.gov/vuln/detail/CVE-2016-6662)
 - [MySQL — secure_file_priv](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_secure_file_priv)

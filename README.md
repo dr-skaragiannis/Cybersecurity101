@@ -10,10 +10,11 @@
 | :--- | :--- | :--- | :--- | :--- |
 | 00 | **Virtualization** | Hypervisors, εισαγωγή OVA, snapshots, λειτουργίες δικτύου VM | Αρχάριος | [README.md](00.%20Virtualization/README.md) |
 | 01 | **Εισαγωγή στο Linux CLI** | Πλοήγηση συστήματος αρχείων, εντολές, δίκτυο, δικαιώματα | Αρχάριος | [README.md](01.%20Εισαγωγή%20στο%20Linux%20CLI/README.md) |
-| 02 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Αρχάριος | [README.md](02.%20Raven-CTF/README.md) |
-| 03 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](03.%20DC-CTF/README.md) |
-| 04 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Μεσαίο | [README.md](04.%20Raven2-CTF/README.md) |
-| 05 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Μεσαίο | [README.md](05.%20Mr%20Robot/README.md) |
+| 02 | **Bandit** | OverTheWire wargame: αρχεία, pipes, δίκτυο, cron, SUID, git, διαφυγή από κέλυφος | Αρχάριος | [PDF](02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
+| 03 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Αρχάριος | [README.md](03.%20Raven-CTF/README.md), [Hardening](03.%20Raven-CTF/Hardening-Guide.md) |
+| 04 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](04.%20DC-CTF/README.md), [Hardening](04.%20DC-CTF/Hardening-Guide.md) |
+| 05 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Μεσαίο | [README.md](05.%20Raven2-CTF/README.md), [Hardening](05.%20Raven2-CTF/Hardening-Guide.md) |
+| 06 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Μεσαίο | [README.md](06.%20Mr%20Robot/README.md), [Hardening](06.%20Mr%20Robot/Hardening-Guide.md) |
 
 ---
 
@@ -28,20 +29,26 @@ new/
 ├── 01. Εισαγωγή στο Linux CLI/
 │   ├── README.md                    Θεωρία + 4 μέρη ασκήσεων με ερωτήματα
 │   └── Detailed-Notes.md            Αναλυτικές σημειώσεις + απαντήσεις
-├── 02. Raven-CTF/
+├── 02. Bandit/
+│   └── Lab 02 - Bandit.pdf          Walkthrough του OverTheWire Bandit (επίπεδα 0–33)
+├── 03. Raven-CTF/
 │   ├── README.md                    Write-up σε 8 βήματα
 │   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά βήμα
+│   ├── Hardening-Guide.md           Θωράκιση: SSH, WordPress, MySQL, sudo
 │   └── images/                      15 στιγμιότυπα οθόνης (image*.png)
-├── 03. DC-CTF/
+├── 04. DC-CTF/
 │   ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
 │   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά φάση
+│   ├── Hardening-Guide.md           Θωράκιση: Drupal, PHP, egress, SUID, mount options
 │   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
-├── 04. Raven2-CTF/
+├── 05. Raven2-CTF/
 │   ├── README.md                    Write-up σε 6 ενότητες
 │   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά ενότητα
+│   ├── Hardening-Guide.md           Θωράκιση: PHPMailer, web root, MySQL (UDF, FILE, root)
 │   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
-└── 05. Mr Robot/
+└── 06. Mr Robot/
     ├── README.md                    Write-up: 6 φάσεις, 32 εικόνες
+    ├── Hardening-Guide.md           Θωράκιση: login, Theme Editor, PHP, hashes, SUID nmap
     └── images/                      32 στιγμιότυπα (από το writeup)
 ```
 
@@ -95,11 +102,31 @@ new/
 
 ---
 
-## 02. Raven-CTF
+## 02. Bandit
+
+Ελληνική, εμπλουτισμένη απόδοση του walkthrough για το wargame **Bandit** της κοινότητας OverTheWire: 34 επίπεδα σε πραγματικό εξυπηρετητή Linux, όπου σε κάθε επίπεδο συνδέεστε μέσω SSH και αναζητάτε τον κωδικό του επόμενου χρήστη.
+
+📘 **Εγχειρίδιο:** [Lab 02 - Bandit.pdf](02.%20Bandit/Lab%2002%20-%20Bandit.pdf)
+
+**Θεματικές ενότητες:**
+
+- **Αρχεία και ονόματα (0–6):** `ls`, `cat`, κρυφά αρχεία, ειδικά ονόματα αρχείων, `file`, `find`.
+- **Επεξεργασία κειμένου (7–12):** `grep`, `sort | uniq`, `strings`, Base64, ROT13, συμπίεση.
+- **Δίκτυο και κλειδιά (13–20):** κλειδιά SSH, `nc`, `openssl s_client`, σάρωση θυρών, `diff`, SUID.
+- **Αυτοματοποίηση (21–24):** `cron`, σενάρια bash, εξαντλητική αναζήτηση.
+- **Διαφυγή και Git (25–33):** διαφυγή μέσω `more` / `vi`, ιστορικό, κλάδοι, ετικέτες, `$0`.
+
+**Πηγή:** [OverTheWire — Bandit](https://overthewire.org/wargames/bandit/), [Writeup: A. Cheron](https://axcheron.github.io/writeups/otw/bandit/)
+
+---
+
+## 03. Raven-CTF
 
 Μεταφρασμένο και εμπλουτισμένο write-up για τη μηχανή **Raven 1** της VulnHub.
 
-📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](02.%20Raven-CTF/Detailed-Notes.md) — μεθοδολογία, ανάλυση κάθε βήματος και εικόνας, παγίδες και ερωτήσεις αυτοελέγχου.
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](03.%20Raven-CTF/Detailed-Notes.md) — μεθοδολογία, ανάλυση κάθε βήματος και εικόνας, παγίδες και ερωτήσεις αυτοελέγχου.
+
+🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](03.%20Raven-CTF/Hardening-Guide.md) — firewall, Apache, WordPress, SSH με κλειδιά & PAM, MySQL με ελάχιστα δικαιώματα, διόρθωση `sudo`.
 
 **Ροή επίλυσης:**
 
@@ -113,15 +140,17 @@ new/
 8. **Root** — hashes από `wp_users` → John the Ripper (`rockyou.txt`) → `steven` → `root`.
 
 **Εργαλεία:** `netdiscover`, `nmap`, `DirBuster`/`gobuster`, `WPScan`, `hydra`, `ssh`, `mysql`, `john`.
-**Πηγή:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/) · [Writeup: Hariharan](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
+**Πηγή:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/), [Writeup: Hariharan](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 
 ---
 
-## 03. DC-CTF
+## 04. DC-CTF
 
 Πλήρες εγχειρίδιο δοκιμής παρείσδυσης στη μηχανή **DC-1**, δομημένο σε τέσσερις μεθοδολογικές φάσεις.
 
-📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](03.%20DC-CTF/Detailed-Notes.md) — θεωρία Drupalgeddon, Metasploit, PTY, SUID και CVSS, με γλωσσάρι και ερωτήσεις.
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](04.%20DC-CTF/Detailed-Notes.md) — θεωρία Drupalgeddon, Metasploit, PTY, SUID και CVSS, με γλωσσάρι και ερωτήσεις.
+
+🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](04.%20DC-CTF/Hardening-Guide.md) — αναβάθμιση/hotfix Drupal, `php.ini`, φιλτράρισμα εξόδου, SUID & `dpkg-statoverride`, `nosuid/noexec`.
 
 **Φάσεις:**
 
@@ -145,15 +174,17 @@ new/
 **Τεχνική σύνοψη & αποκατάσταση:** πίνακας επικινδυνότητας (CVSS v3) και μέτρα hardening — patch management, WAF/ModSecurity με OWASP CRS, αφαίρεση SUID (`chmod u-s /usr/bin/find`), έλεγχοι ακεραιότητας (AIDE/Tripwire), AppArmor/SELinux.
 
 **Εργαλεία:** `netdiscover`, `nmap`, Metasploit Framework, Meterpreter, `find`, `cat`, `whoami`.
-**Πηγή:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/) · [Writeup: Hacking Articles](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
+**Πηγή:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/), [Writeup: Hacking Articles](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
 
 ---
 
-## 04. Raven2-CTF
+## 05. Raven2-CTF
 
 Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (VulnHub), επιπέδου *Beginner/Intermediate*, με στόχο την ανάκτηση 4 σημαιών και την απόκτηση δικαιωμάτων root.
 
-📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](04.%20Raven2-CTF/Detailed-Notes.md) — PHPMailer RCE, MySQL UDF, SUID, με αναλυτική εξήγηση κάθε εντολής.
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](05.%20Raven2-CTF/Detailed-Notes.md) — PHPMailer RCE, MySQL UDF, SUID, με αναλυτική εξήγηση κάθε εντολής.
+
+🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](05.%20Raven2-CTF/Hardening-Guide.md) — καθαρισμός μετά την παραβίαση, PHPMailer 6 με Composer, MySQL ως `mysql`, `secure_file_priv`, `plugin_dir`.
 
 **Ροή επίλυσης:**
 
@@ -165,21 +196,23 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 6. **Root** — `find raj -exec "/bin/sh" \;` → κέλυφος root, **Flag 4** στο `/root` και **Flag 3** στο `wp-content/uploads/2018/11`.
 
 **Εργαλεία:** `netdiscover`, `nmap`, `dirb`, Exploit-DB / `searchsploit`, `nc`, MySQL client, `gcc`, `find`.
-**Πηγή:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/) · [Writeup: Hacking Articles](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
+**Πηγή:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/), [Writeup: Hacking Articles](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
 
 
 ---
 
-## 05. Mr Robot
+## 06. Mr Robot
 
 Πλήρες write-up για τη μηχανή **Mr. Robot** (TryHackMe): από την απαρίθμηση του WordPress μέχρι το `root`, με 32 στιγμιότυπα οθόνης, ανάλυση κάθε εντολής και επεξήγηση κάθε εικόνας.
 
-📘 **Αναλυτικό κείμενο:** [README.md](05.%20Mr%20Robot/README.md)
+📘 **Αναλυτικό κείμενο:** [README.md](06.%20Mr%20Robot/README.md)
+
+🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](06.%20Mr%20Robot/Hardening-Guide.md) — ενιαία μηνύματα σύνδεσης, όρια brute-force, `DISALLOW_FILE_EDIT`, `disable_functions`, hashes, SUID nmap.
 
 **Ροή επίλυσης:**
 
 1. **Αναγνώριση** — `nmap -sV -T4` → μόνο 80/443, Apache httpd.
-2. **Απαρίθμηση** — `gobuster` → `/wp-login`, `/robots.txt`· το `robots.txt` δίνει **Key 1** και το λεξικό `fsocity.dic`.
+2. **Απαρίθμηση** — `gobuster` → `/wp-login`, `/robots.txt`, το `robots.txt` δίνει **Key 1** και το λεξικό `fsocity.dic`.
 3. **Καθαρισμός λεξικού** — `sort | uniq` από 858.160 σε **11.451** λέξεις (-98,6%).
 4. **Διαπιστευτήρια** — διαφορετικά μηνύματα σφάλματος (user enumeration) + Burp Proxy + `hydra` (δύο περάσματα) → `elliot:ER28-0652`.
 5. **Αρχική πρόσβαση** — Theme Editor → PHP reverse shell (`archive.php`) → `nc -lnvp 1234` → shell ως `daemon`.
@@ -188,7 +221,7 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 8. **Εναλλακτικές** — Burp Intruder, `wpscan`, John the Ripper, Hashcat.
 
 **Εργαλεία:** `nmap`, `gobuster`, Burp Suite, `hydra`, `wpscan`, `nc`, `john`, `hashcat`, GTFOBins.
-**Πηγή:** [Mr Robot CTF Walkthrough (2023) — Charalampos Spanias](https://medium.com/@cspanias/thms-mr-robot-ctf-walkthrough-2023-55ca5c19fbaf) · [TryHackMe room](https://tryhackme.com/room/mrrobot)
+**Πηγή:** [Mr Robot CTF Walkthrough (2023) — Charalampos Spanias](https://medium.com/@cspanias/thms-mr-robot-ctf-walkthrough-2023-55ca5c19fbaf), [TryHackMe room](https://tryhackme.com/room/mrrobot)
 
 ---
 
@@ -206,12 +239,12 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 ## Συνιστώμενη Σειρά Εκτέλεσης
 
 ```
-00. Virtualization   →   01. Εισαγωγή στο Linux CLI   →   02. Raven-CTF   →   03. DC-CTF   →   04. Raven2-CTF   →   05. Mr Robot
-   (στήσιμο VMs,             (θεμέλια: CLI, δίκτυο)          (πρώτη CTF        (μεθοδολογία       (web RCE +          (WordPress →
-    δίκτυο, snapshots)                                       εμπειρία)         pentest)           privesc UDF)         root)
+00. Virtualization   →   01. Εισαγωγή στο Linux CLI   →   02. Bandit      →   03. Raven-CTF   →   04. DC-CTF     →   05. Raven2-CTF   →   06. Mr Robot
+(στήσιμο VMs,            (θεμέλια: CLI,                   (πρακτική CLI       (πρώτη CTF          (μεθοδολογία       (web RCE +           (WordPress →
+δίκτυο, snapshots)       δίκτυο)                          μέσω SSH)           εμπειρία)           pentest)           privesc UDF)         root)
 ```
 
-Το εργαστήριο 00 είναι προαπαιτούμενο για όλα: χωρίς εικονική μηχανή και σωστά ρυθμισμένο δίκτυο δεν εκτελείται κανένα από τα επόμενα. Το 01 με τη σειρά του παρέχει τις εντολές (`ls`, `grep`, `chmod`, `ss`, `ping`) που χρησιμοποιούνται άμεσα στα 02, 03, 04 και 05. Το 04 είναι η φυσική συνέχεια του 02 (ίδια σειρά Raven, δυσκολότερη διαδρομή root)· το 05 συνδυάζει enumerations ιστού, brute-force και SUID σε ένα ενιαίο σενάριο.
+Το εργαστήριο 00 είναι προαπαιτούμενο για όλα: χωρίς εικονική μηχανή και σωστά ρυθμισμένο δίκτυο δεν εκτελείται κανένα από τα επόμενα. Το 01 με τη σειρά του παρέχει τις εντολές (`ls`, `grep`, `chmod`, `ss`, `ping`) που χρησιμοποιούνται άμεσα στα επόμενα, ενώ το 02 (Bandit) τις εξασκεί σε πραγματικό απομακρυσμένο σύστημα μέσω SSH πριν από τις CTF μηχανές 03–06. Το 05 είναι η φυσική συνέχεια του 03 (ίδια σειρά Raven, δυσκολότερη διαδρομή root), το 06 συνδυάζει enumerations ιστού, brute-force και SUID σε ένα ενιαίο σενάριο.
 
 ---
 
@@ -230,25 +263,29 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 - [DMTF — Open Virtualization Format (DSP0243)](https://www.dmtf.org/standards/ovf)
 - [Kali Linux — Downloads (VirtualBox images)](https://www.kali.org/get-kali/#kali-platforms)
 
-### Εργαστήριο 02 — Raven: 1
+### Εργαστήριο 02 — Bandit
+- **Πλατφόρμα:** [OverTheWire — Bandit](https://overthewire.org/wargames/bandit/)
+- **Writeup αναφοράς:** [Bandit Write-up — A. Cheron](https://axcheron.github.io/writeups/otw/bandit/)
+
+### Εργαστήριο 03 — Raven: 1
 - **Λήψη μηχανήματος:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/)
 - **Writeup αναφοράς:** [Raven 1 CTF Write-up — Hariharan (corruptedprotocol.medium.com)](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 - **Εργαλεία:** [WPScan](https://wpscan.com/), [OWASP DirBuster/Gobuster](https://www.kali.org/tools/gobuster/), [John the Ripper](https://www.openwall.com/john/)
 
-### Εργαστήριο 03 — DC: 1
+### Εργαστήριο 04 — DC: 1
 - **Λήψη μηχανήματος:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/)
 - **Writeup αναφοράς:** [DC-1: Vulnhub Walkthrough — Hacking Articles](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
 - **Ευπάθεια:** [CVE-2014-3704 — Drupalgeddon (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2014-3704)
 - **Module:** [Metasploit — `exploit/multi/http/drupal_drupageddon`](https://www.rapid7.com/db/modules/exploit/multi/http/drupal_drupageddon/)
 - **Αποκατάσταση:** [OWASP Core Rule Set (ModSecurity)](https://owasp.org/www-project-modsecurity-core-rule-set/)
 
-### Εργαστήριο 04 — Raven: 2
+### Εργαστήριο 05 — Raven: 2
 - **Λήψη μηχανήματος:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
 - **Writeup αναφοράς:** [Raven 2: Vulnhub Walkthrough — Hacking Articles](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
-- **Ευπάθειες:** [CVE-2016-10033 — PHPMailer RCE (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-10033) · [CVE-2016-6662 — MySQL/MariaDB privilege escalation (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-6662)
+- **Ευπάθειες:** [CVE-2016-10033 — PHPMailer RCE (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-10033), [CVE-2016-6662 — MySQL/MariaDB privilege escalation (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-6662)
 - **Exploit:** [Exploit-DB 40974 — PHPMailer < 5.2.18 RCE (Python)](https://www.exploit-db.com/exploits/40974)
 
-### Εργαστήριο 05 — Mr Robot
+### Εργαστήριο 06 — Mr Robot
 - **Writeup αναφοράς:** [Mr Robot CTF Walkthrough (2023) — Charalampos Spanias](https://medium.com/@cspanias/thms-mr-robot-ctf-walkthrough-2023-55ca5c19fbaf)
 - **Πλατφόρμα:** [TryHackMe — Mr Robot CTF](https://tryhackme.com/room/mrrobot)
 - **GTFOBins:** [nmap](https://gtfobins.github.io/gtfobins/nmap/)
