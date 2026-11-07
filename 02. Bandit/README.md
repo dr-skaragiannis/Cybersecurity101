@@ -161,7 +161,7 @@ CV1DtqXWVFXTvM2F0k09SHz0YwRINYA9
 **Εντολές:** quoting · escaping · αυτόματη συμπλήρωση
 
 ```bash
-bandit2@bandit:~$ cat "spaces in this filename"
+bandit2@bandit:~$ cat ./--   όνομα αρχείου.
 UmHadQclWmgdLOKQ3YNgjWxGoRMb5luK
 ```
 
