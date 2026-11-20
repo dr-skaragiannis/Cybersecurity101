@@ -82,6 +82,11 @@ ip addr show
 # Κλασική εντολή
 ifconfig
 
+#Δικαιώματα διαχειριστή
+sudo su
+
+#Ανίχνευση άλλων συσκευών
+sudo arp-scan -l
 ## Ping έλεγχος σύνδεσης
 ping <IP-Address-του-θύματος>
 ```
