@@ -14,6 +14,7 @@ A collection of laboratory exercises that progressively develop core skills, fro
 | 01 | **Introduction to the Linux CLI** | File-system navigation, commands, networking, permissions | Beginner | [README.md](01.%20Introduction%20to%20the%20Linux%20CLI/README.md) |
 | 02 | **Bandit** | OverTheWire wargame: files, pipes, networking, cron, SUID, git, shell escapes | Beginner | [README.md](02.%20Bandit/README.md), [PDF (Greek)](../02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
 | 03 | **Raven-CTF** | Write-up: reconnaissance, WordPress, SSH, MySQL, privilege escalation | Beginner | [README.md](03.%20Raven-CTF/README.md), [Hardening](03.%20Raven-CTF/Hardening-Guide.md) |
+| 04 | **SAST-CodeQL** | Static analysis with GitHub CodeQL: alerts, CWE/CVE, Dependabot, code fixes | Beginner | [README.md](04.%20SAST-CodeQL/README.md), [PDF (Greek)](../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf) |
 | 05 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Beginner | [README.md](05.%20DC-CTF/README.md), [Hardening](05.%20DC-CTF/Hardening-Guide.md) |
 | 06 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Intermediate | [README.md](06.%20Raven2-CTF/README.md), [Hardening](06.%20Raven2-CTF/Hardening-Guide.md) |
 | 07 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Intermediate | [README.md](07.%20Mr%20Robot/README.md), [Hardening](07.%20Mr%20Robot/Hardening-Guide.md) |
@@ -38,6 +39,8 @@ en/
 │   ├── README.md                    Eight-step write-up
 │   ├── Detailed-Notes.md            Detailed notes for each step
 │   └── Hardening-Guide.md           Hardening: SSH, WordPress, MySQL, sudo
+├── 04. SAST-CodeQL/
+│   └── README.md                    CodeQL setup, alert analysis, CVEs, code fixes
 ├── 05. DC-CTF/
 │   ├── README.md                    Four-phase manual + remediation measures
 │   ├── Detailed-Notes.md            Detailed notes for each phase
@@ -145,6 +148,27 @@ A translated and enriched write-up for the **Raven 1** machine from VulnHub.
 
 **Tools:** `netdiscover`, `nmap`, `DirBuster`/`gobuster`, `WPScan`, `hydra`, `ssh`, `mysql`, `john`.
 **Source:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/), [Write-up: Hariharan](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
+
+---
+
+## 04. SAST-CodeQL
+
+A **Static Application Security Testing** (SAST) lab with **GitHub CodeQL**, built on the intentionally vulnerable Flask application [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable). You do not attack a machine here: the analysis only reads the source code, without running it. It is the defensive side of the vulnerabilities you exploit in the CTF labs (SQL injection, command injection, XSS).
+
+📘 **Full text:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF (Greek):** [Exercise](../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf), [Step-by-step guide](../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL%20-%20Οδηγός.pdf)
+
+**Topics:**
+
+- **Concepts:** SAST, source and sink, CWE, CVE, CVSS, GHSA, NVD, SCA.
+- **Setup:** your own repository, CodeQL default setup, the run in Actions.
+- **Reading the findings:** 13 alerts (2 Critical, 9 High, 2 Medium), search filters, *Show paths*, rule documentation.
+- **False negatives:** what CodeQL missed (pickle, MD5, hardcoded secrets, XXE, `random`) and a comparison with **Bandit**.
+- **CVEs in dependencies:** `pip-audit` / Dependabot → `lxml` CVE-2026-41066 (High) and `Flask` CVE-2026-27205 (Low), one commit per CVE.
+- **Fixing the code:** SQL injection (parameterized query), template injection (template variable), command injection (`subprocess` without a shell). Open alerts 13 → 8.
+- **Questions:** 10 search questions within the findings and 10 investigative questions.
+
+**Tools:** GitHub CodeQL, GitHub Actions, Dependabot, `pip-audit`, Bandit.
+**Source:** [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable), [CodeQL query help](https://codeql.github.com/codeql-query-help/)
 
 ---
 
@@ -258,6 +282,7 @@ A video-based walkthrough for the **Kioptrix: Level 1** machine (VulnHub). Rathe
 - **Attacking machine:** Kali Linux (or any distribution with the tools used in the exercises).
 - **Targets:** VM images from [VulnHub](https://www.vulnhub.com/) (Raven 1, DC-1, Raven 2, Kioptrix: Level 1) and the [Mr Robot](https://tryhackme.com/room/mrrobot) room on TryHackMe.
 - **Network:** an isolated NAT Network or Host-Only network.
+- **For Lab 04:** a (free) [github.com](https://github.com/) account and `git`. The analysis runs on GitHub's servers.
 - **Background knowledge:** comfort with the terminal and basic TCP/IP concepts.
 
 ---
@@ -265,13 +290,14 @@ A video-based walkthrough for the **Kioptrix: Level 1** machine (VulnHub). Rathe
 ## Recommended Order
 
 ```
-00. Virtualization  →  01. Linux CLI  →  02. Bandit      →  03. Raven-CTF  →  05. DC-CTF     →  06. Raven2-CTF  →  07. Mr Robot  →  08. Kioptrix
-(VM setup,             (foundations:     (CLI practice      (first CTF         (pentest          (web RCE +          (WordPress →     (exploit
-networking,            CLI,              over SSH)          experience)        methodology)      UDF privesc)        root)            patching)
+00. Virtualization  →  01. Linux CLI  →  02. Bandit      →  03. Raven-CTF  →  04. SAST-CodeQL  →  05. DC-CTF     →  06. Raven2-CTF  →  07. Mr Robot  →  08. Kioptrix
+(VM setup,             (foundations:     (CLI practice      (first CTF         (vulnerabilities    (pentest          (web RCE +          (WordPress →     (exploit
+networking,            CLI,              over SSH)          experience)        from the code       methodology)      UDF privesc)        root)            patching)
+                                                                                side)
 snapshots)             networking)
 ```
 
-Lab 00 is a prerequisite for all others: without a virtual machine and a correctly configured network, none of the subsequent labs can be carried out. Lab 01, in turn, provides the commands (`ls`, `grep`, `chmod`, `ss`, `ping`) that are used directly in the labs that follow, while Lab 02 (Bandit) puts them into practice on a real remote system over SSH before the CTF machines in Labs 03–07. Lab 06 is the natural continuation of Lab 03 (the same Raven series, with a more demanding route to root), Lab 07 combines web enumeration, brute force and SUID abuse in a single scenario, and Lab 08 focuses on adapting and compiling legacy exploit code.
+Lab 00 is a prerequisite for all others: without a virtual machine and a correctly configured network, none of the subsequent labs can be carried out. Lab 01, in turn, provides the commands (`ls`, `grep`, `chmod`, `ss`, `ping`) that are used directly in the labs that follow, while Lab 02 (Bandit) puts them into practice on a real remote system over SSH before the CTF machines in Labs 03 and 05–08. Lab 04 (SAST-CodeQL) looks at the same vulnerabilities you exploit in the CTFs (SQL injection, command injection, XSS) from the code side: how a static analysis tool detects them and how they are fixed. Lab 06 is the natural continuation of Lab 03 (the same Raven series, with a more demanding route to root), Lab 07 combines web enumeration, brute force and SUID abuse in a single scenario, and Lab 08 focuses on adapting and compiling legacy exploit code.
 
 ---
 
@@ -298,6 +324,13 @@ Unauthorized access to third-party systems is a criminal offence. Perform these 
 - **Machine download:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/)
 - **Reference write-up:** [Raven 1 CTF Write-up — Hariharan (corruptedprotocol.medium.com)](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 - **Tools:** [WPScan](https://wpscan.com/), [OWASP DirBuster/Gobuster](https://www.kali.org/tools/gobuster/), [John the Ripper](https://www.openwall.com/john/)
+
+### Lab 04 — SAST with GitHub CodeQL
+- **Target repository:** [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable)
+- **Lab repositories:** [simplest-sast-beginners](https://github.com/dr-skaragiannis/simplest-sast-beginners), [simplest-sast-vulnerable-lab](https://github.com/dr-skaragiannis/simplest-sast-vulnerable-lab)
+- **Documentation:** [About code scanning with CodeQL](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql), [CodeQL query help](https://codeql.github.com/codeql-query-help/)
+- **Catalogues:** [CWE](https://cwe.mitre.org/), [GitHub Advisory Database](https://github.com/advisories), [NVD](https://nvd.nist.gov/)
+- **Tools:** [Bandit](https://bandit.readthedocs.io/), [pip-audit](https://github.com/pypa/pip-audit)
 
 ### Lab 05 — DC: 1
 - **Machine download:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/)

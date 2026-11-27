@@ -14,6 +14,7 @@
 | 01 | **Εισαγωγή στο Linux CLI** | Πλοήγηση συστήματος αρχείων, εντολές, δίκτυο, δικαιώματα | Αρχάριος | [README.md](01.%20Εισαγωγή%20στο%20Linux%20CLI/README.md) |
 | 02 | **Bandit** | OverTheWire wargame: αρχεία, pipes, δίκτυο, cron, SUID, git, διαφυγή από κέλυφος | Αρχάριος | [README.md](02.%20Bandit/README.md), [PDF](02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
 | 03 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Αρχάριος | [README.md](03.%20Raven-CTF/README.md), [Hardening](03.%20Raven-CTF/Hardening-Guide.md) |
+| 04 | **SAST-CodeQL** | Στατική ανάλυση με GitHub CodeQL: alerts, CWE/CVE, Dependabot, διόρθωση κώδικα | Αρχάριος | [README.md](04.%20SAST-CodeQL/README.md), [PDF](04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf) |
 | 05 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](05.%20DC-CTF/README.md), [Hardening](05.%20DC-CTF/Hardening-Guide.md) |
 | 06 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Μεσαίο | [README.md](06.%20Raven2-CTF/README.md), [Hardening](06.%20Raven2-CTF/Hardening-Guide.md) |
 | 07 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Μεσαίο | [README.md](07.%20Mr%20Robot/README.md), [Hardening](07.%20Mr%20Robot/Hardening-Guide.md) |
@@ -39,6 +40,11 @@ new/
 │   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά βήμα
 │   ├── Hardening-Guide.md           Θωράκιση: SSH, WordPress, MySQL, sudo
 │   └── images/                      15 στιγμιότυπα οθόνης (image*.png)
+├── 04. SAST-CodeQL/
+│   ├── README.md                    Setup CodeQL, ανάλυση alerts, CVE, διόρθωση κώδικα
+│   ├── Lab 04 - SAST-CodeQL.pdf     Η πλήρης άσκηση (θεωρία, 7 ασκήσεις, Δ0–Δ11, ερωτήσεις)
+│   ├── Lab 04 - SAST-CodeQL - Οδηγός.pdf  Οδηγός βήμα βήμα με στιγμιότυπα
+│   └── images/                      8 στιγμιότυπα (CodeQL, advisory, commits)
 ├── 05. DC-CTF/
 │   ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
 │   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά φάση
@@ -147,6 +153,27 @@ new/
 
 ---
 
+## 04. SAST-CodeQL
+
+Εργαστήριο **στατικής ανάλυσης ασφάλειας κώδικα** (SAST) με το **GitHub CodeQL**, πάνω στην εσκεμμένα ευάλωτη εφαρμογή Flask [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable). Εδώ δεν επιτίθεστε σε μηχανή: η ανάλυση διαβάζει μόνο τον πηγαίο κώδικα, χωρίς να τον εκτελεί. Είναι η αμυντική πλευρά των ευπαθειών που εκμεταλλεύεστε στα CTF (SQL injection, command injection, XSS).
+
+📘 **Αναλυτικό κείμενο:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF:** [Άσκηση](04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf), [Οδηγός βήμα βήμα](04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL%20-%20Οδηγός.pdf)
+
+**Θεματικές ενότητες:**
+
+- **Έννοιες:** SAST, πηγή και καταβόθρα (source/sink), CWE, CVE, CVSS, GHSA, NVD, SCA.
+- **Setup:** δικό σας αποθετήριο, CodeQL default setup, η εκτέλεση στο Actions.
+- **Ανάγνωση ευρημάτων:** 13 alerts (2 Critical, 9 High, 2 Medium), φίλτρα αναζήτησης, *Show paths*, τεκμηρίωση κανόνων.
+- **Ψευδώς αρνητικά:** τι δεν βρήκε το CodeQL (pickle, MD5, hardcoded secrets, XXE, `random`) και σύγκριση με το **Bandit**.
+- **CVE στις εξαρτήσεις:** `pip-audit` / Dependabot → `lxml` CVE-2026-41066 (High) και `Flask` CVE-2026-27205 (Low), με ένα commit ανά CVE.
+- **Διόρθωση κώδικα:** SQL injection (παραμετροποιημένο ερώτημα), template injection (μεταβλητή προτύπου), command injection (`subprocess` χωρίς κέλυφος). Ανοιχτά alerts 13 → 8.
+- **Ερωτήσεις:** 10 ερωτήσεις αναζήτησης μέσα στα ευρήματα και 10 διερευνητικές ερωτήσεις.
+
+**Εργαλεία:** GitHub CodeQL, GitHub Actions, Dependabot, `pip-audit`, Bandit.
+**Πηγή:** [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable), [CodeQL query help](https://codeql.github.com/codeql-query-help/)
+
+---
+
 ## 05. DC-CTF
 
 Πλήρες εγχειρίδιο δοκιμής παρείσδυσης στη μηχανή **DC-1**, δομημένο σε τέσσερις μεθοδολογικές φάσεις.
@@ -235,6 +262,7 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 - **Επιτιθέμενη μηχανή:** Kali Linux (ή οποιαδήποτε διανομή με τα εργαλεία των ασκήσεων).
 - **Στόχοι:** εικόνες VM από [VulnHub](https://www.vulnhub.com/) (Raven 1, DC-1, Raven 2) και το room [Mr Robot](https://tryhackme.com/room/mrrobot) στο TryHackMe.
 - **Δίκτυο:** απομονωμένο NAT Network ή Host-Only.
+- **Για το εργαστήριο 04:** λογαριασμός στο [github.com](https://github.com/) (δωρεάν) και `git`. Η ανάλυση τρέχει στους servers του GitHub.
 - **Γνώσεις:** άνεση με terminal, βασικές έννοιες TCP/IP.
 
 ---
@@ -242,12 +270,13 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 ## Συνιστώμενη Σειρά Εκτέλεσης
 
 ```
-00. Virtualization   →   01. Εισαγωγή στο Linux CLI   →   02. Bandit      →   03. Raven-CTF   →   05. DC-CTF     →   06. Raven2-CTF   →   07. Mr Robot
-(στήσιμο VMs,            (θεμέλια: CLI,                   (πρακτική CLI       (πρώτη CTF          (μεθοδολογία       (web RCE +           (WordPress →
-δίκτυο, snapshots)       δίκτυο)                          μέσω SSH)           εμπειρία)           pentest)           privesc UDF)         root)
+00. Virtualization   →   01. Εισαγωγή στο Linux CLI   →   02. Bandit      →   03. Raven-CTF   →   04. SAST-CodeQL   →   05. DC-CTF     →   06. Raven2-CTF   →   07. Mr Robot
+(στήσιμο VMs,            (θεμέλια: CLI,                   (πρακτική CLI       (πρώτη CTF          (ευπάθειες από       (μεθοδολογία       (web RCE +           (WordPress →
+δίκτυο, snapshots)       δίκτυο)                          μέσω SSH)           εμπειρία)           την πλευρά του       pentest)           privesc UDF)         root)
+                                                                                                  κώδικα)
 ```
 
-Το εργαστήριο 00 είναι προαπαιτούμενο για όλα: χωρίς εικονική μηχανή και σωστά ρυθμισμένο δίκτυο δεν εκτελείται κανένα από τα επόμενα. Το 01 με τη σειρά του παρέχει τις εντολές (`ls`, `grep`, `chmod`, `ss`, `ping`) που χρησιμοποιούνται άμεσα στα επόμενα, ενώ το 02 (Bandit) τις εξασκεί σε πραγματικό απομακρυσμένο σύστημα μέσω SSH πριν από τις CTF μηχανές 03–06. Το 05 είναι η φυσική συνέχεια του 03 (ίδια σειρά Raven, δυσκολότερη διαδρομή root), το 06 συνδυάζει enumerations ιστού, brute-force και SUID σε ένα ενιαίο σενάριο.
+Το εργαστήριο 00 είναι προαπαιτούμενο για όλα: χωρίς εικονική μηχανή και σωστά ρυθμισμένο δίκτυο δεν εκτελείται κανένα από τα επόμενα. Το 01 με τη σειρά του παρέχει τις εντολές (`ls`, `grep`, `chmod`, `ss`, `ping`) που χρησιμοποιούνται άμεσα στα επόμενα, ενώ το 02 (Bandit) τις εξασκεί σε πραγματικό απομακρυσμένο σύστημα μέσω SSH πριν από τις CTF μηχανές 03 και 05–07. Το 04 (SAST-CodeQL) δείχνει τις ίδιες ευπάθειες που εκμεταλλεύεστε στα CTF (SQL injection, command injection, XSS) από την πλευρά του κώδικα: πώς τις εντοπίζει ένα εργαλείο στατικής ανάλυσης και πώς διορθώνονται. Το 06 είναι η φυσική συνέχεια του 03 (ίδια σειρά Raven, δυσκολότερη διαδρομή root), το 07 συνδυάζει enumerations ιστού, brute-force και SUID σε ένα ενιαίο σενάριο.
 
 ---
 
@@ -274,6 +303,13 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 - **Λήψη μηχανήματος:** [VulnHub — Raven: 1](https://www.vulnhub.com/entry/raven-1,256/)
 - **Writeup αναφοράς:** [Raven 1 CTF Write-up — Hariharan (corruptedprotocol.medium.com)](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 - **Εργαλεία:** [WPScan](https://wpscan.com/), [OWASP DirBuster/Gobuster](https://www.kali.org/tools/gobuster/), [John the Ripper](https://www.openwall.com/john/)
+
+### Εργαστήριο 04 — SAST με GitHub CodeQL
+- **Αποθετήριο-στόχος:** [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable)
+- **Αποθετήρια του εργαστηρίου:** [simplest-sast-beginners](https://github.com/dr-skaragiannis/simplest-sast-beginners), [simplest-sast-vulnerable-lab](https://github.com/dr-skaragiannis/simplest-sast-vulnerable-lab)
+- **Τεκμηρίωση:** [Code scanning με CodeQL](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql), [CodeQL query help](https://codeql.github.com/codeql-query-help/)
+- **Κατάλογοι:** [CWE](https://cwe.mitre.org/), [GitHub Advisory Database](https://github.com/advisories), [NVD](https://nvd.nist.gov/)
+- **Εργαλεία:** [Bandit](https://bandit.readthedocs.io/), [pip-audit](https://github.com/pypa/pip-audit)
 
 ### Εργαστήριο 05 — DC: 1
 - **Λήψη μηχανήματος:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/)
