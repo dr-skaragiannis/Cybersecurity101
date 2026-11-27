@@ -576,7 +576,7 @@ systemctl restart mysql
 ps -o user,cmd -C mysqld
 ```
 
-The **`user = mysql`** setting is critical: on Raven, MySQL ran as `root`, so anything the database did (e.g., writing a file) was performed with root privileges. The exploitation of this flaw is analyzed in the [Raven 2 Hardening Guide](../05.%20Raven2-CTF/Hardening-Guide.md).
+The **`user = mysql`** setting is critical: on Raven, MySQL ran as `root`, so anything the database did (e.g., writing a file) was performed with root privileges. The exploitation of this flaw is analyzed in the [Raven 2 Hardening Guide](../06.%20Raven2-CTF/Hardening-Guide.md).
 
 ---
 

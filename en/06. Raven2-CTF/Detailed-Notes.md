@@ -1,5 +1,5 @@
 
-# Detailed Notes — Lab 05: Raven 2
+# Detailed Notes — Lab 06: Raven 2
 
 This file is the **extended edition** of `README.md`. The original text is preserved **in full**, and each section is followed by an *"Explanation"* box containing theory, a breakdown of the commands, and the points that require particular attention.
 
@@ -67,7 +67,7 @@ This document is a detailed technical guide to solving the **Raven 2** virtual m
 
 The initial phase of every penetration test requires identifying the target on the local network.
 
-![Network scan with netdiscover](../../05.%20Raven2-CTF/images/image.png)
+![Network scan with netdiscover](../../06.%20Raven2-CTF/images/image.png)
 
 *Figure 1 — Network scan with `netdiscover`: the host `192.168.1.101` was identified, with MAC Vendor "VMware, Inc.".*
 
@@ -77,7 +77,7 @@ Once the target's IP address has been found (`192.168.1.101` in this scenario), 
 nmap -A 192.168.1.101
 ```
 
-![nmap -A scan](../../05.%20Raven2-CTF/images/image-3.png)
+![nmap -A scan](../../06.%20Raven2-CTF/images/image-3.png)
 
 *Figure 2 — `nmap -A`: identification of the operating system, service versions, and traceroute.*
 
@@ -127,7 +127,7 @@ Two indicators: **`PATH`** (a suspicious file that does not belong to a library)
 
 Since an HTTP service was identified on port 80, the next step is to map the structure of the website.
 
-![Raven Security website identified](../../05.%20Raven2-CTF/images/image-1.png)
+![Raven Security website identified](../../06.%20Raven2-CTF/images/image-1.png)
 
 *Figure 3 — The Raven Security website identified on port 80.*
 
@@ -140,19 +140,19 @@ dirb http://192.168.1.101/
 * `dirb`: A specialized web application scanning tool (Web Content Scanner). It works by sending a continuous stream of HTTP GET requests built from words in a predefined wordlist, looking for responses such as 200 OK or 403 Forbidden.
 * `http://192.168.1.101/`: The base URI (Uniform Resource Identifier) of the target.
 
-![dirb scan results](../../05.%20Raven2-CTF/images/image-4.png)
+![dirb scan results](../../06.%20Raven2-CTF/images/image-4.png)
 
 *Figure 4 — `dirb` scan results: the `/vendor/` directory was identified (as well as `/wordpress/`).*
 
 The scan indicated the existence of the `/vendor` directory. On browsing to this directory, files of particular interest were found.
 
-![The /vendor directory](../../05.%20Raven2-CTF/images/image-5.png)
+![The /vendor directory](../../06.%20Raven2-CTF/images/image-5.png)
 
 *Figure 5 — The index of `/vendor/`: `PATH`, `VERSION`, `PHPMailerAutoload.php`, `class.phpmailer.php`.*
 
 * **`PATH` file**: Viewing it revealed the first flag (Flag 1).
 
-![Contents of the PATH file](../../05.%20Raven2-CTF/images/image-6.png)
+![Contents of the PATH file](../../06.%20Raven2-CTF/images/image-6.png)
 
 *Figure 6 — `flag1{a2c1f66d2b8051bd3a5874b5b6e43e21}` inside `/vendor/PATH`.*
 
@@ -210,11 +210,11 @@ export TERM=xterm
 
 PHPMailer 5.2.6 is known to contain a critical vulnerability that permits Remote Code Execution (RCE).
 
-![Exploit-DB 40974 for PHPMailer](../../05.%20Raven2-CTF/images/image-7.png)
+![Exploit-DB 40974 for PHPMailer](../../06.%20Raven2-CTF/images/image-7.png)
 
 *Figure 7 — Exploit-DB **40974** (CVE-2016-10033): PHPMailer < 5.2.18 Remote Code Execution (Python).*
 
-![Modifying the exploit code](../../05.%20Raven2-CTF/images/image-8.png)
+![Modifying the exploit code](../../06.%20Raven2-CTF/images/image-8.png)
 
 *Figure 8 — Modifying the Python exploit code: `# coding: utf-8`, `target`, `backdoor`, and the IP for the reverse shell.*
 
@@ -224,13 +224,13 @@ After downloading a suitable Python exploit, the following modifications are req
 3. Specify the name of the malicious file (backdoor.php).
 4. Enter the attacker's IP address in order to establish the reverse connection (reverse shell).
 
-![Running the exploit](../../05.%20Raven2-CTF/images/image-9.png)
+![Running the exploit](../../06.%20Raven2-CTF/images/image-9.png)
 
 *Figure 9 — Running the exploit: "SeNdіNg eViL sHeLL… SpAwnIng eViL sHeLL…" and `ExPloiTeD http://192.168.1.101/contact.php`.*
 
 We now need to set up the listener and navigate to the backdoor's location, which in our case is rev.php. We can do this by starting netcat on port 4444 (the default) and browsing to ip-address/rev.php. If all of this has been done correctly, we should obtain a shell on the web server.
 
-![Receiving the reverse shell](../../05.%20Raven2-CTF/images/image-10.png)
+![Receiving the reverse shell](../../06.%20Raven2-CTF/images/image-10.png)
 
 *Figure 10 — Receiving the reverse shell: `nc -lvp 4444` and the connection from the web server.*
 
@@ -252,7 +252,7 @@ To stabilize the terminal and convert it into a fully interactive TTY (Teletype)
 python -c 'import pty;pty.spawn("/bin/bash")'
 ```
 
-![Upgrading to a full TTY](../../05.%20Raven2-CTF/images/image-11.png)
+![Upgrading to a full TTY](../../06.%20Raven2-CTF/images/image-11.png)
 
 *Figure 11 — Upgrading the "blind" shell to an interactive TTY and setting `TERM=xterm`.*
 
@@ -261,7 +261,7 @@ python -c 'import pty;pty.spawn("/bin/bash")'
 
 Subsequently, using navigation commands (`cd /var/www`), the second flag (Flag 2) was retrieved.
 
-![Retrieving flag2](../../05.%20Raven2-CTF/images/image-12.png)
+![Retrieving flag2](../../06.%20Raven2-CTF/images/image-12.png)
 
 *Figure 12 — Retrieving the second flag from `/var/www/flag2.txt`.*
 
@@ -411,7 +411,7 @@ Once the compiled `.so` file has been transferred to the target (via `wget`), a 
 mysql -u root -p
 ```
 
-![Connecting to MySQL](../../05.%20Raven2-CTF/images/image-13.png)
+![Connecting to MySQL](../../06.%20Raven2-CTF/images/image-13.png)
 
 *Figure 13 — Connecting to MySQL as `root` and running `SHOW DATABASES`: the `wordpress` database exists.*
 

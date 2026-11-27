@@ -14,9 +14,9 @@
 | 01 | **Εισαγωγή στο Linux CLI** | Πλοήγηση συστήματος αρχείων, εντολές, δίκτυο, δικαιώματα | Αρχάριος | [README.md](01.%20Εισαγωγή%20στο%20Linux%20CLI/README.md) |
 | 02 | **Bandit** | OverTheWire wargame: αρχεία, pipes, δίκτυο, cron, SUID, git, διαφυγή από κέλυφος | Αρχάριος | [README.md](02.%20Bandit/README.md), [PDF](02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
 | 03 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Αρχάριος | [README.md](03.%20Raven-CTF/README.md), [Hardening](03.%20Raven-CTF/Hardening-Guide.md) |
-| 04 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](04.%20DC-CTF/README.md), [Hardening](04.%20DC-CTF/Hardening-Guide.md) |
-| 05 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Μεσαίο | [README.md](05.%20Raven2-CTF/README.md), [Hardening](05.%20Raven2-CTF/Hardening-Guide.md) |
-| 06 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Μεσαίο | [README.md](06.%20Mr%20Robot/README.md), [Hardening](06.%20Mr%20Robot/Hardening-Guide.md) |
+| 05 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](05.%20DC-CTF/README.md), [Hardening](05.%20DC-CTF/Hardening-Guide.md) |
+| 06 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Μεσαίο | [README.md](06.%20Raven2-CTF/README.md), [Hardening](06.%20Raven2-CTF/Hardening-Guide.md) |
+| 07 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Μεσαίο | [README.md](07.%20Mr%20Robot/README.md), [Hardening](07.%20Mr%20Robot/Hardening-Guide.md) |
 
 ---
 
@@ -39,17 +39,17 @@ new/
 │   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά βήμα
 │   ├── Hardening-Guide.md           Θωράκιση: SSH, WordPress, MySQL, sudo
 │   └── images/                      15 στιγμιότυπα οθόνης (image*.png)
-├── 04. DC-CTF/
+├── 05. DC-CTF/
 │   ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
 │   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά φάση
 │   ├── Hardening-Guide.md           Θωράκιση: Drupal, PHP, egress, SUID, mount options
 │   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
-├── 05. Raven2-CTF/
+├── 06. Raven2-CTF/
 │   ├── README.md                    Write-up σε 6 ενότητες
 │   ├── Detailed-Notes.md            Αναλυτικές σημειώσεις ανά ενότητα
 │   ├── Hardening-Guide.md           Θωράκιση: PHPMailer, web root, MySQL (UDF, FILE, root)
 │   └── images/                      13 στιγμιότυπα οθόνης (image*.png)
-└── 06. Mr Robot/
+└── 07. Mr Robot/
     ├── README.md                    Write-up: 6 φάσεις, 32 εικόνες
     ├── Hardening-Guide.md           Θωράκιση: login, Theme Editor, PHP, hashes, SUID nmap
     └── images/                      32 στιγμιότυπα (από το writeup)
@@ -147,13 +147,13 @@ new/
 
 ---
 
-## 04. DC-CTF
+## 05. DC-CTF
 
 Πλήρες εγχειρίδιο δοκιμής παρείσδυσης στη μηχανή **DC-1**, δομημένο σε τέσσερις μεθοδολογικές φάσεις.
 
-📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](04.%20DC-CTF/Detailed-Notes.md) — θεωρία Drupalgeddon, Metasploit, PTY, SUID και CVSS, με γλωσσάρι και ερωτήσεις.
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](05.%20DC-CTF/Detailed-Notes.md) — θεωρία Drupalgeddon, Metasploit, PTY, SUID και CVSS, με γλωσσάρι και ερωτήσεις.
 
-🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](04.%20DC-CTF/Hardening-Guide.md) — αναβάθμιση/hotfix Drupal, `php.ini`, φιλτράρισμα εξόδου, SUID & `dpkg-statoverride`, `nosuid/noexec`.
+🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](05.%20DC-CTF/Hardening-Guide.md) — αναβάθμιση/hotfix Drupal, `php.ini`, φιλτράρισμα εξόδου, SUID & `dpkg-statoverride`, `nosuid/noexec`.
 
 **Φάσεις:**
 
@@ -181,13 +181,13 @@ new/
 
 ---
 
-## 05. Raven2-CTF
+## 06. Raven2-CTF
 
 Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (VulnHub), επιπέδου *Beginner/Intermediate*, με στόχο την ανάκτηση 4 σημαιών και την απόκτηση δικαιωμάτων root.
 
-📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](05.%20Raven2-CTF/Detailed-Notes.md) — PHPMailer RCE, MySQL UDF, SUID, με αναλυτική εξήγηση κάθε εντολής.
+📘 **Αναλυτικές σημειώσεις:** [Detailed-Notes.md](06.%20Raven2-CTF/Detailed-Notes.md) — PHPMailer RCE, MySQL UDF, SUID, με αναλυτική εξήγηση κάθε εντολής.
 
-🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](05.%20Raven2-CTF/Hardening-Guide.md) — καθαρισμός μετά την παραβίαση, PHPMailer 6 με Composer, MySQL ως `mysql`, `secure_file_priv`, `plugin_dir`.
+🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](06.%20Raven2-CTF/Hardening-Guide.md) — καθαρισμός μετά την παραβίαση, PHPMailer 6 με Composer, MySQL ως `mysql`, `secure_file_priv`, `plugin_dir`.
 
 **Ροή επίλυσης:**
 
@@ -204,13 +204,13 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 
 ---
 
-## 06. Mr Robot
+## 07. Mr Robot
 
 Πλήρες write-up για τη μηχανή **Mr. Robot** (TryHackMe): από την απαρίθμηση του WordPress μέχρι το `root`, με 32 στιγμιότυπα οθόνης, ανάλυση κάθε εντολής και επεξήγηση κάθε εικόνας.
 
-📘 **Αναλυτικό κείμενο:** [README.md](06.%20Mr%20Robot/README.md)
+📘 **Αναλυτικό κείμενο:** [README.md](07.%20Mr%20Robot/README.md)
 
-🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](06.%20Mr%20Robot/Hardening-Guide.md) — ενιαία μηνύματα σύνδεσης, όρια brute-force, `DISALLOW_FILE_EDIT`, `disable_functions`, hashes, SUID nmap.
+🛡️ **Εγχειρίδιο θωράκισης:** [Hardening-Guide.md](07.%20Mr%20Robot/Hardening-Guide.md) — ενιαία μηνύματα σύνδεσης, όρια brute-force, `DISALLOW_FILE_EDIT`, `disable_functions`, hashes, SUID nmap.
 
 **Ροή επίλυσης:**
 
@@ -242,7 +242,7 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 ## Συνιστώμενη Σειρά Εκτέλεσης
 
 ```
-00. Virtualization   →   01. Εισαγωγή στο Linux CLI   →   02. Bandit      →   03. Raven-CTF   →   04. DC-CTF     →   05. Raven2-CTF   →   06. Mr Robot
+00. Virtualization   →   01. Εισαγωγή στο Linux CLI   →   02. Bandit      →   03. Raven-CTF   →   05. DC-CTF     →   06. Raven2-CTF   →   07. Mr Robot
 (στήσιμο VMs,            (θεμέλια: CLI,                   (πρακτική CLI       (πρώτη CTF          (μεθοδολογία       (web RCE +           (WordPress →
 δίκτυο, snapshots)       δίκτυο)                          μέσω SSH)           εμπειρία)           pentest)           privesc UDF)         root)
 ```
@@ -275,20 +275,20 @@ Write-up δοκιμής διείσδυσης στη μηχανή **Raven 2** (Vu
 - **Writeup αναφοράς:** [Raven 1 CTF Write-up — Hariharan (corruptedprotocol.medium.com)](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 - **Εργαλεία:** [WPScan](https://wpscan.com/), [OWASP DirBuster/Gobuster](https://www.kali.org/tools/gobuster/), [John the Ripper](https://www.openwall.com/john/)
 
-### Εργαστήριο 04 — DC: 1
+### Εργαστήριο 05 — DC: 1
 - **Λήψη μηχανήματος:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/)
 - **Writeup αναφοράς:** [DC-1: Vulnhub Walkthrough — Hacking Articles](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
 - **Ευπάθεια:** [CVE-2014-3704 — Drupalgeddon (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2014-3704)
 - **Module:** [Metasploit — `exploit/multi/http/drupal_drupageddon`](https://www.rapid7.com/db/modules/exploit/multi/http/drupal_drupageddon/)
 - **Αποκατάσταση:** [OWASP Core Rule Set (ModSecurity)](https://owasp.org/www-project-modsecurity-core-rule-set/)
 
-### Εργαστήριο 05 — Raven: 2
+### Εργαστήριο 06 — Raven: 2
 - **Λήψη μηχανήματος:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
 - **Writeup αναφοράς:** [Raven 2: Vulnhub Walkthrough — Hacking Articles](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
 - **Ευπάθειες:** [CVE-2016-10033 — PHPMailer RCE (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-10033), [CVE-2016-6662 — MySQL/MariaDB privilege escalation (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-6662)
 - **Exploit:** [Exploit-DB 40974 — PHPMailer < 5.2.18 RCE (Python)](https://www.exploit-db.com/exploits/40974)
 
-### Εργαστήριο 06 — Mr Robot
+### Εργαστήριο 07 — Mr Robot
 - **Writeup αναφοράς:** [Mr Robot CTF Walkthrough (2023) — Charalampos Spanias](https://medium.com/@cspanias/thms-mr-robot-ctf-walkthrough-2023-55ca5c19fbaf)
 - **Πλατφόρμα:** [TryHackMe — Mr Robot CTF](https://tryhackme.com/room/mrrobot)
 - **GTFOBins:** [nmap](https://gtfobins.github.io/gtfobins/nmap/)

@@ -444,7 +444,7 @@ GbKksEFF4yrVs6il55v6gwY5aVje5f0j
 
 The `s` in place of the owner's `x` (`-rwsr-x---`) is the **SUID** bit: the file runs with the privileges of **its owner** (`bandit20`), not those of the user who launches it.
 
-> 🛡️ **Security:** once access has been obtained, `find / -perm -4000 2>/dev/null` is one of the first steps when searching for privilege escalation vectors. You will encounter it again in [DC-CTF](../04.%20DC-CTF/README.md), [Raven2-CTF](../05.%20Raven2-CTF/README.md), and [Mr Robot](../06.%20Mr%20Robot/README.md).
+> 🛡️ **Security:** once access has been obtained, `find / -perm -4000 2>/dev/null` is one of the first steps when searching for privilege escalation vectors. You will encounter it again in [DC-CTF](../05.%20DC-CTF/README.md), [Raven2-CTF](../06.%20Raven2-CTF/README.md), and [Mr Robot](../07.%20Mr%20Robot/README.md).
 
 ### Level 20 → 21: Listening on a port with netcat
 **Commands:** `nc -l` · listener · setuid

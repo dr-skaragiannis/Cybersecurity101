@@ -576,7 +576,7 @@ systemctl restart mysql
 ps -o user,cmd -C mysqld
 ```
 
-Το **`user = mysql`** είναι κρίσιμο: στο Raven η MySQL έτρεχε ως `root`, οπότε ό,τι έκανε η βάση (π.χ. εγγραφή αρχείου) γινόταν με δικαιώματα root. Η εκμετάλλευση αυτού του λάθους αναλύεται στο [Hardening-Guide του Raven 2](../05.%20Raven2-CTF/Hardening-Guide.md).
+Το **`user = mysql`** είναι κρίσιμο: στο Raven η MySQL έτρεχε ως `root`, οπότε ό,τι έκανε η βάση (π.χ. εγγραφή αρχείου) γινόταν με δικαιώματα root. Η εκμετάλλευση αυτού του λάθους αναλύεται στο [Hardening-Guide του Raven 2](../06.%20Raven2-CTF/Hardening-Guide.md).
 
 ---
 

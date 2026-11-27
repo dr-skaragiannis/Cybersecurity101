@@ -133,7 +133,7 @@ PORT    STATE SERVICE  VERSION
 443/tcp open  ssl/http Apache httpd
 ```
 
-![Nmap scan results](../../06.%20Mr%20Robot/images/nmap-scan.png)
+![Nmap scan results](../../07.%20Mr%20Robot/images/nmap-scan.png)
 
 *Figure 1. Output of the Nmap command: only ports 80 and 443 (Apache httpd) are confirmed to be exposed.*
 
@@ -146,7 +146,7 @@ PORT    STATE SERVICE  VERSION
 
 When browsing to `http://<target-ip>`, the server displays an interactive web page designed as a terminal emulator, with visual and thematic references to the Mr. Robot television series.
 
-![Target home page](../../06.%20Mr%20Robot/images/img-02.png)
+![Target home page](../../07.%20Mr%20Robot/images/img-02.png)
 
 *Figure 2. The home page on port 80: a simulated command-line environment.*
 
@@ -183,7 +183,7 @@ gobuster dir -u http://<target-ip> -w /usr/share/wordlists/dirbuster/directory-l
 
 ### 4.2 Assessment of Scan Results and CMS Architecture
 
-![Gobuster results and login page](../../06.%20Mr%20Robot/images/img-03.png)
+![Gobuster results and login page](../../07.%20Mr%20Robot/images/img-03.png)
 
 *Figure 3. Gobuster scan results and confirmation of the WordPress authentication page at the path `/wp-login`.*
 
@@ -199,7 +199,7 @@ Identifying WordPress fundamentally changes the attack plan: the application is 
 
 A fundamental passive reconnaissance practice is the inspection of the `robots.txt` file. This file was created under the *Robots Exclusion Protocol* to instruct search engines as to which areas of a website should **not** be indexed. Frequently, however, administrators make the mistake of listing sensitive paths in it, wrongly assuming that non-indexing is equivalent to protection (Security through Obscurity).
 
-![Contents of robots.txt](../../06.%20Mr%20Robot/images/img-04.png)
+![Contents of robots.txt](../../07.%20Mr%20Robot/images/img-04.png)
 
 *Figure 4. The contents of the `robots.txt` file: two `Disallow` entries are identified.*
 
@@ -227,7 +227,7 @@ curl -s http://<target-ip>/key-1-of-3.txt
 
 The second entry in `robots.txt` points to the file `fsocity.dic`. This is a custom wordlist.
 
-![Contents of the wordlist](../../06.%20Mr%20Robot/images/img-05.png)
+![Contents of the wordlist](../../07.%20Mr%20Robot/images/img-05.png)
 
 *Figure 5. Preview of the first lines of the `fsocity.dic` file.*
 
@@ -294,17 +294,17 @@ This subtle difference allows an attacker to confirm which usernames are valid, 
 
 To configure the offensive tools correctly, a precise understanding of the HTTP authentication request is required.
 
-![Error message for an invalid user](../../06.%20Mr%20Robot/images/img-06.jpg)
+![Error message for an invalid user](../../07.%20Mr%20Robot/images/img-06.jpg)
 
 *Figure 6. Manual login test: the message "ERROR: Invalid username" is displayed.*
 
 Using the Burp Suite Proxy, the HTTP POST request sent when the form is submitted is captured:
 
-![Request capture via proxy](../../06.%20Mr%20Robot/images/img-07.png)
+![Request capture via proxy](../../07.%20Mr%20Robot/images/img-07.png)
 
 *Figure 7. Monitoring the HTTP POST request in Burp Suite Proxy.*
 
-![Request parameters](../../06.%20Mr%20Robot/images/img-08.png)
+![Request parameters](../../07.%20Mr%20Robot/images/img-08.png)
 
 *Figure 8. Inspection of the Request Body: identification of the `log` and `pwd` parameters.*
 
@@ -333,7 +333,7 @@ hydra -L fs-list -p test <target-ip> http-post-form "/wp-login.php:log=^USER^&pw
 | `http-post-form` | HTTP POST form testing module. It consists of 3 parts separated by `:` <br>1. Path: `/wp-login.php`<br>2. Parameters: `log=^USER^&pwd=^PASS^`<br>3. Failure Condition: `F=Invalid username` |
 | `-t 30` | Runs 30 parallel connection threads. |
 
-![User enumeration result](../../06.%20Mr%20Robot/images/img-09.png)
+![User enumeration result](../../07.%20Mr%20Robot/images/img-09.png)
 
 *Figure 9. Hydra output: identification of the valid user `elliot`.*
 
@@ -343,7 +343,7 @@ Hydra detects that for the username **`elliot`**, the server did **not** return 
 
 With the username confirmed, a manual test is performed in the web interface to record the new error message:
 
-![Error message for a valid user](../../06.%20Mr%20Robot/images/img-10.jpg)
+![Error message for a valid user](../../07.%20Mr%20Robot/images/img-10.jpg)
 
 *Figure 10. The differentiated error message: "The password you entered for the username elliot is incorrect".*
 
@@ -357,7 +357,7 @@ hydra -l elliot -P fs-list <target-ip> http-post-form "/wp-login.php:log=^USER^&
 > - Lowercase `-l`: Specifies a **single, fixed** username.
 > - Uppercase `-P`: Specifies a **list file** of passwords.
 
-![Successful password recovery](../../06.%20Mr%20Robot/images/img-11.png)
+![Successful password recovery](../../07.%20Mr%20Robot/images/img-11.png)
 
 *Figure 11. Successful recovery of the password for the `elliot` account.*
 
@@ -369,7 +369,7 @@ Hydra successfully completes the attack, revealing the credentials:
 
 Logging in at `http://<target-ip>/wp-login.php` with the recovered credentials leads directly to the administration environment (WordPress Dashboard):
 
-![WordPress administration panel](../../06.%20Mr%20Robot/images/img-12.png)
+![WordPress administration panel](../../07.%20Mr%20Robot/images/img-12.png)
 
 *Figure 12. Successful authentication: full access to the WordPress Dashboard as an administrator.*
 
@@ -383,7 +383,7 @@ The `elliot` account holds full administrator (`Administrator`) privileges. In W
 
 WordPress includes a built-in file editor (Theme File Editor) under `Appearance > Editor`. This feature allows administrators to modify the PHP files of installed themes directly.
 
-![WordPress theme editor](../../06.%20Mr%20Robot/images/img-13.png)
+![WordPress theme editor](../../07.%20Mr%20Robot/images/img-13.png)
 
 *Figure 13. Navigating to the Theme Editor and selecting the `archive.php` template.*
 
@@ -393,7 +393,7 @@ The active theme (Twenty Fifteen) is selected, and a template file that is execu
 
 To obtain an interactive shell, the widely recognized `php-reverse-shell` script (developed by pentestmonkey) is used.
 
-![Reverse shell script](../../06.%20Mr%20Robot/images/img-14.png)
+![Reverse shell script](../../07.%20Mr%20Robot/images/img-14.png)
 
 *Figure 14. The source code of the PHP Reverse Shell script.*
 
@@ -408,7 +408,7 @@ To obtain an interactive shell, the widely recognized `php-reverse-shell` script
 > **Why a Reverse Shell and not a Bind Shell?**  
 > In a *Bind Shell*, the target opens a port and waits for the attacker to connect. If the target is protected by a firewall or sits behind NAT, inbound connections are usually blocked. Conversely, in a *Reverse Shell*, it is the target that initiates the outbound connection to the attacker. Firewalls generally allow outbound traffic, which makes the reverse shell highly reliable.
 
-![Script configuration](../../06.%20Mr%20Robot/images/img-15.png)
+![Script configuration](../../07.%20Mr%20Robot/images/img-15.png)
 
 *Figure 15. Configuring the `$ip` and `$port` variables within the `archive.php` file.*
 
@@ -440,7 +440,7 @@ The code is triggered by visiting the corresponding path in a browser or with `c
 curl http://<target-ip>/wp-content/themes/twentyfifteen/archive.php
 ```
 
-![Receiving the reverse shell](../../06.%20Mr%20Robot/images/img-16.png)
+![Receiving the reverse shell](../../07.%20Mr%20Robot/images/img-16.png)
 
 *Figure 16. Successful reverse shell connection: access to the system as a service user (`daemon`).*
 
@@ -471,7 +471,7 @@ Inspecting the contents of the `/home/robot` directory:
 ls -la /home/robot
 ```
 
-![Files and permissions in the user's directory](../../06.%20Mr%20Robot/images/img-17.png)
+![Files and permissions in the user's directory](../../07.%20Mr%20Robot/images/img-17.png)
 
 *Figure 17. Contents of the `/home/robot` directory and analysis of the access permissions.*
 
@@ -508,7 +508,7 @@ The extracted hash corresponds to the **MD5 (Message Digest 5)** algorithm:
 | **bcrypt** | Adjustable (Cost Factor) | Yes (128-bit) | High | **Acceptable / Secure** |
 | **Argon2id** | Adjustable (Memory/CPU)| Yes | Maximum (Memory-Hard) | **Recommended (State-of-the-Art)** |
 
-![Password recovery via an online database](../../06.%20Mr%20Robot/images/img-18.png)
+![Password recovery via an online database](../../07.%20Mr%20Robot/images/img-18.png)
 
 *Figure 18. Immediate identification of the MD5 hash via an online database (CrackStation).*
 
@@ -520,7 +520,7 @@ Because no salt is used, submitting the hash to online lookup databases (e.g., C
 
 Now that the credentials of the `robot` user are known, a user switch is attempted with the `su robot` command:
 
-![Failed user switch](../../06.%20Mr%20Robot/images/img-19.png)
+![Failed user switch](../../07.%20Mr%20Robot/images/img-19.png)
 
 *Figure 19. Failure of the `su` command: "su: must be run from a terminal".*
 
@@ -551,7 +551,7 @@ whoami
 # robot
 ```
 
-![Restored interactive shell](../../06.%20Mr%20Robot/images/img-20.png)
+![Restored interactive shell](../../07.%20Mr%20Robot/images/img-20.png)
 
 *Figure 20. Successful switch to the `robot` user and reading of the `key-2-of-3.txt` file.*
 
@@ -593,7 +593,7 @@ find / -perm -u=s -type f 2>/dev/null
 - `-type f`: Restricts the search exclusively to regular files (excluding directories and special device files).
 - `2>/dev/null`: Redirects access error messages (Standard Error) to the null device, keeping the output clean.
 
-![Search results](../../06.%20Mr%20Robot/images/img-21.png)
+![Search results](../../07.%20Mr%20Robot/images/img-21.png)
 
 *Figure 21. List of executables with the SUID bit set: identification of `/usr/local/bin/nmap`.*
 
@@ -607,7 +607,7 @@ Assigning SUID root permissions to such a powerful networking tool constitutes a
 
 The **GTFOBins** database systematically documents ways in which legitimate UNIX executables can be abused to bypass security restrictions and execute commands.
 
-![Documentation of the technique](../../06.%20Mr%20Robot/images/img-22.png)
+![Documentation of the technique](../../07.%20Mr%20Robot/images/img-22.png)
 
 *Figure 22. Documentation of the shell escape technique for the `nmap` binary on GTFOBins.*
 
@@ -636,7 +636,7 @@ nmap> !sh
 #### Technical Interpretation of the Escalation:
 Nmap runs with EUID `0` (`root`) because of the SUID bit. When the `!sh` command is invoked, the program calls the system function `system("/bin/sh")`. Because this older version does not drop privileges before the call, the new subshell (`sh`) fully inherits the superuser privileges (`EUID=0`).
 
-![Obtaining a root shell](../../06.%20Mr%20Robot/images/img-23.png)
+![Obtaining a root shell](../../07.%20Mr%20Robot/images/img-23.png)
 
 *Figure 23. Execution of the interactive escape shell and confirmation of root privileges.*
 
@@ -658,7 +658,7 @@ ls -la
 cat key-3-of-3.txt
 ```
 
-![Reading the final key](../../06.%20Mr%20Robot/images/img-24.png)
+![Reading the final key](../../07.%20Mr%20Robot/images/img-24.png)
 
 *Figure 24. Reading the final key from the `/root` directory.*
 
@@ -681,25 +681,25 @@ In addition to the `hydra` command-line tool, a brute-force attack against the W
 
 1. **Sending the Request:** The captured POST request is forwarded from the HTTP History to Intruder (`Ctrl + I`).
 
-![Sending the request for automation](../../06.%20Mr%20Robot/images/img-25.png)
+![Sending the request for automation](../../07.%20Mr%20Robot/images/img-25.png)
 
 *Figure 25. Forwarding the `/wp-login.php` request to Burp Suite Intruder.*
 
 2. **Defining Payload Positions:** The attack type is set to **Sniper** (for a single parameter), and markers (`§`) are placed around the password parameter: `pwd=§password§`.
 
-![Defining payload positions](../../06.%20Mr%20Robot/images/img-26.png)
+![Defining payload positions](../../07.%20Mr%20Robot/images/img-26.png)
 
 *Figure 26. Defining the `pwd` parameter as the payload insertion position.*
 
 3. **Loading the Dictionary:** In the Payloads tab, the optimized `fs-list` list is loaded.
 
-![Loading the wordlist](../../06.%20Mr%20Robot/images/img-27.jpg)
+![Loading the wordlist](../../07.%20Mr%20Robot/images/img-27.jpg)
 
 *Figure 27. Loading the processed `fs-list` dictionary.*
 
 4. **Analysis of the Results:** During execution, the successful attempt is immediately distinguishable from the others, either by a change in the **HTTP Status Code** (`302 Found` instead of `200 OK`) or by a significant difference in the response size (**Length**).
 
-![Analysis of the results](../../06.%20Mr%20Robot/images/img-28.png)
+![Analysis of the results](../../07.%20Mr%20Robot/images/img-28.png)
 
 *Figure 28. Identification of the valid password based on the Status Code / Length discrepancy.*
 
@@ -715,7 +715,7 @@ wpscan --url http://<target-ip> -t 50 -U elliot -P fs-list
 - Automatically identifies the authentication endpoints without manual configuration.
 - Supports exploitation of the **XML-RPC** interface (`xmlrpc.php`), enabling the **system.multicall** technique, which tests hundreds of password combinations in a **single** HTTP request, thereby bypassing simple rate-limiting mechanisms.
 
-![Successful attack via a specialized scanner](../../06.%20Mr%20Robot/images/img-29.png)
+![Successful attack via a specialized scanner](../../07.%20Mr%20Robot/images/img-29.png)
 
 *Figure 29. Confirmation of the `elliot` user's credentials via WPScan.*
 
@@ -727,7 +727,7 @@ The password stored in the `password.raw-md5` file can be recovered locally with
 john --format=Raw-MD5 --wordlist=/usr/share/wordlists/rockyou.txt hash.txt
 ```
 
-![Password recovery via a dictionary tool](../../06.%20Mr%20Robot/images/img-30.png)
+![Password recovery via a dictionary tool](../../07.%20Mr%20Robot/images/img-30.png)
 
 *Figure 30. Successful cracking of the MD5 hash with John the Ripper.*
 
@@ -742,7 +742,7 @@ hashcat -m 0 -a 0 hash.txt /usr/share/wordlists/rockyou.txt
 - `-m 0`: Specifies the hash type (0 = MD5).
 - `-a 0`: Specifies a Straight Dictionary Attack.
 
-![GPU acceleration](../../06.%20Mr%20Robot/images/img-31.png)
+![GPU acceleration](../../07.%20Mr%20Robot/images/img-31.png)
 
 *Figure 31. Extremely fast completion of the cracking process using Hashcat.*
 

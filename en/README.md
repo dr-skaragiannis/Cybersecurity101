@@ -14,10 +14,10 @@ A collection of laboratory exercises that progressively develop core skills, fro
 | 01 | **Introduction to the Linux CLI** | File-system navigation, commands, networking, permissions | Beginner | [README.md](01.%20Introduction%20to%20the%20Linux%20CLI/README.md) |
 | 02 | **Bandit** | OverTheWire wargame: files, pipes, networking, cron, SUID, git, shell escapes | Beginner | [README.md](02.%20Bandit/README.md), [PDF (Greek)](../02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
 | 03 | **Raven-CTF** | Write-up: reconnaissance, WordPress, SSH, MySQL, privilege escalation | Beginner | [README.md](03.%20Raven-CTF/README.md), [Hardening](03.%20Raven-CTF/Hardening-Guide.md) |
-| 04 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Beginner | [README.md](04.%20DC-CTF/README.md), [Hardening](04.%20DC-CTF/Hardening-Guide.md) |
-| 05 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Intermediate | [README.md](05.%20Raven2-CTF/README.md), [Hardening](05.%20Raven2-CTF/Hardening-Guide.md) |
-| 06 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Intermediate | [README.md](06.%20Mr%20Robot/README.md), [Hardening](06.%20Mr%20Robot/Hardening-Guide.md) |
-| 07 | **Kioptrix** | Walkthrough: service enumeration → patching and compiling a legacy mod_ssl exploit → root | Beginner | [README.md](07.%20Kioptrix/README.md), [Hardening](07.%20Kioptrix/Hardening-Guide.md) |
+| 05 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Beginner | [README.md](05.%20DC-CTF/README.md), [Hardening](05.%20DC-CTF/Hardening-Guide.md) |
+| 06 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Intermediate | [README.md](06.%20Raven2-CTF/README.md), [Hardening](06.%20Raven2-CTF/Hardening-Guide.md) |
+| 07 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Intermediate | [README.md](07.%20Mr%20Robot/README.md), [Hardening](07.%20Mr%20Robot/Hardening-Guide.md) |
+| 08 | **Kioptrix** | Walkthrough: service enumeration → patching and compiling a legacy mod_ssl exploit → root | Beginner | [README.md](08.%20Kioptrix/README.md), [Hardening](08.%20Kioptrix/Hardening-Guide.md) |
 
 ---
 
@@ -38,18 +38,18 @@ en/
 │   ├── README.md                    Eight-step write-up
 │   ├── Detailed-Notes.md            Detailed notes for each step
 │   └── Hardening-Guide.md           Hardening: SSH, WordPress, MySQL, sudo
-├── 04. DC-CTF/
+├── 05. DC-CTF/
 │   ├── README.md                    Four-phase manual + remediation measures
 │   ├── Detailed-Notes.md            Detailed notes for each phase
 │   └── Hardening-Guide.md           Hardening: Drupal, PHP, egress, SUID, mount options
-├── 05. Raven2-CTF/
+├── 06. Raven2-CTF/
 │   ├── README.md                    Six-section write-up
 │   ├── Detailed-Notes.md            Detailed notes for each section
 │   └── Hardening-Guide.md           Hardening: PHPMailer, web root, MySQL (UDF, FILE, root)
-├── 06. Mr Robot/
+├── 07. Mr Robot/
 │   ├── README.md                    Write-up: six phases, 32 figures
 │   └── Hardening-Guide.md           Hardening: login, Theme Editor, PHP, hashes, SUID nmap
-└── 07. Kioptrix/
+└── 08. Kioptrix/
     ├── README.md                    Video-based walkthrough: enumeration, exploit patching, root
     └── Hardening-Guide.md           Hardening: OS/package upgrades, Apache/mod_ssl, Samba
 ```
@@ -148,13 +148,13 @@ A translated and enriched write-up for the **Raven 1** machine from VulnHub.
 
 ---
 
-## 04. DC-CTF
+## 05. DC-CTF
 
 A complete penetration-testing manual for the **DC-1** machine, structured in four methodological phases.
 
-📘 **Detailed notes:** [Detailed-Notes.md](04.%20DC-CTF/Detailed-Notes.md) — theory of Drupalgeddon, Metasploit, PTYs, SUID and CVSS, with a glossary and questions.
+📘 **Detailed notes:** [Detailed-Notes.md](05.%20DC-CTF/Detailed-Notes.md) — theory of Drupalgeddon, Metasploit, PTYs, SUID and CVSS, with a glossary and questions.
 
-🛡️ **Hardening guide:** [Hardening-Guide.md](04.%20DC-CTF/Hardening-Guide.md) — Drupal upgrade/hotfix, `php.ini`, egress filtering, SUID and `dpkg-statoverride`, `nosuid/noexec`.
+🛡️ **Hardening guide:** [Hardening-Guide.md](05.%20DC-CTF/Hardening-Guide.md) — Drupal upgrade/hotfix, `php.ini`, egress filtering, SUID and `dpkg-statoverride`, `nosuid/noexec`.
 
 **Phases:**
 
@@ -182,13 +182,13 @@ A complete penetration-testing manual for the **DC-1** machine, structured in fo
 
 ---
 
-## 05. Raven2-CTF
+## 06. Raven2-CTF
 
 A penetration-testing write-up for the **Raven 2** machine (VulnHub), rated *Beginner/Intermediate*, with the objective of capturing four flags and obtaining root privileges.
 
-📘 **Detailed notes:** [Detailed-Notes.md](05.%20Raven2-CTF/Detailed-Notes.md) — PHPMailer RCE, MySQL UDF and SUID, with a detailed explanation of every command.
+📘 **Detailed notes:** [Detailed-Notes.md](06.%20Raven2-CTF/Detailed-Notes.md) — PHPMailer RCE, MySQL UDF and SUID, with a detailed explanation of every command.
 
-🛡️ **Hardening guide:** [Hardening-Guide.md](05.%20Raven2-CTF/Hardening-Guide.md) — post-compromise clean-up, PHPMailer 6 via Composer, running MySQL as `mysql`, `secure_file_priv`, `plugin_dir`.
+🛡️ **Hardening guide:** [Hardening-Guide.md](06.%20Raven2-CTF/Hardening-Guide.md) — post-compromise clean-up, PHPMailer 6 via Composer, running MySQL as `mysql`, `secure_file_priv`, `plugin_dir`.
 
 **Solution path:**
 
@@ -204,13 +204,13 @@ A penetration-testing write-up for the **Raven 2** machine (VulnHub), rated *Beg
 
 ---
 
-## 06. Mr Robot
+## 07. Mr Robot
 
 A complete write-up for the **Mr. Robot** machine (TryHackMe): from WordPress enumeration through to `root`, with 32 screenshots, an analysis of every command and an explanation of every figure.
 
-📘 **Full text:** [README.md](06.%20Mr%20Robot/README.md)
+📘 **Full text:** [README.md](07.%20Mr%20Robot/README.md)
 
-🛡️ **Hardening guide:** [Hardening-Guide.md](06.%20Mr%20Robot/Hardening-Guide.md) — uniform login error messages, brute-force limits, `DISALLOW_FILE_EDIT`, `disable_functions`, password hashes, SUID nmap.
+🛡️ **Hardening guide:** [Hardening-Guide.md](07.%20Mr%20Robot/Hardening-Guide.md) — uniform login error messages, brute-force limits, `DISALLOW_FILE_EDIT`, `disable_functions`, password hashes, SUID nmap.
 
 **Solution path:**
 
@@ -228,13 +228,13 @@ A complete write-up for the **Mr. Robot** machine (TryHackMe): from WordPress en
 
 ---
 
-## 07. Kioptrix
+## 08. Kioptrix
 
 A video-based walkthrough for the **Kioptrix: Level 1** machine (VulnHub). Rather than a simple flag hunt, it emphasizes the mindset of a real penetration test — searching for weaknesses in the target's **services** — and the skill that makes this lab particularly instructive: **patching and compiling an outdated exploit** so that it builds and runs on a modern Kali Linux system.
 
-📘 **Full text:** [README.md](07.%20Kioptrix/README.md)
+📘 **Full text:** [README.md](08.%20Kioptrix/README.md)
 
-🛡️ **Hardening guide:** [Hardening-Guide.md](07.%20Kioptrix/Hardening-Guide.md) — system inventory, OS and package upgrades, migration to a supported platform, and remediation of the exposed services.
+🛡️ **Hardening guide:** [Hardening-Guide.md](08.%20Kioptrix/Hardening-Guide.md) — system inventory, OS and package upgrades, migration to a supported platform, and remediation of the exposed services.
 
 **Solution path:**
 
@@ -265,13 +265,13 @@ A video-based walkthrough for the **Kioptrix: Level 1** machine (VulnHub). Rathe
 ## Recommended Order
 
 ```
-00. Virtualization  →  01. Linux CLI  →  02. Bandit      →  03. Raven-CTF  →  04. DC-CTF     →  05. Raven2-CTF  →  06. Mr Robot  →  07. Kioptrix
+00. Virtualization  →  01. Linux CLI  →  02. Bandit      →  03. Raven-CTF  →  05. DC-CTF     →  06. Raven2-CTF  →  07. Mr Robot  →  08. Kioptrix
 (VM setup,             (foundations:     (CLI practice      (first CTF         (pentest          (web RCE +          (WordPress →     (exploit
 networking,            CLI,              over SSH)          experience)        methodology)      UDF privesc)        root)            patching)
 snapshots)             networking)
 ```
 
-Lab 00 is a prerequisite for all others: without a virtual machine and a correctly configured network, none of the subsequent labs can be carried out. Lab 01, in turn, provides the commands (`ls`, `grep`, `chmod`, `ss`, `ping`) that are used directly in the labs that follow, while Lab 02 (Bandit) puts them into practice on a real remote system over SSH before the CTF machines in Labs 03–07. Lab 05 is the natural continuation of Lab 03 (the same Raven series, with a more demanding route to root), Lab 06 combines web enumeration, brute force and SUID abuse in a single scenario, and Lab 07 focuses on adapting and compiling legacy exploit code.
+Lab 00 is a prerequisite for all others: without a virtual machine and a correctly configured network, none of the subsequent labs can be carried out. Lab 01, in turn, provides the commands (`ls`, `grep`, `chmod`, `ss`, `ping`) that are used directly in the labs that follow, while Lab 02 (Bandit) puts them into practice on a real remote system over SSH before the CTF machines in Labs 03–07. Lab 06 is the natural continuation of Lab 03 (the same Raven series, with a more demanding route to root), Lab 07 combines web enumeration, brute force and SUID abuse in a single scenario, and Lab 08 focuses on adapting and compiling legacy exploit code.
 
 ---
 
@@ -299,26 +299,26 @@ Unauthorized access to third-party systems is a criminal offence. Perform these 
 - **Reference write-up:** [Raven 1 CTF Write-up — Hariharan (corruptedprotocol.medium.com)](https://corruptedprotocol.medium.com/raven-1-ctf-write-up-1ddaf2cff9e2)
 - **Tools:** [WPScan](https://wpscan.com/), [OWASP DirBuster/Gobuster](https://www.kali.org/tools/gobuster/), [John the Ripper](https://www.openwall.com/john/)
 
-### Lab 04 — DC: 1
+### Lab 05 — DC: 1
 - **Machine download:** [VulnHub — DC: 1](https://www.vulnhub.com/entry/dc-1,292/)
 - **Reference write-up:** [DC-1: Vulnhub Walkthrough — Hacking Articles](https://www.hackingarticles.in/dc-1-vulnhub-walkthrough/)
 - **Vulnerability:** [CVE-2014-3704 — Drupalgeddon (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2014-3704)
 - **Module:** [Metasploit — `exploit/multi/http/drupal_drupageddon`](https://www.rapid7.com/db/modules/exploit/multi/http/drupal_drupageddon/)
 - **Remediation:** [OWASP Core Rule Set (ModSecurity)](https://owasp.org/www-project-modsecurity-core-rule-set/)
 
-### Lab 05 — Raven: 2
+### Lab 06 — Raven: 2
 - **Machine download:** [VulnHub — Raven: 2](https://www.vulnhub.com/entry/raven-2,269/)
 - **Reference write-up:** [Raven 2: Vulnhub Walkthrough — Hacking Articles](https://www.hackingarticles.in/raven-2-vulnhub-walkthrough/)
 - **Vulnerabilities:** [CVE-2016-10033 — PHPMailer RCE (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-10033), [CVE-2016-6662 — MySQL/MariaDB privilege escalation (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2016-6662)
 - **Exploit:** [Exploit-DB 40974 — PHPMailer < 5.2.18 RCE (Python)](https://www.exploit-db.com/exploits/40974)
 
-### Lab 06 — Mr Robot
+### Lab 07 — Mr Robot
 - **Reference write-up:** [Mr Robot CTF Walkthrough (2023) — Charalampos Spanias](https://medium.com/@cspanias/thms-mr-robot-ctf-walkthrough-2023-55ca5c19fbaf)
 - **Platform:** [TryHackMe — Mr Robot CTF](https://tryhackme.com/room/mrrobot)
 - **GTFOBins:** [nmap](https://gtfobins.github.io/gtfobins/nmap/)
 - **Reverse shell:** [pentestmonkey/php-reverse-shell](https://github.com/pentestmonkey/php-reverse-shell)
 
-### Lab 07 — Kioptrix: Level 1
+### Lab 08 — Kioptrix: Level 1
 - **Machine download:** [VulnHub — Kioptrix: Level 1 (#1)](https://www.vulnhub.com/entry/kioptrix-level-1-1,22/)
 
 ### General

@@ -476,7 +476,7 @@ apt-get install iptables-persistent
 iptables-save > /etc/iptables/rules.v4
 ```
 
-A detailed explanation of each parameter is given in [DC-1 §8](../04.%20DC-CTF/Hardening-Guide.md) (restricting outbound connections).
+A detailed explanation of each parameter is given in [DC-1 §8](../05.%20DC-CTF/Hardening-Guide.md) (restricting outbound connections).
 
 > 💡 A stricter restriction is to allow HTTPS **only** to the IP addresses of `api.wordpress.org` and `downloads.wordpress.org`. Because these IP addresses change, an intermediate proxy with an allowlist of hostnames is typically used instead.
 
@@ -595,7 +595,7 @@ The difference between MD5 and yescrypt amounts to a factor of **millions** in t
 
 nmap requires **raw sockets** for certain scan types (e.g., SYN scan, `-sS`), and raw sockets require root privileges. An administrator who wanted users to be able to run SYN scans set the SUID root bit on nmap. Version 3.81, however, included an **interactive mode** (`--interactive`) with a `!sh` command, which opens a shell **with the privileges of the process**, i.e., as root.
 
-The technique of SUID abuse is analyzed in [DC-1 §9](../04.%20DC-CTF/Hardening-Guide.md) (SUID: understanding, auditing, remediation).
+The technique of SUID abuse is analyzed in [DC-1 §9](../05.%20DC-CTF/Hardening-Guide.md) (SUID: understanding, auditing, remediation).
 
 ### 11.2 Remediation
 
@@ -648,7 +648,7 @@ The user can run **only** that specific command with those specific parameters.
 find / -xdev \( -perm -4000 -o -perm -2000 \) -type f -exec ls -ld {} \; 2>/dev/null
 ```
 
-Compare the results with the list of expected SUID binaries in [DC-1 §9.2](../04.%20DC-CTF/Hardening-Guide.md), and establish a baseline with a daily check as described in [DC-1 §9.5](../04.%20DC-CTF/Hardening-Guide.md).
+Compare the results with the list of expected SUID binaries in [DC-1 §9.2](../05.%20DC-CTF/Hardening-Guide.md), and establish a baseline with a daily check as described in [DC-1 §9.5](../05.%20DC-CTF/Hardening-Guide.md).
 
 ---
 

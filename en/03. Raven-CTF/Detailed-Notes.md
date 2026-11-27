@@ -470,7 +470,7 @@ If `id` returns `uid=0(root)`, the escalation is complete and we have full contr
 | Privesc | `sudo -l` + Python (GTFOBins) | `sudo` on an interpreter = root; `john` + password reuse is an alternative |
 The methodology followed is, in its conception, relatively simple; the main difficulty for the novice analyst lies in identifying the correct first step and in moving from one phase to the next. These difficulties are to be expected when solving a CTF; with systematic practice, familiarity with the techniques and tools improves steadily.
 
-The machine also has a sequel (**Raven 2**), which is covered in a corresponding lab of this course material (Lab 05).
+The machine also has a sequel (**Raven 2**), which is covered in a corresponding lab of this course material (Lab 06).
 
 ---
 

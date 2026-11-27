@@ -546,7 +546,7 @@ chmod 700 /usr/bin/gcc* /usr/bin/cc /usr/bin/make 2>/dev/null
 
 ### 11.2 `/tmp` Without Execution and SUID
 
-The attack used `/tmp` for `LinEnum.sh` and `1518.so`. We apply the `nosuid,nodev,noexec` options as explained in [DC-1 §10](../04.%20DC-CTF/Hardening-Guide.md#10-mount-options):
+The attack used `/tmp` for `LinEnum.sh` and `1518.so`. We apply the `nosuid,nodev,noexec` options as explained in [DC-1 §10](../05.%20DC-CTF/Hardening-Guide.md#10-mount-options):
 
 ```text
 # /etc/fstab
@@ -562,7 +562,7 @@ In addition, with `secure-file-priv = /var/lib/mysql-files` (§9.3), MySQL can *
 
 ### 11.3 Restricting Outbound Connections
 
-The web server initiated **two** outbound connections: the reverse shell (`nc` on port 4444) and the download of `LinEnum.sh` (`wget`). Per-user egress filtering is explained in detail in [DC-1 §8](../04.%20DC-CTF/Hardening-Guide.md#8-restricting-outbound-connections). On Raven 2 we add a specific rule: the contact form needs to send email, so we allow **only** SMTP to the mail server:
+The web server initiated **two** outbound connections: the reverse shell (`nc` on port 4444) and the download of `LinEnum.sh` (`wget`). Per-user egress filtering is explained in detail in [DC-1 §8](../05.%20DC-CTF/Hardening-Guide.md#8-restricting-outbound-connections). On Raven 2 we add a specific rule: the contact form needs to send email, so we allow **only** SMTP to the mail server:
 
 ```bash
 iptables -A OUTPUT -o lo -j ACCEPT
@@ -580,7 +580,7 @@ apt-get install iptables-persistent && iptables-save > /etc/iptables/rules.v4
 
 ### 11.4 SUID: Baseline and Daily Audit
 
-On Raven 2, the SUID bit on `find` **was added by the attacker**. A daily audit against a baseline would have detected it. See the script in [DC-1 §9.5](../04.%20DC-CTF/Hardening-Guide.md#95-periodic-auditing-against-a-baseline).
+On Raven 2, the SUID bit on `find` **was added by the attacker**. A daily audit against a baseline would have detected it. See the script in [DC-1 §9.5](../05.%20DC-CTF/Hardening-Guide.md#95-periodic-auditing-against-a-baseline).
 
 ### 11.5 The Remaining Measures (Shared with Raven 1)
 
