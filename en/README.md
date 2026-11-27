@@ -155,7 +155,7 @@ A translated and enriched write-up for the **Raven 1** machine from VulnHub.
 
 A **Static Application Security Testing** (SAST) lab with **GitHub CodeQL**, built on the intentionally vulnerable Flask application [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable). You do not attack a machine here: the analysis only reads the source code, without running it. It is the defensive side of the vulnerabilities you exploit in the CTF labs (SQL injection, command injection, XSS).
 
-📘 **Full text:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF (Greek):** [Exercise](../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf), [Step-by-step guide](../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL%20-%20Οδηγός.pdf)
+📘 **Full text:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF (Greek):** [Lab 04 - SAST-CodeQL.pdf](../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf)
 
 **Topics:**
 

@@ -13,7 +13,6 @@ Unlike the CTF labs, you do **not** attack a machine here. The analysis only rea
 | File | Contents |
 | :--- | :--- |
 | [Lab 04 - SAST-CodeQL.pdf](../../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf) | The full exercise (51 pages, in Greek): theory (SAST, CWE, CVE, CVSS, GHSA, NVD), enabling CodeQL, analysing an alert, CVEs in dependencies, false negatives, writing up a finding, the 10 README vulnerabilities, 7 hands-on exercises, fixing and re-scanning every vulnerability (Δ0–Δ11), 10 investigative questions. |
-| [Lab 04 - SAST-CodeQL - Οδηγός.pdf](../../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL%20-%20Οδηγός.pdf) | Step-by-step guide (25 pages, in Greek): setup with screenshots, reading the alert list and an alert page, search filters, 10 search questions, fixing the 2 CVEs and the 3 most severe alerts. |
 
 **Reference repositories:**
 

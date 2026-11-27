@@ -43,7 +43,6 @@ new/
 ├── 04. SAST-CodeQL/
 │   ├── README.md                    Setup CodeQL, ανάλυση alerts, CVE, διόρθωση κώδικα
 │   ├── Lab 04 - SAST-CodeQL.pdf     Η πλήρης άσκηση (θεωρία, 7 ασκήσεις, Δ0–Δ11, ερωτήσεις)
-│   ├── Lab 04 - SAST-CodeQL - Οδηγός.pdf  Οδηγός βήμα βήμα με στιγμιότυπα
 │   └── images/                      8 στιγμιότυπα (CodeQL, advisory, commits)
 ├── 05. DC-CTF/
 │   ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
@@ -157,7 +156,7 @@ new/
 
 Εργαστήριο **στατικής ανάλυσης ασφάλειας κώδικα** (SAST) με το **GitHub CodeQL**, πάνω στην εσκεμμένα ευάλωτη εφαρμογή Flask [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable). Εδώ δεν επιτίθεστε σε μηχανή: η ανάλυση διαβάζει μόνο τον πηγαίο κώδικα, χωρίς να τον εκτελεί. Είναι η αμυντική πλευρά των ευπαθειών που εκμεταλλεύεστε στα CTF (SQL injection, command injection, XSS).
 
-📘 **Αναλυτικό κείμενο:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF:** [Άσκηση](04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf), [Οδηγός βήμα βήμα](04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL%20-%20Οδηγός.pdf)
+📘 **Αναλυτικό κείμενο:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF:** [Lab 04 - SAST-CodeQL.pdf](04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf)
 
 **Θεματικές ενότητες:**
 
