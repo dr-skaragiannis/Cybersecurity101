@@ -14,7 +14,7 @@ A collection of laboratory exercises that progressively develop core skills, fro
 | 01 | **Introduction to the Linux CLI** | File-system navigation, commands, networking, permissions | Beginner | [README.md](01.%20Introduction%20to%20the%20Linux%20CLI/README.md) |
 | 02 | **Bandit** | OverTheWire wargame: files, pipes, networking, cron, SUID, git, shell escapes | Beginner | [README.md](02.%20Bandit/README.md), [PDF (Greek)](../02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
 | 03 | **Raven-CTF** | Write-up: reconnaissance, WordPress, SSH, MySQL, privilege escalation | Beginner | [README.md](03.%20Raven-CTF/README.md), [Hardening](03.%20Raven-CTF/Hardening-Guide.md) |
-| 04 | **SAST-CodeQL** | Static analysis with GitHub CodeQL: alerts, CWE/CVE, Dependabot, code fixes | Beginner | [README.md](04.%20SAST-CodeQL/README.md), [PDF (Greek)](../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf) |
+| 04 | **SAST-CodeQL** | Static analysis with GitHub CodeQL: alerts, CWE/CVE, Dependabot, code fixes | Beginner | [README.md](04.%20SAST-CodeQL/README.md), [PDF (Greek)](../04.%20SAST-CodeQL/SAST-Askisi-simplest-sast-vulnerable.pdf) |
 | 05 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Beginner | [README.md](05.%20DC-CTF/README.md), [Hardening](05.%20DC-CTF/Hardening-Guide.md) |
 | 06 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Intermediate | [README.md](06.%20Raven2-CTF/README.md), [Hardening](06.%20Raven2-CTF/Hardening-Guide.md) |
 | 07 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Intermediate | [README.md](07.%20Mr%20Robot/README.md), [Hardening](07.%20Mr%20Robot/Hardening-Guide.md) |
@@ -155,7 +155,7 @@ A translated and enriched write-up for the **Raven 1** machine from VulnHub.
 
 A **Static Application Security Testing** (SAST) lab with **GitHub CodeQL**, built on the intentionally vulnerable Flask application [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable). You do not attack a machine here: the analysis only reads the source code, without running it. It is the defensive side of the vulnerabilities you exploit in the CTF labs (SQL injection, command injection, XSS).
 
-📘 **Full text:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF (Greek):** [Lab 04 - SAST-CodeQL.pdf](../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf)
+📘 **Full text:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF (Greek):** [SAST-Askisi-simplest-sast-vulnerable.pdf](../04.%20SAST-CodeQL/SAST-Askisi-simplest-sast-vulnerable.pdf)
 
 **Topics:**
 

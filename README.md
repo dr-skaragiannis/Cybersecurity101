@@ -14,7 +14,7 @@
 | 01 | **Εισαγωγή στο Linux CLI** | Πλοήγηση συστήματος αρχείων, εντολές, δίκτυο, δικαιώματα | Αρχάριος | [README.md](01.%20Εισαγωγή%20στο%20Linux%20CLI/README.md) |
 | 02 | **Bandit** | OverTheWire wargame: αρχεία, pipes, δίκτυο, cron, SUID, git, διαφυγή από κέλυφος | Αρχάριος | [README.md](02.%20Bandit/README.md), [PDF](02.%20Bandit/Lab%2002%20-%20Bandit.pdf) |
 | 03 | **Raven-CTF** | Write-up: αναγνώριση, WordPress, SSH, MySQL, privilege escalation | Αρχάριος | [README.md](03.%20Raven-CTF/README.md), [Hardening](03.%20Raven-CTF/Hardening-Guide.md) |
-| 04 | **SAST-CodeQL** | Στατική ανάλυση με GitHub CodeQL: alerts, CWE/CVE, Dependabot, διόρθωση κώδικα | Αρχάριος | [README.md](04.%20SAST-CodeQL/README.md), [PDF](04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf) |
+| 04 | **SAST-CodeQL** | Στατική ανάλυση με GitHub CodeQL: alerts, CWE/CVE, Dependabot, διόρθωση κώδικα | Αρχάριος | [README.md](04.%20SAST-CodeQL/README.md), [PDF](04.%20SAST-CodeQL/SAST-Askisi-simplest-sast-vulnerable.pdf) |
 | 05 | **DC-CTF** | Walkthrough: Drupalgeddon (CVE-2014-3704) → SUID `find` → root | Αρχάριος | [README.md](05.%20DC-CTF/README.md), [Hardening](05.%20DC-CTF/Hardening-Guide.md) |
 | 06 | **Raven2-CTF** | Write-up: PHPMailer RCE (CVE-2016-10033) → MySQL UDF → SUID `find` | Μεσαίο | [README.md](06.%20Raven2-CTF/README.md), [Hardening](06.%20Raven2-CTF/Hardening-Guide.md) |
 | 07 | **Mr Robot** | Write-up: WordPress enumeration → reverse shell → SUID nmap | Μεσαίο | [README.md](07.%20Mr%20Robot/README.md), [Hardening](07.%20Mr%20Robot/Hardening-Guide.md) |
@@ -42,7 +42,7 @@ new/
 │   └── images/                      15 στιγμιότυπα οθόνης (image*.png)
 ├── 04. SAST-CodeQL/
 │   ├── README.md                    Setup CodeQL, ανάλυση alerts, CVE, διόρθωση κώδικα
-│   ├── Lab 04 - SAST-CodeQL.pdf     Η πλήρης άσκηση (θεωρία, 7 ασκήσεις, Δ0–Δ11, ερωτήσεις)
+│   ├── SAST-Askisi-simplest-sast-vulnerable.pdf  Η πλήρης άσκηση (θεωρία, 7 ασκήσεις, Δ0–Δ11, ερωτήσεις)
 │   └── images/                      8 στιγμιότυπα (CodeQL, advisory, commits)
 ├── 05. DC-CTF/
 │   ├── README.md                    Εγχειρίδιο 4 φάσεων + μέτρα αποκατάστασης
@@ -156,7 +156,7 @@ new/
 
 Εργαστήριο **στατικής ανάλυσης ασφάλειας κώδικα** (SAST) με το **GitHub CodeQL**, πάνω στην εσκεμμένα ευάλωτη εφαρμογή Flask [plexicus/simplest-sast-vulnerable](https://github.com/plexicus/simplest-sast-vulnerable). Εδώ δεν επιτίθεστε σε μηχανή: η ανάλυση διαβάζει μόνο τον πηγαίο κώδικα, χωρίς να τον εκτελεί. Είναι η αμυντική πλευρά των ευπαθειών που εκμεταλλεύεστε στα CTF (SQL injection, command injection, XSS).
 
-📘 **Αναλυτικό κείμενο:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF:** [Lab 04 - SAST-CodeQL.pdf](04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf)
+📘 **Αναλυτικό κείμενο:** [README.md](04.%20SAST-CodeQL/README.md) · **PDF:** [SAST-Askisi-simplest-sast-vulnerable.pdf](04.%20SAST-CodeQL/SAST-Askisi-simplest-sast-vulnerable.pdf)
 
 **Θεματικές ενότητες:**
 

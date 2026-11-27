@@ -12,7 +12,7 @@ Unlike the CTF labs, you do **not** attack a machine here. The analysis only rea
 
 | File | Contents |
 | :--- | :--- |
-| [Lab 04 - SAST-CodeQL.pdf](../../04.%20SAST-CodeQL/Lab%2004%20-%20SAST-CodeQL.pdf) | The full exercise (51 pages, in Greek): theory (SAST, CWE, CVE, CVSS, GHSA, NVD), enabling CodeQL, analysing an alert, CVEs in dependencies, false negatives, writing up a finding, the 10 README vulnerabilities, 7 hands-on exercises, fixing and re-scanning every vulnerability (Δ0–Δ11), 10 investigative questions. |
+| [SAST-Askisi-simplest-sast-vulnerable.pdf](../../04.%20SAST-CodeQL/SAST-Askisi-simplest-sast-vulnerable.pdf) | The full exercise (51 pages, in Greek): theory (SAST, CWE, CVE, CVSS, GHSA, NVD), enabling CodeQL, analysing an alert, CVEs in dependencies, false negatives, writing up a finding, the 10 README vulnerabilities, 7 hands-on exercises, fixing and re-scanning every vulnerability (Δ0–Δ11), 10 investigative questions. |
 
 **Reference repositories:**
 
